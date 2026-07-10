@@ -1,0 +1,47 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Livewire\Admin\UserManager;
+use App\Models\Plan;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+class Phase3Test extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Plan::create(['name' => 'Free', 'slug' => 'free', 'daily_quota' => 20, 'monthly_quota' => 300]);
+    }
+
+    public function test_non_admin_cannot_access_admin(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'role' => 'user', 'email_verified_at' => now()]);
+
+        $this->actingAs($user)->get('/admin')->assertForbidden();
+    }
+
+    public function test_admin_can_access_admin(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+
+        $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('User Management');
+    }
+
+    public function test_admin_can_approve_a_pending_user(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $pending = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)
+            ->call('approve', $pending->id);
+
+        $this->assertSame('approved', $pending->fresh()->status);
+        $this->assertSame($admin->id, $pending->fresh()->approved_by);
+    }
+}

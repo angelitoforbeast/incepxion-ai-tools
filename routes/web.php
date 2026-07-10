@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\AdCopyGenerator;
+use App\Livewire\Admin\UserManager;
 use App\Models\Tool;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,9 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('tools/ad-copy-generator', AdCopyGenerator::class)->name('tools.ad-copy');
     Route::view('tools/profit-calculator', 'tools.profit-calculator')->name('tools.profit');
 });
+
+// Admin
+Route::get('admin', UserManager::class)->middleware(['auth', 'admin'])->name('admin.users');
 
 // Profile is reachable while pending, so users can set up their API key while they wait
 Route::view('profile', 'profile')

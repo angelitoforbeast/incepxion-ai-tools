@@ -88,10 +88,11 @@ class AdCopyGenerator extends Component
             $this->results = $out['variants'];
 
             // Fill the BotCake sales-assistant prompt from the placeholder inputs.
-            $this->sp['PRODUCT_NAME'] = $this->sp['PRODUCT_NAME'] ?: $this->product_name;
-            $this->sp['PRODUCT_INFORMATION'] = $this->sp['PRODUCT_INFORMATION'] ?: $this->product_description;
+            $values = $this->sp;
+            $values['PRODUCT_NAME'] = ($values['PRODUCT_NAME'] ?? '') ?: $this->product_name;
+            $values['PRODUCT_INFORMATION'] = ($values['PRODUCT_INFORMATION'] ?? '') ?: $this->product_description;
             $template = $tool->config['botcake_template'] ?? \App\Services\SalesPromptService::DEFAULT_TEMPLATE;
-            $this->generatedPrompt = app(\App\Services\SalesPromptService::class)->fill($template, $this->sp);
+            $this->generatedPrompt = app(\App\Services\SalesPromptService::class)->fill($template, $values);
 
             $generation = Generation::create([
                 'user_id'       => $user->id,
@@ -105,7 +106,7 @@ class AdCopyGenerator extends Component
                     'language'            => $this->language,
                     'tone'                => $this->tone,
                     'variants'            => $this->variants,
-                    'sales_prompt_fields' => $this->sp,
+                    'sales_prompt_fields' => $values,
                 ],
                 'output'        => ['variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt],
                 'input_tokens'  => $out['input_tokens'],

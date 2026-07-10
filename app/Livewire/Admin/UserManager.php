@@ -56,6 +56,24 @@ class UserManager extends Component
         session()->flash('msg', 'User reinstated.');
     }
 
+    public function makeAdmin(int $id): void
+    {
+        User::whereKey($id)->update(['role' => 'admin', 'status' => 'approved']);
+        session()->flash('msg', 'User is now an admin.');
+    }
+
+    public function removeAdmin(int $id): void
+    {
+        if ($id === auth()->id()) {
+            session()->flash('msg', "You can't remove your own admin role.");
+
+            return;
+        }
+
+        User::whereKey($id)->update(['role' => 'user']);
+        session()->flash('msg', 'Admin role removed.');
+    }
+
     public function render()
     {
         $users = User::query()

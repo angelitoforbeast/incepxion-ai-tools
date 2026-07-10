@@ -58,4 +58,23 @@ class Phase3Test extends TestCase
         $this->assertSame('approved', $pending->fresh()->status);
         $this->assertSame($admin->id, $pending->fresh()->approved_by);
     }
+
+    public function test_admin_can_promote_a_user_to_admin(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['status' => 'approved', 'role' => 'user', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)->call('makeAdmin', $user->id);
+
+        $this->assertSame('admin', $user->fresh()->role);
+    }
+
+    public function test_admin_cannot_remove_their_own_admin_role(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)->call('removeAdmin', $admin->id);
+
+        $this->assertSame('admin', $admin->fresh()->role);
+    }
 }

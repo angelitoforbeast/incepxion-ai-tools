@@ -85,9 +85,16 @@
                             <div class="flex items-center justify-end gap-2">
                                 @if ($u->status === 'pending')
                                     <button wire:click="approve({{ $u->id }})" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
-                                    <button wire:click="reject({{ $u->id }})" wire:confirm="I-reject ang user na ito?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">Reject</button>
+                                    <button wire:click="reject({{ $u->id }})" wire:confirm="Reject this user?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">Reject</button>
                                 @elseif ($u->status === 'approved')
-                                    <button wire:click="suspend({{ $u->id }})" wire:confirm="I-suspend ang user na ito?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Suspend</button>
+                                    @if ($u->isAdmin())
+                                        @if ($u->id !== auth()->id())
+                                            <button wire:click="removeAdmin({{ $u->id }})" wire:confirm="Remove admin role from this user?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-50">Remove Admin</button>
+                                        @endif
+                                    @else
+                                        <button wire:click="makeAdmin({{ $u->id }})" wire:confirm="Make this user an admin?" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">Make Admin</button>
+                                    @endif
+                                    <button wire:click="suspend({{ $u->id }})" wire:confirm="Suspend this user?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Suspend</button>
                                 @else
                                     <button wire:click="reinstate({{ $u->id }})" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Reinstate</button>
                                 @endif

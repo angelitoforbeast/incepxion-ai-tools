@@ -36,6 +36,14 @@
         </div>
 
         <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Key Features Prompt <span class="text-xs font-normal text-slate-400">(AI generates the product's Key Features)</span></label>
+            <textarea wire:model="featuresPrompt" rows="4"
+                      class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono leading-relaxed"></textarea>
+            @error('featuresPrompt') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            <p class="mt-1 text-xs text-slate-400">The generated features pre-fill the "Key Features" field in the tool — users can still edit them.</p>
+        </div>
+
+        <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">BotCake Sales Prompt Template</label>
             <textarea wire:model="botcakeTemplate" rows="14"
                       class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono leading-relaxed"></textarea>

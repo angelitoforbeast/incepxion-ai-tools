@@ -83,9 +83,15 @@ class AdCopyGenerator extends Component
                 'creativity'          => $this->creativity,
                 'model'               => $tool->config['default_model'] ?? 'gpt-4o',
                 'system_prompt'       => $tool->config['system_prompt'] ?? null,
+                'features_prompt'     => $tool->config['features_prompt'] ?? null,
             ]);
 
             $this->results = $out['variants'];
+
+            // AI-generated Key Features fill the field if the user left it blank (still editable).
+            if (trim($this->sp['PRODUCT_FEATURES'] ?? '') === '') {
+                $this->sp['PRODUCT_FEATURES'] = $out['product_features'] ?? '';
+            }
 
             // Fill the BotCake sales-assistant prompt from the placeholder inputs.
             $values = $this->sp;

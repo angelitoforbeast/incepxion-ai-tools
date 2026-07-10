@@ -27,6 +27,13 @@ Rules:
 - No fabricated medical/financial claims. Keep it honest and compliant.
 SYS;
 
+    /** Default instruction for generating the product's Key Features. Admin-editable. */
+    public const DEFAULT_FEATURES_PROMPT = <<<'FP'
+From the product name and description, write a concise list of 4-6 key features/benefits.
+Format each on its own line starting with "✅ ". Keep each line short and benefit-focused.
+Do not invent specs that aren't implied by the description.
+FP;
+
     /**
      * Generate Facebook ad copy variants using the user's own OpenAI key.
      *
@@ -51,6 +58,10 @@ SYS;
         $template = trim($input['system_prompt'] ?? '') ?: self::DEFAULT_SYSTEM;
         $system = str_replace('{language}', $language, $template);
 
+        // Key Features generation instruction (admin-editable) — appended to the system prompt.
+        $featuresPrompt = trim($input['features_prompt'] ?? '') ?: self::DEFAULT_FEATURES_PROMPT;
+        $system .= "\n\n---\n\nAdditionally, produce a \"product_features\" string:\n".$featuresPrompt;
+
         $userPrompt = <<<TXT
 Create {$count} completely different Facebook ad copy variants for this product.
 
@@ -63,8 +74,9 @@ TXT;
         $schema = [
             'type'                 => 'object',
             'additionalProperties' => false,
-            'required'             => ['variants'],
+            'required'             => ['variants', 'product_features'],
             'properties'           => [
+                'product_features' => ['type' => 'string'],
                 'variants' => [
                     'type'  => 'array',
                     'items' => [
@@ -116,10 +128,11 @@ TXT;
         $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
 
         return [
-            'variants'      => array_values($parsed['variants']),
-            'model'         => $model,
-            'input_tokens'  => $response->usage->promptTokens ?? 0,
-            'output_tokens' => $response->usage->completionTokens ?? 0,
+            'variants'         => array_values($parsed['variants']),
+            'product_features' => $parsed['product_features'] ?? '',
+            'model'            => $model,
+            'input_tokens'     => $response->usage->promptTokens ?? 0,
+            'output_tokens'    => $response->usage->completionTokens ?? 0,
         ];
     }
 }

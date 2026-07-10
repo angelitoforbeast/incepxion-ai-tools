@@ -14,6 +14,7 @@ class PromptManager extends Component
 {
     public string $systemPrompt = '';
     public string $model = 'gpt-4o';
+    public string $featuresPrompt = '';
     public string $botcakeTemplate = '';
 
     public function mount(): void
@@ -22,6 +23,7 @@ class PromptManager extends Component
         $config = $tool->config ?? [];
         $this->systemPrompt = $config['system_prompt'] ?? AdCopyService::DEFAULT_SYSTEM;
         $this->model = $config['default_model'] ?? 'gpt-4o';
+        $this->featuresPrompt = $config['features_prompt'] ?? AdCopyService::DEFAULT_FEATURES_PROMPT;
         $this->botcakeTemplate = $config['botcake_template'] ?? SalesPromptService::DEFAULT_TEMPLATE;
     }
 
@@ -35,13 +37,15 @@ class PromptManager extends Component
         $this->validate([
             'systemPrompt'    => ['required', 'string', 'min:20'],
             'model'           => ['required', 'string', 'max:60'],
+            'featuresPrompt'  => ['required', 'string', 'min:10'],
             'botcakeTemplate' => ['required', 'string', 'min:20'],
         ]);
 
         $tool = $this->tool();
         $config = $tool->config ?? [];
-        $config['system_prompt']   = trim($this->systemPrompt);
-        $config['default_model']   = trim($this->model);
+        $config['system_prompt']    = trim($this->systemPrompt);
+        $config['default_model']    = trim($this->model);
+        $config['features_prompt']  = trim($this->featuresPrompt);
         $config['botcake_template'] = trim($this->botcakeTemplate);
         $tool->update(['config' => $config]);
 

@@ -11,6 +11,7 @@ class SalesPromptService
         'PRODUCT_INFORMATION' => 'Product Information',
         'PRODUCT_FEATURES'    => 'Key Features',
         'PRODUCT_PRICE'       => 'Price',
+        'PROMO'               => 'Promo / Offer',
         'PACKAGE_CONTENTS'    => 'Package Contents',
         'PACKAGE_SUMMARY'     => 'Package Summary',
         'UNIT_NAME'           => 'Unit Name (e.g. box, bottle)',
@@ -153,6 +154,14 @@ Whenever customers ask about price, clearly mention:
 **{{PRODUCT_PRICE}}**
 
 Include that each {{UNIT_NAME}} contains **{{PACKAGE_SUMMARY}}**.
+
+---
+
+## Promo / Offer
+
+If there is an active promo, share it naturally when relevant (especially when the customer hesitates on price or is close to ordering):
+
+{{PROMO}}
 
 ---
 

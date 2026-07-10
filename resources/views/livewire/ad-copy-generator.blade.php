@@ -75,6 +75,31 @@
                     <input type="range" wire:model="creativity" min="0" max="1" step="0.1" class="w-full accent-indigo-600">
                 </div>
 
+                <!-- BotCake sales-prompt placeholder details -->
+                <div x-data="{ open: false }" class="border-t border-gray-100 pt-4">
+                    <button type="button" @click="open = !open" class="flex w-full items-center justify-between text-sm font-medium text-gray-700">
+                        <span>🤖 Sales Prompt details (BotCake)</span>
+                        <svg class="w-4 h-4 text-gray-400 transition" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-transition style="display:none" class="mt-3 space-y-3">
+                        @php
+                            $spFields = ['STORE_NAME','PRODUCT_FEATURES','PRODUCT_PRICE','PACKAGE_CONTENTS','PACKAGE_SUMMARY','UNIT_NAME','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spMulti = ['PRODUCT_FEATURES','PACKAGE_CONTENTS','LEGITIMACY_INFO','ORDER_FIELDS'];
+                        @endphp
+                        @foreach ($spFields as $k)
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ \App\Services\SalesPromptService::FIELDS[$k] }}</label>
+                                @if (in_array($k, $spMulti))
+                                    <textarea wire:model="sp.{{ $k }}" rows="2" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                                @else
+                                    <input type="text" wire:model="sp.{{ $k }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                @endif
+                            </div>
+                        @endforeach
+                        <p class="text-xs text-gray-400">Product name &amp; information auto-fill from the fields above. Blank placeholders are just left empty.</p>
+                    </div>
+                </div>
+
                 <button type="submit"
                         class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                         wire:loading.attr="disabled" wire:target="generate">
@@ -132,6 +157,18 @@
                             </div>
                         @endunless
                     @endforelse
+
+                    @if ($generatedPrompt)
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
+                            <div class="flex items-center justify-between mb-2">
+                                <strong class="text-gray-900">🤖 BotCake Sales Prompt</strong>
+                                <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                        @click="navigator.clipboard.writeText($refs.sp.innerText); $wire.recordCopy(-1, 'sales_prompt'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
+                            </div>
+                            <div x-ref="sp" class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-800 whitespace-pre-wrap max-h-96 overflow-y-auto font-mono leading-relaxed">{{ $generatedPrompt }}</div>
+                            <p class="mt-2 text-xs text-gray-400">Ready to paste into BotCake AI.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

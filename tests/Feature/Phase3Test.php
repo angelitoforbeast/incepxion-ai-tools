@@ -36,6 +36,7 @@ class Phase3Test extends TestCase
 
         $this->actingAs($admin)->get('/admin/users')->assertOk()->assertSee('User Management');
         $this->actingAs($admin)->get('/admin/prompts')->assertOk()->assertSee('System Prompt');
+        $this->actingAs($admin)->get('/admin/logs')->assertOk()->assertSee('Data Logs');
     }
 
     public function test_admin_can_preapprove_a_user_by_email(): void

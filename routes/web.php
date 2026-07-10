@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\AdCopyGenerator;
+use App\Livewire\Admin\GenerationLog;
 use App\Livewire\Admin\PromptManager;
 use App\Livewire\Admin\UserManager;
 use App\Models\Tool;
@@ -43,6 +44,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::redirect('/', '/admin/users');
     Route::get('users', UserManager::class)->name('admin.users');
     Route::get('prompts', PromptManager::class)->name('admin.prompts');
+    Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
 
 // Profile (view-only) is reachable while pending; Settings requires an approved account

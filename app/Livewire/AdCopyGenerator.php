@@ -38,6 +38,17 @@ class AdCopyGenerator extends Component
     public ?string $error = null;
     public ?int $lastGenerationId = null;
 
+    /** BotCake sales-prompt placeholder values, keyed by placeholder name. */
+    public array $sp = [];
+    public ?string $generatedPrompt = null;
+
+    public function mount(): void
+    {
+        foreach (array_keys(\App\Services\SalesPromptService::FIELDS) as $key) {
+            $this->sp[$key] = '';
+        }
+    }
+
     public function generate(AdCopyService $service): void
     {
         $this->validate();
@@ -76,17 +87,27 @@ class AdCopyGenerator extends Component
 
             $this->results = $out['variants'];
 
+            // Fill the BotCake sales-assistant prompt from the placeholder inputs.
+            $this->sp['PRODUCT_NAME'] = $this->sp['PRODUCT_NAME'] ?: $this->product_name;
+            $this->sp['PRODUCT_INFORMATION'] = $this->sp['PRODUCT_INFORMATION'] ?: $this->product_description;
+            $template = $tool->config['botcake_template'] ?? \App\Services\SalesPromptService::DEFAULT_TEMPLATE;
+            $this->generatedPrompt = app(\App\Services\SalesPromptService::class)->fill($template, $this->sp);
+
             $generation = Generation::create([
                 'user_id'       => $user->id,
                 'tool_id'       => $tool?->id,
                 'provider'      => 'openai',
                 'model'         => $out['model'],
                 'input'         => [
-                    'product_name' => $this->product_name,
-                    'language'     => $this->language,
-                    'variants'     => $this->variants,
+                    'product_name'        => $this->product_name,
+                    'product_description' => $this->product_description,
+                    'audience'            => $this->audience,
+                    'language'            => $this->language,
+                    'tone'                => $this->tone,
+                    'variants'            => $this->variants,
+                    'sales_prompt_fields' => $this->sp,
                 ],
-                'output'        => $out['variants'],
+                'output'        => ['variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt],
                 'input_tokens'  => $out['input_tokens'],
                 'output_tokens' => $out['output_tokens'],
                 'status'        => 'success',
@@ -123,11 +144,15 @@ class AdCopyGenerator extends Component
             return;
         }
 
+        $text = $field === 'sales_prompt'
+            ? $this->generatedPrompt
+            : ($this->results[$index][$field] ?? null);
+
         $copies = $generation->copies ?? [];
         $copies[] = [
             'variant' => $index,
             'field'   => $field,
-            'text'    => $this->results[$index][$field] ?? null,
+            'text'    => $text,
             'at'      => now()->toDateTimeString(),
         ];
         $generation->update(['copies' => $copies]);

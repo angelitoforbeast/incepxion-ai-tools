@@ -35,6 +35,17 @@
             </div>
         </div>
 
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">BotCake Sales Prompt Template</label>
+            <textarea wire:model="botcakeTemplate" rows="14"
+                      class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono leading-relaxed"></textarea>
+            @error('botcakeTemplate') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            <div class="mt-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-500">
+                💡 Placeholders (auto-replaced from the tool's inputs):
+                <span class="font-mono">@foreach (\App\Services\SalesPromptService::FIELDS as $k => $label){{ '{'.'{'.$k.'}'.'}' }}@if (! $loop->last) · @endif @endforeach</span>
+            </div>
+        </div>
+
         <div class="flex items-center gap-3">
             <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
                 Save Prompt

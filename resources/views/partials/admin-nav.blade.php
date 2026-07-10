@@ -2,6 +2,7 @@
     $tabs = [
         ['route' => 'admin.users', 'label' => 'Users'],
         ['route' => 'admin.prompts', 'label' => 'Prompts'],
+        ['route' => 'admin.logs', 'label' => 'Data Logs'],
     ];
 @endphp
 <div class="border-b border-slate-200 mb-6">

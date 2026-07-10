@@ -73,6 +73,17 @@ class Phase2Test extends TestCase
             ->assertSet('error', fn ($e) => str_contains($e, 'OpenAI API key'));
     }
 
+    public function test_sales_prompt_service_fills_placeholders(): void
+    {
+        $svc = new \App\Services\SalesPromptService();
+        $out = $svc->fill('Store: {{STORE_NAME}} · Price: {{PRODUCT_PRICE}}', [
+            'STORE_NAME' => 'MyShop', 'PRODUCT_PRICE' => 'P299',
+        ]);
+
+        $this->assertStringContainsString('Store: MyShop', $out);
+        $this->assertStringContainsString('Price: P299', $out);
+    }
+
     public function test_copy_is_recorded_on_the_generation(): void
     {
         $user = $this->approvedUser();

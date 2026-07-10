@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\PromptVersion;
 use App\Models\Tool;
 use App\Services\AdCopyService;
+use App\Services\SalesPromptService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -13,6 +14,7 @@ class PromptManager extends Component
 {
     public string $systemPrompt = '';
     public string $model = 'gpt-4o';
+    public string $botcakeTemplate = '';
 
     public function mount(): void
     {
@@ -20,6 +22,7 @@ class PromptManager extends Component
         $config = $tool->config ?? [];
         $this->systemPrompt = $config['system_prompt'] ?? AdCopyService::DEFAULT_SYSTEM;
         $this->model = $config['default_model'] ?? 'gpt-4o';
+        $this->botcakeTemplate = $config['botcake_template'] ?? SalesPromptService::DEFAULT_TEMPLATE;
     }
 
     private function tool(): Tool
@@ -30,14 +33,16 @@ class PromptManager extends Component
     public function save(): void
     {
         $this->validate([
-            'systemPrompt' => ['required', 'string', 'min:20'],
-            'model'        => ['required', 'string', 'max:60'],
+            'systemPrompt'    => ['required', 'string', 'min:20'],
+            'model'           => ['required', 'string', 'max:60'],
+            'botcakeTemplate' => ['required', 'string', 'min:20'],
         ]);
 
         $tool = $this->tool();
         $config = $tool->config ?? [];
-        $config['system_prompt'] = trim($this->systemPrompt);
-        $config['default_model'] = trim($this->model);
+        $config['system_prompt']   = trim($this->systemPrompt);
+        $config['default_model']   = trim($this->model);
+        $config['botcake_template'] = trim($this->botcakeTemplate);
         $tool->update(['config' => $config]);
 
         // Snapshot this version into history.

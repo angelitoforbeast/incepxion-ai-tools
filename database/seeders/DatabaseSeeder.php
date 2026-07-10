@@ -37,8 +37,8 @@ class DatabaseSeeder extends Seeder
             'sort_order'    => 2,
         ]);
 
-        // ---------- Admin user ----------
-        User::updateOrCreate(['email' => 'admin@incepxion-ai.com'], [
+        // ---------- Admin user (firstOrCreate: never resets an existing password) ----------
+        User::firstOrCreate(['email' => 'admin@incepxion-ai.com'], [
             'name'              => 'Admin',
             'password'          => Hash::make('password'), // CHANGE THIS after first login
             'role'              => 'admin',
@@ -49,17 +49,29 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // ---------- Tools ----------
-        Tool::updateOrCreate(['slug' => 'ad-copy-generator'], [
-            'name'        => 'AI Ad Copy Generator',
-            'description' => 'Gumawa ng high-converting Facebook ad copy para sa Pinoy market.',
-            'icon'        => '📣',
-            'category'    => 'Marketing',
-            'is_active'   => true,
-            'sort_order'  => 1,
-            'config'      => [
-                'provider'      => 'openai',
-                'default_model' => 'gpt-4o',
+        $tools = [
+            [
+                'slug' => 'ad-copy-generator', 'name' => 'AI Ad Copy Generator',
+                'description' => 'Gumawa ng high-converting Facebook ad copy para sa Pinoy market.',
+                'icon' => '📣', 'category' => 'Marketing', 'sort_order' => 1,
+                'config' => ['provider' => 'openai', 'default_model' => 'gpt-4o'],
             ],
-        ]);
+            [
+                'slug' => 'rts-processor', 'name' => 'RTS Processor',
+                'description' => 'I-upload ang courier file (J&T, atbp.) para mabilis i-proseso ang Return-to-Sender orders.',
+                'icon' => '📦', 'category' => 'Logistics', 'sort_order' => 2,
+                'config' => ['status' => 'coming_soon'],
+            ],
+            [
+                'slug' => 'profit-computation', 'name' => 'Profit Computation',
+                'description' => 'Kalkulahin ang kita per order/product — kasama ang shipping, fees, at COGS.',
+                'icon' => '💰', 'category' => 'Finance', 'sort_order' => 3,
+                'config' => ['status' => 'coming_soon'],
+            ],
+        ];
+
+        foreach ($tools as $t) {
+            Tool::updateOrCreate(['slug' => $t['slug']], array_merge($t, ['is_active' => true]));
+        }
     }
 }

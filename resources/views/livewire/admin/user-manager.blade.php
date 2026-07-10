@@ -1,7 +1,10 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+    <h1 class="text-xl font-bold text-slate-900 mb-1">Admin</h1>
+    @include('partials.admin-nav')
+
     <div class="mb-6">
-        <h1 class="text-xl font-bold text-slate-900">Admin · User Management</h1>
+        <h2 class="text-lg font-semibold text-slate-900">User Management</h2>
         <p class="text-sm text-slate-500">Approve, reject, or manage users.</p>
     </div>
 

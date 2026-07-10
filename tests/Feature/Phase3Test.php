@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Admin\PromptManager;
 use App\Livewire\Admin\UserManager;
 use App\Models\Plan;
+use App\Models\Tool;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -17,20 +19,37 @@ class Phase3Test extends TestCase
     {
         parent::setUp();
         Plan::create(['name' => 'Free', 'slug' => 'free', 'daily_quota' => 20, 'monthly_quota' => 300]);
+        Tool::create(['slug' => 'ad-copy-generator', 'name' => 'AI Ad Copy Generator', 'is_active' => true, 'config' => ['default_model' => 'gpt-4o']]);
     }
 
     public function test_non_admin_cannot_access_admin(): void
     {
         $user = User::factory()->create(['status' => 'approved', 'role' => 'user', 'email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/admin')->assertForbidden();
+        $this->actingAs($user)->get('/admin/users')->assertForbidden();
+        $this->actingAs($user)->get('/admin/prompts')->assertForbidden();
     }
 
     public function test_admin_can_access_admin(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
 
-        $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('User Management');
+        $this->actingAs($admin)->get('/admin/users')->assertOk()->assertSee('User Management');
+        $this->actingAs($admin)->get('/admin/prompts')->assertOk()->assertSee('System Prompt');
+    }
+
+    public function test_admin_can_edit_the_ad_copy_prompt(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(PromptManager::class)
+            ->set('systemPrompt', 'Custom instructions for {language} with clear rules.')
+            ->set('model', 'gpt-4o-mini')
+            ->call('save');
+
+        $config = Tool::where('slug', 'ad-copy-generator')->first()->config;
+        $this->assertSame('Custom instructions for {language} with clear rules.', $config['system_prompt']);
+        $this->assertSame('gpt-4o-mini', $config['default_model']);
     }
 
     public function test_plain_blade_pages_load_livewire_alpine_scripts(): void

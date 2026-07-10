@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\AdCopyGenerator;
+use App\Livewire\Admin\PromptManager;
 use App\Livewire\Admin\UserManager;
 use App\Models\Tool;
 use Illuminate\Support\Facades\Route;
@@ -37,8 +38,12 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::view('tools/profit-calculator', 'tools.profit-calculator')->name('tools.profit');
 });
 
-// Admin
-Route::get('admin', UserManager::class)->middleware(['auth', 'admin'])->name('admin.users');
+// Admin — separate routes for each section
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::redirect('/', '/admin/users');
+    Route::get('users', UserManager::class)->name('admin.users');
+    Route::get('prompts', PromptManager::class)->name('admin.prompts');
+});
 
 // Profile (view-only) is reachable while pending; Settings requires an approved account
 Route::view('profile', 'profile')->middleware(['auth'])->name('profile');

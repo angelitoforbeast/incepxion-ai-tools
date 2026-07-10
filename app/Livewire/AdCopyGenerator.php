@@ -70,6 +70,7 @@ class AdCopyGenerator extends Component
                 'variants'            => $this->variants,
                 'creativity'          => $this->creativity,
                 'model'               => $tool->config['default_model'] ?? 'gpt-4o',
+                'system_prompt'       => $tool->config['system_prompt'] ?? null,
             ]);
 
             $this->results = $out['variants'];

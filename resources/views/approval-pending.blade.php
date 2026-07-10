@@ -19,9 +19,8 @@
             </div>
 
             <p class="mt-6 text-xs text-slate-400">
-                While you wait, you can set up your OpenAI API key in
-                <a href="{{ route('settings') }}" wire:navigate class="text-indigo-600 underline">Settings</a>.
-                Refresh this page later to check if you've been approved.
+                Once approved, you'll be able to add your OpenAI API key and start using the tools.
+                Refresh this page later to check your status.
             </p>
         </div>
     </div>

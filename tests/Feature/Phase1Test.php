@@ -44,12 +44,12 @@ class Phase1Test extends TestCase
         $this->actingAs($user)->get('/dashboard')->assertRedirect(route('approval.pending'));
     }
 
-    public function test_pending_users_can_reach_profile_and_settings(): void
+    public function test_pending_users_can_reach_profile_but_not_settings(): void
     {
         $user = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
 
         $this->actingAs($user)->get('/profile')->assertOk();
-        $this->actingAs($user)->get('/settings')->assertOk();
+        $this->actingAs($user)->get('/settings')->assertRedirect(route('approval.pending'));
     }
 
     public function test_pending_page_shows_message_and_hides_tools_menu(): void

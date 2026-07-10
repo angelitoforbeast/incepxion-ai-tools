@@ -40,8 +40,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
 // Admin
 Route::get('admin', UserManager::class)->middleware(['auth', 'admin'])->name('admin.users');
 
-// Profile (view-only) + Settings (API key, password, delete) — reachable while pending
+// Profile (view-only) is reachable while pending; Settings requires an approved account
 Route::view('profile', 'profile')->middleware(['auth'])->name('profile');
-Route::view('settings', 'settings')->middleware(['auth'])->name('settings');
+Route::view('settings', 'settings')->middleware(['auth', 'approved'])->name('settings');
 
 require __DIR__.'/auth.php';

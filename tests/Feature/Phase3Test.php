@@ -77,4 +77,23 @@ class Phase3Test extends TestCase
 
         $this->assertSame('admin', $admin->fresh()->role);
     }
+
+    public function test_admin_can_delete_a_user(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)->call('deleteUser', $user->id);
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    }
+
+    public function test_admin_cannot_delete_themselves(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)->call('deleteUser', $admin->id);
+
+        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    }
 }

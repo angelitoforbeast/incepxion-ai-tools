@@ -74,6 +74,22 @@ class UserManager extends Component
         session()->flash('msg', 'Admin role removed.');
     }
 
+    public function deleteUser(int $id): void
+    {
+        if ($id === auth()->id()) {
+            session()->flash('msg', "You can't delete your own account.");
+
+            return;
+        }
+
+        $user = User::find($id);
+        if ($user) {
+            $name = $user->name;
+            $user->delete(); // cascades: social accounts, API keys, subscriptions, generations, usage
+            session()->flash('msg', "{$name}'s account and all its data have been deleted.");
+        }
+    }
+
     public function render()
     {
         $users = User::query()

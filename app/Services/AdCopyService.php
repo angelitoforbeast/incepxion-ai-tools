@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\User;
+use RuntimeException;
+
+class AdCopyService
+{
+    /**
+     * Generate Facebook ad copy variants using the user's own OpenAI key.
+     *
+     * @return array{variants: array, model: string, input_tokens: int, output_tokens: int}
+     */
+    public function generate(User $user, array $input): array
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('Wala ka pang OpenAI API key. Mag-set up muna sa Profile.');
+        }
+
+        $count      = (int) ($input['variants'] ?? 5);
+        $language   = $input['language'] ?? 'Taglish';
+        $tone       = $input['tone'] ?? 'Friendly at persuasive';
+        $audience   = trim($input['audience'] ?? '');
+        $creativity = (float) ($input['creativity'] ?? 0.7);
+        $model      = $input['model'] ?? 'gpt-4o';
+
+        $system = <<<SYS
+You are an expert Filipino direct-response Facebook ads copywriter. You write
+Messenger-optimized ad copy that gets high click-through and conversion rates
+for the Philippine market. You understand local buying psychology and slang.
+
+Rules:
+- Write in {$language}. If Taglish, mix natural conversational Tagalog + English.
+- Each variant must be DISTINCT in angle (problem-agitate, benefit-led, social
+  proof, urgency/scarcity, curiosity).
+- Headline: max 10 words, scroll-stopping.
+- Primary text: 1-4 short lines, high CTR, ends with a clear call to action.
+- Messaging template: a warm auto-reply greeting to send when a customer messages.
+- Quick replies: exactly 3 short button labels, each under 25 characters.
+- No fabricated medical/financial claims. Keep it honest and compliant.
+SYS;
+
+        $userPrompt = <<<TXT
+Gumawa ka ng {$count} completely different Facebook ad copy variants para sa product na ito.
+
+Product name: {$input['product_name']}
+Product description: {$input['product_description']}
+Target audience: {$audience}
+Tone: {$tone}
+TXT;
+
+        $schema = [
+            'type'                 => 'object',
+            'additionalProperties' => false,
+            'required'             => ['variants'],
+            'properties'           => [
+                'variants' => [
+                    'type'  => 'array',
+                    'items' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => false,
+                        'required'             => ['angle', 'headline', 'primary_text', 'messaging_template', 'quick_replies'],
+                        'properties'           => [
+                            'angle'              => ['type' => 'string'],
+                            'headline'           => ['type' => 'string'],
+                            'primary_text'       => ['type' => 'string'],
+                            'messaging_template' => ['type' => 'string'],
+                            'quick_replies'      => [
+                                'type'  => 'array',
+                                'items' => ['type' => 'string'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $client = \OpenAI::client($keyRow->plainKey());
+
+        $response = $client->chat()->create([
+            'model'    => $model,
+            'messages' => [
+                ['role' => 'system', 'content' => $system],
+                ['role' => 'user',   'content' => $userPrompt],
+            ],
+            'temperature'     => $creativity,
+            'response_format' => [
+                'type'        => 'json_schema',
+                'json_schema' => [
+                    'name'   => 'ad_variants',
+                    'strict' => true,
+                    'schema' => $schema,
+                ],
+            ],
+        ]);
+
+        $content = $response->choices[0]->message->content ?? '';
+        $parsed  = json_decode($content, true);
+
+        if (! is_array($parsed) || ! isset($parsed['variants'])) {
+            throw new RuntimeException('Hindi ma-parse ang sagot ng AI. Subukan ulit.');
+        }
+
+        // Mark the key as used and valid.
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+
+        return [
+            'variants'      => array_values($parsed['variants']),
+            'model'         => $model,
+            'input_tokens'  => $response->usage->promptTokens ?? 0,
+            'output_tokens' => $response->usage->completionTokens ?? 0,
+        ];
+    }
+}

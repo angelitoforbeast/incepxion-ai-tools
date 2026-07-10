@@ -1,0 +1,139 @@
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Header -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">📣 AI Ad Copy Generator</h1>
+                <p class="text-sm text-gray-500">High-converting Facebook ad copy para sa Pinoy market.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
+                    {{ $remaining }}/{{ $quota }} natitira ngayon
+                </span>
+            </div>
+        </div>
+
+        @unless ($hasKey)
+            <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                ⚠️ Wala ka pang OpenAI API key.
+                <a href="{{ route('profile') }}" class="font-semibold underline">Magdagdag sa Profile</a>
+                bago ka mag-generate.
+            </div>
+        @endunless
+
+        <div class="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 items-start">
+
+            <!-- Form -->
+            <form wire:submit="generate" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
+                    <input type="text" wire:model="product_name" placeholder="hal. GlowUp Vitamin C Serum"
+                           class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    @error('product_name') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea wire:model="product_description" rows="4" placeholder="Ano ang product, benefits, presyo, offer..."
+                              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                    @error('product_description') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Target Audience <span class="text-gray-400">(optional)</span></label>
+                    <input type="text" wire:model="audience" placeholder="hal. Moms 25-40, budget-conscious"
+                           class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                        <select wire:model="language" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                            <option>Taglish</option>
+                            <option>Filipino</option>
+                            <option>English</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Variants</label>
+                        <select wire:model="variants" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                            @for ($i = 5; $i >= 1; $i--)<option value="{{ $i }}">{{ $i }}</option>@endfor
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tone</label>
+                    <input type="text" wire:model="tone" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                </div>
+
+                <div x-data="{ c: @entangle('creativity') }">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Creativity <span class="text-gray-400">(<span x-text="parseFloat(c).toFixed(1)"></span>)</span>
+                    </label>
+                    <input type="range" wire:model="creativity" min="0" max="1" step="0.1" class="w-full accent-indigo-600">
+                </div>
+
+                <button type="submit"
+                        class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                        wire:loading.attr="disabled" wire:target="generate">
+                    <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
+                    <span wire:loading wire:target="generate">Ginagawa ng AI...</span>
+                </button>
+            </form>
+
+            <!-- Results -->
+            <div>
+                @if ($error)
+                    <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">⚠️ {{ $error }}</div>
+                @endif
+
+                <div wire:loading wire:target="generate" class="space-y-4">
+                    @for ($i = 0; $i < $variants; $i++)
+                        <div class="h-40 rounded-xl bg-gray-200 animate-pulse"></div>
+                    @endfor
+                </div>
+
+                <div wire:loading.remove wire:target="generate" class="space-y-4">
+                    @forelse ($results as $i => $v)
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
+                            <div class="flex items-center justify-between mb-3">
+                                <strong class="text-gray-900">Variant {{ $i + 1 }}</strong>
+                                <span class="text-xs font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 rounded-full px-3 py-1">{{ $v['angle'] ?? 'Ad' }}</span>
+                            </div>
+
+                            @foreach (['Headline' => 'headline', 'Primary Text' => 'primary_text', 'Messaging Template' => 'messaging_template'] as $label => $key)
+                                <div class="mb-3">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-xs uppercase tracking-wide text-gray-400">{{ $label }}</span>
+                                        <button type="button" class="text-xs text-gray-400 hover:text-indigo-600"
+                                                @click="navigator.clipboard.writeText($refs.f{{ $i }}{{ $loop->index }}.innerText); $el.innerText='Copied!'; setTimeout(() => $el.innerText='Copy', 1200)">Copy</button>
+                                    </div>
+                                    <div x-ref="f{{ $i }}{{ $loop->index }}"
+                                         class="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap {{ $key === 'headline' ? 'font-semibold' : '' }}">{{ $v[$key] ?? '' }}</div>
+                                </div>
+                            @endforeach
+
+                            <div>
+                                <span class="text-xs uppercase tracking-wide text-gray-400">Quick Replies</span>
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    @foreach (($v['quick_replies'] ?? []) as $qr)
+                                        <span class="rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-sm text-gray-700">{{ $qr }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        @unless ($error)
+                            <div class="flex flex-col items-center justify-center min-h-[340px] rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-center p-10">
+                                <div class="text-4xl mb-3">📝</div>
+                                <p>Punan ang form sa kaliwa at i-click ang <strong>Generate</strong>.<br>Lalabas dito ang ad copy variants.</p>
+                            </div>
+                        @endunless
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

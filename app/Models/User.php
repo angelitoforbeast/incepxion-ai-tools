@@ -74,6 +74,43 @@ class User extends Authenticatable
         return $this->hasMany(Generation::class);
     }
 
+    public function usageDaily(): HasMany
+    {
+        return $this->hasMany(UsageDaily::class);
+    }
+
+    // ---------- Quota ----------
+
+    public function usageToday(): int
+    {
+        return (int) ($this->usageDaily()->where('date', now()->toDateString())->value('count') ?? 0);
+    }
+
+    public function dailyQuota(): int
+    {
+        return (int) ($this->plan?->daily_quota ?? 0);
+    }
+
+    public function remainingQuota(): int
+    {
+        return max(0, $this->dailyQuota() - $this->usageToday());
+    }
+
+    public function hasQuotaLeft(): bool
+    {
+        return $this->usageToday() < $this->dailyQuota();
+    }
+
+    /** Increment today's usage counter (atomic upsert). */
+    public function recordUsage(): void
+    {
+        $row = UsageDaily::firstOrCreate(
+            ['user_id' => $this->id, 'date' => now()->toDateString()],
+            ['count' => 0],
+        );
+        $row->increment('count');
+    }
+
     // ---------- Helpers ----------
 
     public function isApproved(): bool

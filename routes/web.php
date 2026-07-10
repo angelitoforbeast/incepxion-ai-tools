@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
+use App\Livewire\AdCopyGenerator;
+use App\Models\Tool;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -23,9 +25,15 @@ Route::view('approval/pending', 'approval-pending')
     ->name('approval.pending');
 
 // Dashboard + tools require an approved account
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified', 'approved'])
-    ->name('dashboard');
+Route::middleware(['auth', 'verified', 'approved'])->group(function () {
+    Route::get('dashboard', function () {
+        return view('dashboard', [
+            'tools' => Tool::where('is_active', true)->orderBy('sort_order')->get(),
+        ]);
+    })->name('dashboard');
+
+    Route::get('tools/ad-copy-generator', AdCopyGenerator::class)->name('tools.ad-copy');
+});
 
 // Profile is reachable while pending, so users can set up their API key while they wait
 Route::view('profile', 'profile')

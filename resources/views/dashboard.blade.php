@@ -32,7 +32,11 @@
                 <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">{{ $category }}</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     @foreach ($items as $tool)
-                        @php $route = $tool->slug === 'ad-copy-generator' ? route('tools.ad-copy') : null; @endphp
+                        @php $route = match ($tool->slug) {
+                            'ad-copy-generator'  => route('tools.ad-copy'),
+                            'profit-computation' => route('tools.profit'),
+                            default              => null,
+                        }; @endphp
                         <a @if ($route) href="{{ $route }}" wire:navigate @endif
                            class="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition
                                   {{ $route ? 'hover:shadow-md hover:-translate-y-0.5 hover:border-indigo-300' : '' }}">

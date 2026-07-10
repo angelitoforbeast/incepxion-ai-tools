@@ -33,6 +33,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     })->name('dashboard');
 
     Route::get('tools/ad-copy-generator', AdCopyGenerator::class)->name('tools.ad-copy');
+    Route::view('tools/profit-calculator', 'tools.profit-calculator')->name('tools.profit');
 });
 
 // Profile is reachable while pending, so users can set up their API key while they wait

@@ -58,7 +58,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Variants</label>
                         <select wire:model="variants" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                            @for ($i = 5; $i >= 1; $i--)<option value="{{ $i }}">{{ $i }}</option>@endfor
+                            @for ($i = 1; $i <= 5; $i++)<option value="{{ $i }}">{{ $i }}</option>@endfor
                         </select>
                     </div>
                 </div>

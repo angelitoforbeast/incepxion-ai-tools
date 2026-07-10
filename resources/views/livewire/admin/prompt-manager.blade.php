@@ -1,20 +1,21 @@
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <h1 class="text-xl font-bold text-slate-900 mb-1">Admin</h1>
     @include('partials.admin-nav')
 
-    <div class="mb-6">
-        <h2 class="text-lg font-semibold text-slate-900">Ad Copy Generator — Prompt</h2>
-        <p class="text-sm text-slate-500">Edit the system prompt that guides the AI. Changes apply to the next generation.</p>
-    </div>
-
-    @if (session('msg'))
-        <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700">
-            ✓ {{ session('msg') }}
+    <div class="max-w-3xl">
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold text-slate-900">Ad Copy Generator — Prompt</h2>
+            <p class="text-sm text-slate-500">Edit the system prompt that guides the AI. Changes apply to the next generation.</p>
         </div>
-    @endif
 
-    <form wire:submit="save" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+        @if (session('msg'))
+            <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700">
+                ✓ {{ session('msg') }}
+            </div>
+        @endif
+
+        <form wire:submit="save" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Default Model</label>
             <input type="text" wire:model="model"
@@ -43,5 +44,6 @@
                 Reset to Default
             </button>
         </div>
-    </form>
+        </form>
+    </div>
 </div>

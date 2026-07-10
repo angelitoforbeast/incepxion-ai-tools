@@ -29,7 +29,7 @@ class AdCopyGenerator extends Component
     public string $tone = 'Friendly at persuasive';
 
     #[Validate('required|integer|min:1|max:5')]
-    public int $variants = 5;
+    public int $variants = 1;
 
     #[Validate('required|numeric|min:0|max:1')]
     public float $creativity = 0.7;

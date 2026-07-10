@@ -3,9 +3,15 @@
     <h1 class="text-xl font-bold text-slate-900 mb-1">Admin</h1>
     @include('partials.admin-nav')
 
-    <div class="mb-6">
-        <h2 class="text-lg font-semibold text-slate-900">User Management</h2>
-        <p class="text-sm text-slate-500">Approve, reject, or manage users.</p>
+    <div class="mb-6 flex items-start justify-between gap-3">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">User Management</h2>
+            <p class="text-sm text-slate-500">Approve, reject, or manage users.</p>
+        </div>
+        <button wire:click="openInvite" type="button"
+                class="flex-shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+            + Pre-approve user
+        </button>
     </div>
 
     <!-- Stats -->
@@ -145,6 +151,32 @@
                             class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
                     <button wire:click="confirmReject" type="button"
                             class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">Reject User</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Pre-approve (invite) modal -->
+    @if ($showInvite)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+                <h3 class="text-lg font-semibold text-slate-900">Pre-approve a user</h3>
+                <p class="mt-1 text-sm text-slate-500">Enter their Google email. They'll be approved automatically the moment they sign in — no need to wait for them to connect first.</p>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email (Google account)</label>
+                    <input type="email" wire:model="inviteEmail" placeholder="name@gmail.com"
+                           class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    @error('inviteEmail') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <label class="mt-3 flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" wire:model="inviteAdmin" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    Make them an admin
+                </label>
+                <div class="mt-5 flex justify-end gap-3">
+                    <button wire:click="$set('showInvite', false)" type="button"
+                            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button wire:click="invite" type="button"
+                            class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Pre-approve</button>
                 </div>
             </div>
         </div>

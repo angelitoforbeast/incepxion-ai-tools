@@ -38,6 +38,34 @@ class Phase3Test extends TestCase
         $this->actingAs($admin)->get('/admin/prompts')->assertOk()->assertSee('System Prompt');
     }
 
+    public function test_admin_can_preapprove_a_user_by_email(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)
+            ->set('inviteEmail', 'newbie@gmail.com')
+            ->set('inviteAdmin', true)
+            ->call('invite');
+
+        $this->assertDatabaseHas('users', [
+            'email'  => 'newbie@gmail.com',
+            'status' => 'approved',
+            'role'   => 'admin',
+        ]);
+    }
+
+    public function test_saving_prompt_creates_a_version(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(PromptManager::class)
+            ->set('systemPrompt', 'Version one prompt with {language} rules.')
+            ->set('model', 'gpt-4o')
+            ->call('save');
+
+        $this->assertDatabaseHas('prompt_versions', ['system_prompt' => 'Version one prompt with {language} rules.']);
+    }
+
     public function test_admin_can_edit_the_ad_copy_prompt(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);

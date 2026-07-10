@@ -107,11 +107,11 @@
                                 <div class="mb-3">
                                     <div class="flex items-center justify-between mb-1">
                                         <span class="text-xs uppercase tracking-wide text-gray-400">{{ $label }}</span>
-                                        <button type="button" class="text-xs text-gray-400 hover:text-indigo-600"
-                                                @click="navigator.clipboard.writeText($refs.f{{ $i }}{{ $loop->index }}.innerText); $el.innerText='Copied!'; setTimeout(() => $el.innerText='Copy', 1200)">Copy</button>
+                                        <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                                @click="navigator.clipboard.writeText($refs.f{{ $i }}{{ $loop->index }}.innerText); $wire.recordCopy({{ $i }}, '{{ $key }}'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
                                     </div>
                                     <div x-ref="f{{ $i }}{{ $loop->index }}"
-                                         class="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap {{ $key === 'headline' ? 'font-semibold' : '' }}">{{ $v[$key] ?? '' }}</div>
+                                         class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap {{ $key === 'headline' ? 'font-semibold' : '' }}">{{ $v[$key] ?? '' }}</div>
                                 </div>
                             @endforeach
 
@@ -119,7 +119,7 @@
                                 <span class="text-xs uppercase tracking-wide text-gray-400">Quick Replies</span>
                                 <div class="flex flex-wrap gap-2 mt-1">
                                     @foreach (($v['quick_replies'] ?? []) as $qr)
-                                        <span class="rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-sm text-gray-700">{{ $qr }}</span>
+                                        <span class="select-none rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-sm text-gray-700">{{ $qr }}</span>
                                     @endforeach
                                 </div>
                             </div>

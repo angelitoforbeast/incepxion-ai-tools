@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\AdCopyGenerator;
+use App\Models\Generation;
 use App\Models\Plan;
 use App\Models\Tool;
 use App\Models\User;
@@ -70,6 +71,25 @@ class Phase2Test extends TestCase
             ->set('product_description', 'Vitamin C serum, 299 pesos')
             ->call('generate')
             ->assertSet('error', fn ($e) => str_contains($e, 'OpenAI API key'));
+    }
+
+    public function test_copy_is_recorded_on_the_generation(): void
+    {
+        $user = $this->approvedUser();
+        $gen = Generation::create(['user_id' => $user->id, 'provider' => 'openai', 'status' => 'success', 'output' => []]);
+
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->set('lastGenerationId', $gen->id)
+            ->set('results', [[
+                'angle' => 'x', 'headline' => 'Hi', 'primary_text' => 'Buy now',
+                'messaging_template' => 'Hello', 'quick_replies' => ['a', 'b', 'c'],
+            ]])
+            ->call('recordCopy', 0, 'primary_text');
+
+        $copies = $gen->fresh()->copies;
+        $this->assertCount(1, $copies);
+        $this->assertSame('primary_text', $copies[0]['field']);
+        $this->assertSame('Buy now', $copies[0]['text']);
     }
 
     public function test_generate_over_quota_shows_error_without_calling_api(): void

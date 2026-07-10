@@ -36,6 +36,7 @@ class AdCopyGenerator extends Component
 
     public array $results = [];
     public ?string $error = null;
+    public ?int $lastGenerationId = null;
 
     public function generate(AdCopyService $service): void
     {
@@ -75,7 +76,7 @@ class AdCopyGenerator extends Component
 
             $this->results = $out['variants'];
 
-            Generation::create([
+            $generation = Generation::create([
                 'user_id'       => $user->id,
                 'tool_id'       => $tool?->id,
                 'provider'      => 'openai',
@@ -92,6 +93,7 @@ class AdCopyGenerator extends Component
                 'duration_ms'   => (int) ((microtime(true) - $start) * 1000),
             ]);
 
+            $this->lastGenerationId = $generation->id;
             $user->recordUsage();
         } catch (\Throwable $e) {
             $this->error = $e->getMessage();
@@ -107,6 +109,28 @@ class AdCopyGenerator extends Component
                 'duration_ms' => (int) ((microtime(true) - $start) * 1000),
             ]);
         }
+    }
+
+    /** Record that the user copied a specific field of a variant (fires from the Copy button). */
+    public function recordCopy(int $index, string $field): void
+    {
+        if (! $this->lastGenerationId) {
+            return;
+        }
+
+        $generation = \App\Models\Generation::find($this->lastGenerationId);
+        if (! $generation || $generation->user_id !== auth()->id()) {
+            return;
+        }
+
+        $copies = $generation->copies ?? [];
+        $copies[] = [
+            'variant' => $index,
+            'field'   => $field,
+            'text'    => $this->results[$index][$field] ?? null,
+            'at'      => now()->toDateTimeString(),
+        ];
+        $generation->update(['copies' => $copies]);
     }
 
     public function render()

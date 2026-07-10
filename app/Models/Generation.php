@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Generation extends Model
 {
     protected $fillable = [
-        'user_id', 'tool_id', 'provider', 'model', 'input', 'output',
+        'user_id', 'tool_id', 'provider', 'model', 'input', 'output', 'copies',
         'input_tokens', 'output_tokens', 'cost', 'status', 'error', 'duration_ms',
     ];
 
     protected $casts = [
         'input'  => 'array',
         'output' => 'array',
+        'copies' => 'array',
         'cost'   => 'decimal:6',
     ];
 

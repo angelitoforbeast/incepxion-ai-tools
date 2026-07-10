@@ -24,11 +24,44 @@ class UserManager extends Component
     public ?int $rejectingId = null;
     public string $rejectRemarks = '';
 
+    // Pre-approve / invite modal state
+    public bool $showInvite = false;
+    public string $inviteEmail = '';
+    public bool $inviteAdmin = false;
+
     public function updating($name): void
     {
         if (in_array($name, ['filter', 'search'])) {
             $this->resetPage();
         }
+    }
+
+    public function openInvite(): void
+    {
+        $this->reset('inviteEmail', 'inviteAdmin');
+        $this->resetErrorBag();
+        $this->showInvite = true;
+    }
+
+    public function invite(): void
+    {
+        $this->validate([
+            'inviteEmail' => ['required', 'email', 'max:255', 'unique:users,email'],
+        ]);
+
+        User::create([
+            'name'              => \Illuminate\Support\Str::before($this->inviteEmail, '@'),
+            'email'             => $this->inviteEmail,
+            'password'          => null,
+            'status'            => 'approved',
+            'role'              => $this->inviteAdmin ? 'admin' : 'user',
+            'email_verified_at' => now(),
+            'approved_at'       => now(),
+            'approved_by'       => auth()->id(),
+        ]);
+
+        session()->flash('msg', "Pre-approved {$this->inviteEmail}. They get access the moment they sign in with Google.");
+        $this->reset('inviteEmail', 'inviteAdmin', 'showInvite');
     }
 
     public function approve(int $id): void

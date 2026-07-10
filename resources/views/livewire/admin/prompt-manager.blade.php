@@ -45,5 +45,28 @@
             </button>
         </div>
         </form>
+
+        <!-- History -->
+        <div class="mt-8">
+            <h3 class="text-sm font-semibold text-slate-900 mb-3">Version History</h3>
+            @forelse ($versions as $v)
+                <div class="flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 mb-2">
+                    <div class="min-w-0">
+                        <div class="text-xs text-slate-500">
+                            {{ $v->created_at->format('M d, Y g:i A') }}
+                            · <span class="text-slate-600">{{ $v->author?->name ?? 'system' }}</span>
+                            · <span class="font-mono">{{ $v->model }}</span>
+                        </div>
+                        <p class="mt-1 text-sm text-slate-600 line-clamp-2">{{ \Illuminate\Support\Str::limit($v->system_prompt, 160) }}</p>
+                    </div>
+                    <button wire:click="restore({{ $v->id }})"
+                            class="flex-shrink-0 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50">
+                        Restore
+                    </button>
+                </div>
+            @empty
+                <p class="text-sm text-slate-400">No saved versions yet. Each time you Save, a version is added here.</p>
+            @endforelse
+        </div>
     </div>
 </div>

@@ -97,6 +97,47 @@ class Phase3Test extends TestCase
         $this->assertSame('admin', $admin->fresh()->role);
     }
 
+    public function test_admin_can_reject_a_user_with_remarks(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $pending = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)
+            ->call('startReject', $pending->id)
+            ->set('rejectRemarks', 'Incomplete profile')
+            ->call('confirmReject');
+
+        $fresh = $pending->fresh();
+        $this->assertSame('rejected', $fresh->status);
+        $this->assertSame('Incomplete profile', $fresh->remarks);
+    }
+
+    public function test_reject_requires_remarks(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $pending = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)
+            ->call('startReject', $pending->id)
+            ->set('rejectRemarks', '')
+            ->call('confirmReject')
+            ->assertHasErrors('rejectRemarks');
+
+        $this->assertSame('pending', $pending->fresh()->status);
+    }
+
+    public function test_approving_a_rejected_user_clears_remarks(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $rejected = User::factory()->create(['status' => 'rejected', 'remarks' => 'spam', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)->call('approve', $rejected->id);
+
+        $fresh = $rejected->fresh();
+        $this->assertSame('approved', $fresh->status);
+        $this->assertNull($fresh->remarks);
+    }
+
     public function test_admin_can_delete_a_user(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);

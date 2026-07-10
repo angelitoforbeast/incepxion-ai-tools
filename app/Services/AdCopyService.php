@@ -19,7 +19,10 @@ Rules:
   proof, urgency/scarcity, curiosity).
 - Headline: max 10 words, scroll-stopping.
 - Primary text: 1-4 short lines, high CTR, ends with a clear call to action.
-- Messaging template: a warm auto-reply greeting to send when a customer messages.
+- Messaging template: a warm, multi-line Messenger auto-reply. Structure it as:
+  (1) a friendly greeting line, then (2) EXACTLY 3 benefit/feature lines that each
+  begin with "✅ ", each on its own separate line, then (3) a closing call-to-action
+  line. Put a real line break between every line (use \n in the JSON string).
 - Quick replies: exactly 3 short button labels, each under 25 characters.
 - No fabricated medical/financial claims. Keep it honest and compliant.
 SYS;

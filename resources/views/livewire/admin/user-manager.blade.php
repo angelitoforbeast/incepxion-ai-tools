@@ -32,7 +32,7 @@
     <!-- Controls -->
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-            @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'all' => 'All'] as $key => $label)
+            @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'all' => 'All'] as $key => $label)
                 <button wire:click="$set('filter', '{{ $key }}')"
                         class="px-3 py-1.5 text-sm font-medium rounded-md transition {{ $filter === $key ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                     {{ $label }}
@@ -70,6 +70,9 @@
                                         @if ($u->isAdmin())<span class="ml-1 text-[10px] bg-indigo-100 text-indigo-700 rounded px-1.5 py-0.5">admin</span>@endif
                                     </div>
                                     <div class="text-xs text-slate-400">{{ $u->email }}</div>
+                                    @if ($u->status === 'rejected' && $u->remarks)
+                                        <div class="mt-1 text-xs text-rose-600"><span class="font-medium">Reason:</span> {{ $u->remarks }}</div>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -88,7 +91,9 @@
                             <div class="flex items-center justify-end gap-2">
                                 @if ($u->status === 'pending')
                                     <button wire:click="approve({{ $u->id }})" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
-                                    <button wire:click="reject({{ $u->id }})" wire:confirm="Reject this user?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">Reject</button>
+                                    <button wire:click="startReject({{ $u->id }})" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">Reject</button>
+                                @elseif ($u->status === 'rejected')
+                                    <button wire:click="approve({{ $u->id }})" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
                                 @elseif ($u->status === 'approved')
                                     @if ($u->isAdmin())
                                         @if ($u->id !== auth()->id())
@@ -125,4 +130,23 @@
     <div class="mt-4">
         {{ $users->links() }}
     </div>
+
+    <!-- Reject modal (with remarks) -->
+    @if ($rejectingId)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+                <h3 class="text-lg font-semibold text-slate-900">Reject user</h3>
+                <p class="mt-1 text-sm text-slate-500">Add a reason for the rejection — it's saved as remarks and shown on the user.</p>
+                <textarea wire:model="rejectRemarks" rows="4" placeholder="e.g. Incomplete profile, suspicious activity…"
+                          class="mt-4 w-full rounded-lg border-slate-300 text-sm focus:border-rose-500 focus:ring-rose-500"></textarea>
+                @error('rejectRemarks') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                <div class="mt-5 flex justify-end gap-3">
+                    <button wire:click="cancelReject" type="button"
+                            class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button wire:click="confirmReject" type="button"
+                            class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">Reject User</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

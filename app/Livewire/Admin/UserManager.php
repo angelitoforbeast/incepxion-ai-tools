@@ -20,6 +20,10 @@ class UserManager extends Component
     #[Url]
     public string $search = '';
 
+    // Reject-with-remarks modal state
+    public ?int $rejectingId = null;
+    public string $rejectRemarks = '';
+
     public function updating($name): void
     {
         if (in_array($name, ['filter', 'search'])) {
@@ -34,14 +38,40 @@ class UserManager extends Component
             'status'      => 'approved',
             'approved_at' => now(),
             'approved_by' => auth()->id(),
+            'remarks'     => null,
         ]);
         session()->flash('msg', "{$user->name} has been approved.");
     }
 
-    public function reject(int $id): void
+    public function startReject(int $id): void
     {
-        User::whereKey($id)->update(['status' => 'rejected']);
-        session()->flash('msg', 'User rejected.');
+        $this->rejectingId = $id;
+        $this->rejectRemarks = '';
+        $this->resetErrorBag();
+    }
+
+    public function cancelReject(): void
+    {
+        $this->rejectingId = null;
+        $this->rejectRemarks = '';
+    }
+
+    public function confirmReject(): void
+    {
+        $this->validate(
+            ['rejectRemarks' => ['required', 'string', 'max:1000']],
+            ['rejectRemarks.required' => 'Please provide a reason for rejection.'],
+        );
+
+        if ($this->rejectingId) {
+            User::whereKey($this->rejectingId)->update([
+                'status'  => 'rejected',
+                'remarks' => trim($this->rejectRemarks),
+            ]);
+            session()->flash('msg', 'User rejected with remarks.');
+        }
+
+        $this->cancelReject();
     }
 
     public function suspend(int $id): void
@@ -52,7 +82,7 @@ class UserManager extends Component
 
     public function reinstate(int $id): void
     {
-        User::whereKey($id)->update(['status' => 'approved', 'approved_at' => now(), 'approved_by' => auth()->id()]);
+        User::whereKey($id)->update(['status' => 'approved', 'approved_at' => now(), 'approved_by' => auth()->id(), 'remarks' => null]);
         session()->flash('msg', 'User reinstated.');
     }
 

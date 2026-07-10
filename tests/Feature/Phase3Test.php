@@ -33,6 +33,20 @@ class Phase3Test extends TestCase
         $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('User Management');
     }
 
+    public function test_plain_blade_pages_load_livewire_alpine_scripts(): void
+    {
+        // The dropup + mobile toggle need Alpine, which ships with Livewire's script.
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()
+            ->assertSee('livewire.js', false);
+
+        $this->actingAs($user)->get('/profile')
+            ->assertOk()
+            ->assertSee('livewire.js', false);
+    }
+
     public function test_admin_can_approve_a_pending_user(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);

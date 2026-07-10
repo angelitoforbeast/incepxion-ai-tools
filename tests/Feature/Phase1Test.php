@@ -44,6 +44,24 @@ class Phase1Test extends TestCase
         $this->actingAs($user)->get('/dashboard')->assertRedirect(route('approval.pending'));
     }
 
+    public function test_pending_users_are_blocked_from_profile_and_settings(): void
+    {
+        $user = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
+
+        $this->actingAs($user)->get('/profile')->assertRedirect(route('approval.pending'));
+        $this->actingAs($user)->get('/settings')->assertRedirect(route('approval.pending'));
+    }
+
+    public function test_pending_page_has_no_sidebar_navigation(): void
+    {
+        $user = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
+
+        $this->actingAs($user)->get(route('approval.pending'))
+            ->assertOk()
+            ->assertSee('Naghihintay ng Approval')
+            ->assertDontSee('livewire:layout.navigation', false);
+    }
+
     public function test_approved_users_can_access_dashboard(): void
     {
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);

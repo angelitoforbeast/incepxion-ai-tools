@@ -20,14 +20,14 @@
                 <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-left text-sm text-gray-700 mb-6">
                     💡 Habang naghihintay, pwede mo nang i-set up ang iyong
                     <strong>OpenAI API key</strong> sa
-                    <a href="{{ route('profile') }}" class="text-indigo-600 underline">Profile settings</a>
+                    <a href="{{ route('settings') }}" class="text-indigo-600 underline">Settings</a>
                     para handa ka na agad pag-approved.
                 </div>
 
                 <div class="flex items-center justify-center gap-3">
-                    <a href="{{ route('profile') }}"
+                    <a href="{{ route('settings') }}"
                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700">
-                        Go to Profile
+                        I-set up ang API Key
                     </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

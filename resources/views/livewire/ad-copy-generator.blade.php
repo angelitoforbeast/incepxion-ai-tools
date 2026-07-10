@@ -17,7 +17,7 @@
         @unless ($hasKey)
             <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 ⚠️ Wala ka pang OpenAI API key.
-                <a href="{{ route('profile') }}" class="font-semibold underline">Magdagdag sa Profile</a>
+                <a href="{{ route('settings') }}" class="font-semibold underline">Magdagdag sa Settings</a>
                 bago ka mag-generate.
             </div>
         @endunless

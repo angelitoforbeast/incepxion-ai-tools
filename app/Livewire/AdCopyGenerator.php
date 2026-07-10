@@ -46,7 +46,7 @@ class AdCopyGenerator extends Component
         $user = auth()->user();
 
         if (! $user->apiKeyFor('openai')) {
-            $this->error = 'Wala ka pang OpenAI API key. Pumunta sa Profile at magdagdag muna bago mag-generate.';
+            $this->error = 'Wala ka pang OpenAI API key. Pumunta sa Settings at magdagdag muna bago mag-generate.';
 
             return;
         }

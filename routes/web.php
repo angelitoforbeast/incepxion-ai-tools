@@ -40,9 +40,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
 // Admin
 Route::get('admin', UserManager::class)->middleware(['auth', 'admin'])->name('admin.users');
 
-// Profile is reachable while pending, so users can set up their API key while they wait
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
+// Profile (view-only) + Settings (API key, password, delete) — reachable while pending
+Route::view('profile', 'profile')->middleware(['auth'])->name('profile');
+Route::view('settings', 'settings')->middleware(['auth'])->name('settings');
 
 require __DIR__.'/auth.php';

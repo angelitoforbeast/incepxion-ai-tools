@@ -19,7 +19,7 @@
                 <span class="text-xl">🔑</span>
                 <div class="text-sm text-amber-800">
                     <strong>Isang hakbang na lang!</strong> Wala ka pang OpenAI API key.
-                    <a href="{{ route('profile') }}" class="font-semibold underline" wire:navigate>Idagdag sa Profile</a>
+                    <a href="{{ route('settings') }}" class="font-semibold underline" wire:navigate>Idagdag sa Settings</a>
                     para magamit ang mga AI tools.
                 </div>
             </div>

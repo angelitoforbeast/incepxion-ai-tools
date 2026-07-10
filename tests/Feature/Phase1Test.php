@@ -44,22 +44,23 @@ class Phase1Test extends TestCase
         $this->actingAs($user)->get('/dashboard')->assertRedirect(route('approval.pending'));
     }
 
-    public function test_pending_users_are_blocked_from_profile_and_settings(): void
+    public function test_pending_users_can_reach_profile_and_settings(): void
     {
         $user = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/profile')->assertRedirect(route('approval.pending'));
-        $this->actingAs($user)->get('/settings')->assertRedirect(route('approval.pending'));
+        $this->actingAs($user)->get('/profile')->assertOk();
+        $this->actingAs($user)->get('/settings')->assertOk();
     }
 
-    public function test_pending_page_has_no_sidebar_navigation(): void
+    public function test_pending_page_shows_message_and_hides_tools_menu(): void
     {
         $user = User::factory()->create(['status' => 'pending', 'email_verified_at' => now()]);
 
         $this->actingAs($user)->get(route('approval.pending'))
             ->assertOk()
-            ->assertSee('Naghihintay ng Approval')
-            ->assertDontSee('livewire:layout.navigation', false);
+            ->assertSee('Account Pending Approval')
+            ->assertSee('Log out')          // account dropup is present in the sidebar
+            ->assertDontSee('>Menu<', false); // the Tools menu label is hidden
     }
 
     public function test_approved_users_can_access_dashboard(): void

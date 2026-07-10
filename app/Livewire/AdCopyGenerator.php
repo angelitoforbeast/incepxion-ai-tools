@@ -46,13 +46,13 @@ class AdCopyGenerator extends Component
         $user = auth()->user();
 
         if (! $user->apiKeyFor('openai')) {
-            $this->error = 'Wala ka pang OpenAI API key. Pumunta sa Settings at magdagdag muna bago mag-generate.';
+            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
 
             return;
         }
 
         if (! $user->hasQuotaLeft()) {
-            $this->error = "Naabot mo na ang daily limit ({$user->dailyQuota()} generations). Balik ka bukas o mag-upgrade ng plan.";
+            $this->error = "You've reached your daily limit ({$user->dailyQuota()} generations). Come back tomorrow or upgrade your plan.";
 
             return;
         }

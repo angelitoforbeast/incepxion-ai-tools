@@ -2,7 +2,7 @@
 
     <div class="mb-6">
         <h1 class="text-xl font-bold text-slate-900">Admin · User Management</h1>
-        <p class="text-sm text-slate-500">I-approve, i-reject, o i-manage ang mga users.</p>
+        <p class="text-sm text-slate-500">Approve, reject, or manage users.</p>
     </div>
 
     <!-- Stats -->
@@ -29,7 +29,7 @@
     <!-- Controls -->
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-            @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'all' => 'Lahat'] as $key => $label)
+            @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'all' => 'All'] as $key => $label)
                 <button wire:click="$set('filter', '{{ $key }}')"
                         class="px-3 py-1.5 text-sm font-medium rounded-md transition {{ $filter === $key ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
                     {{ $label }}
@@ -95,7 +95,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">Walang users sa filter na ito.</td></tr>
+                    <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No users in this filter.</td></tr>
                 @endforelse
             </tbody>
         </table>

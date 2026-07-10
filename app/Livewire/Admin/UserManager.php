@@ -35,25 +35,25 @@ class UserManager extends Component
             'approved_at' => now(),
             'approved_by' => auth()->id(),
         ]);
-        session()->flash('msg', "{$user->name} ay na-approve na.");
+        session()->flash('msg', "{$user->name} has been approved.");
     }
 
     public function reject(int $id): void
     {
         User::whereKey($id)->update(['status' => 'rejected']);
-        session()->flash('msg', 'Na-reject ang user.');
+        session()->flash('msg', 'User rejected.');
     }
 
     public function suspend(int $id): void
     {
         User::whereKey($id)->update(['status' => 'suspended']);
-        session()->flash('msg', 'Na-suspend ang user.');
+        session()->flash('msg', 'User suspended.');
     }
 
     public function reinstate(int $id): void
     {
         User::whereKey($id)->update(['status' => 'approved', 'approved_at' => now(), 'approved_by' => auth()->id()]);
-        session()->flash('msg', 'Na-reinstate ang user.');
+        session()->flash('msg', 'User reinstated.');
     }
 
     public function render()

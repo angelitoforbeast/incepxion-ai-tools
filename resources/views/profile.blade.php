@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h1 class="text-xl font-bold text-slate-900">Profile</h1>
-            <p class="text-sm text-slate-500">Ang iyong account information.</p>
+            <p class="text-sm text-slate-500">Your account information.</p>
         </div>
     </x-slot>
 
@@ -40,7 +40,7 @@
                 </div>
                 <div>
                     <dt class="text-slate-400">Daily usage</dt>
-                    <dd class="font-medium text-slate-800">{{ $user->usageToday() }} / {{ $user->dailyQuota() }} ngayon</dd>
+                    <dd class="font-medium text-slate-800">{{ $user->usageToday() }} / {{ $user->dailyQuota() }} today</dd>
                 </div>
                 <div>
                     <dt class="text-slate-400">Member since</dt>
@@ -55,9 +55,9 @@
                 <div>
                     <h3 class="font-semibold text-slate-900">OpenAI API Key</h3>
                     @if ($key)
-                        <p class="mt-1 text-sm text-slate-500">Naka-set up: <span class="font-mono">{{ $key->masked() }}</span></p>
+                        <p class="mt-1 text-sm text-slate-500">Set up: <span class="font-mono">{{ $key->masked() }}</span></p>
                     @else
-                        <p class="mt-1 text-sm text-amber-600">Wala pa — kailangan para sa AI tools.</p>
+                        <p class="mt-1 text-sm text-amber-600">Not set yet — required for the AI tools.</p>
                     @endif
                 </div>
                 <a href="{{ route('settings') }}" wire:navigate
@@ -68,7 +68,7 @@
         </div>
 
         <p class="text-center text-xs text-slate-400">
-            Gustong baguhin ang password o account? Pumunta sa
+            Want to change your password or account? Go to
             <a href="{{ route('settings') }}" wire:navigate class="text-indigo-600 underline">Settings</a>.
         </p>
     </div>

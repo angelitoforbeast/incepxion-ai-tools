@@ -16,7 +16,7 @@ class AdCopyService
     {
         $keyRow = $user->apiKeyFor('openai');
         if (! $keyRow) {
-            throw new RuntimeException('Wala ka pang OpenAI API key. Mag-set up muna sa Profile.');
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
         }
 
         $count      = (int) ($input['variants'] ?? 5);
@@ -43,7 +43,7 @@ Rules:
 SYS;
 
         $userPrompt = <<<TXT
-Gumawa ka ng {$count} completely different Facebook ad copy variants para sa product na ito.
+Create {$count} completely different Facebook ad copy variants for this product.
 
 Product name: {$input['product_name']}
 Product description: {$input['product_description']}
@@ -100,7 +100,7 @@ TXT;
         $parsed  = json_decode($content, true);
 
         if (! is_array($parsed) || ! isset($parsed['variants'])) {
-            throw new RuntimeException('Hindi ma-parse ang sagot ng AI. Subukan ulit.');
+            throw new RuntimeException("Couldn't parse the AI response. Please try again.");
         }
 
         // Mark the key as used and valid.

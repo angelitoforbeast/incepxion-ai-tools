@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Incepxion AI — E-commerce Tools para sa Pinoy Sellers</title>
+    <title>Incepxion AI — E-commerce Tools for Sellers</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -33,39 +33,39 @@
         <div class="absolute inset-0 bg-gradient-to-b from-indigo-50/60 to-white -z-10"></div>
         <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16 text-center">
             <span class="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700">
-                ⚡ AI-powered tools para sa e-commerce
+                ⚡ AI-powered tools for e-commerce
             </span>
             <h1 class="mt-6 text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900">
-                Lahat ng tools mo,<br>
-                <span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">nasa isang lugar.</span>
+                All your tools,<br>
+                <span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">in one place.</span>
             </h1>
             <p class="mt-5 max-w-2xl mx-auto text-lg text-slate-600">
-                Ad copy generator, RTS processing, profit computation — mga tool na kailangan ng Pinoy online sellers para mas mabilis at mas kumita.
+                Ad copy generator, RTS processing, profit computation — the tools online sellers need to move faster and earn more.
             </p>
             <div class="mt-8 flex items-center justify-center gap-3">
                 <a href="{{ route('register') }}" class="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700">
-                    Simulan nang libre →
+                    Start for free →
                 </a>
                 <a href="{{ route('login') }}" class="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                    Mayroon nang account
+                    I already have an account
                 </a>
             </div>
-            <p class="mt-4 text-xs text-slate-400">Libre muna · BYOK (bring your own API key) · No credit card</p>
+            <p class="mt-4 text-xs text-slate-400">Free to start · BYOK (bring your own API key) · No credit card</p>
         </div>
     </section>
 
     <!-- Tools -->
     <section class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
         <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-slate-900">Mga Tools</h2>
-            <p class="mt-2 text-slate-600">Patuloy na dumadami — ito ang mga available at paparating.</p>
+            <h2 class="text-3xl font-bold text-slate-900">Tools</h2>
+            <p class="mt-2 text-slate-600">Always growing — here's what's available and what's coming.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @php
                 $features = [
-                    ['icon' => '📣', 'name' => 'AI Ad Copy Generator', 'desc' => 'High-converting Facebook ad copy sa Taglish, Filipino, o English. 5 variants kada generate.', 'ready' => true],
-                    ['icon' => '📦', 'name' => 'RTS Processor', 'desc' => 'I-upload ang courier file (J&T, atbp.) para mabilis i-proseso ang Return-to-Sender orders.', 'ready' => false],
-                    ['icon' => '💰', 'name' => 'Profit Computation', 'desc' => 'Kalkulahin ang kita per order/product — kasama ang shipping, fees, at COGS.', 'ready' => false],
+                    ['icon' => '📣', 'name' => 'AI Ad Copy Generator', 'desc' => 'High-converting Facebook ad copy in Taglish, Filipino, or English. 5 variants per generation.', 'ready' => true],
+                    ['icon' => '📦', 'name' => 'RTS Processor', 'desc' => 'Upload your courier file (J&T, etc.) to quickly process Return-to-Sender orders.', 'ready' => false],
+                    ['icon' => '💰', 'name' => 'Profit Computation', 'desc' => 'Compute profit per order/product — including shipping, fees, and COGS.', 'ready' => false],
                 ];
             @endphp
             @foreach ($features as $f)
@@ -85,13 +85,13 @@
     <section class="bg-slate-50 border-y border-slate-100">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
             <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-slate-900">Paano gumagana</h2>
+                <h2 class="text-3xl font-bold text-slate-900">How it works</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 @foreach ([
-                    ['1', 'Mag-sign up', 'Gamit ang Google account mo. Mabilis at libre.'],
-                    ['2', 'Ilagay ang API key', 'Sariling OpenAI key mo (encrypted). Ikaw ang may kontrol sa gastos.'],
-                    ['3', 'Gamitin ang tools', 'Piliin ang tool, i-generate, tapos! Simple lang.'],
+                    ['1', 'Sign up', 'With your Google account. Fast and free.'],
+                    ['2', 'Add your API key', 'Your own OpenAI key (encrypted). You stay in control of costs.'],
+                    ['3', 'Use the tools', 'Pick a tool, generate, done. Simple.'],
                 ] as $step)
                     <div class="text-center">
                         <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">{{ $step[0] }}</div>
@@ -106,10 +106,10 @@
     <!-- CTA -->
     <section class="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
         <div class="rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 px-8 py-14 shadow-xl">
-            <h2 class="text-3xl font-bold text-white">Handa ka na bang mag-level up?</h2>
-            <p class="mt-3 text-indigo-100">Sumali sa mga Pinoy sellers na gumagamit ng Incepxion AI.</p>
+            <h2 class="text-3xl font-bold text-white">Ready to level up?</h2>
+            <p class="mt-3 text-indigo-100">Join the sellers using Incepxion AI.</p>
             <a href="{{ route('register') }}" class="mt-7 inline-block rounded-xl bg-white px-7 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
-                Gumawa ng account
+                Create an account
             </a>
         </div>
     </section>
@@ -120,7 +120,7 @@
                 <x-application-logo class="w-6 h-6" />
                 <span class="font-semibold text-slate-600">Incepxion AI</span>
             </div>
-            <p>© {{ date('Y') }} Incepxion AI. Para sa Pinoy e-commerce sellers.</p>
+            <p>© {{ date('Y') }} Incepxion AI. E-commerce tools for sellers.</p>
         </div>
     </footer>
 </body>

@@ -24,7 +24,7 @@ class GoogleController extends Controller
             $googleUser = Socialite::driver('google')->user();
         } catch (\Throwable $e) {
             return redirect()->route('login')
-                ->withErrors(['email' => 'Hindi natuloy ang Google sign-in. Subukan ulit.']);
+                ->withErrors(['email' => 'Google sign-in failed. Please try again.']);
         }
 
         // 1. Existing social account → log in.

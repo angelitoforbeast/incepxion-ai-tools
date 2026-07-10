@@ -6,7 +6,7 @@
             </a>
             <div>
                 <h1 class="text-xl font-bold text-slate-900">💰 Profit Computation</h1>
-                <p class="text-sm text-slate-500">Kalkulahin ang kita, margin, at ROI ng produkto mo.</p>
+                <p class="text-sm text-slate-500">Compute your profit, margin, and ROI per product.</p>
             </div>
         </div>
     </x-slot>
@@ -36,14 +36,14 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     @php
                         $fields = [
-                            ['sellingPrice', 'Selling Price (bawat unit)', '₱', 'Presyo na binabayad ng customer'],
-                            ['productCost', 'Product Cost / COGS', '₱', 'Puhunan bawat unit'],
-                            ['shippingCharged', 'Shipping na Sinisingil', '₱', 'Kung may bayad sa shipping ang customer'],
-                            ['shippingCost', 'Shipping Cost (actual)', '₱', 'Aktwal na bayad sa courier'],
-                            ['feePercent', 'Marketplace/Payment Fee', '%', 'hal. Shopee/Lazada commission'],
-                            ['adCost', 'Ad Spend (bawat unit)', '₱', 'Gastos sa ads bawat benta'],
-                            ['otherCost', 'Iba pang Gastos', '₱', 'Packaging, atbp.'],
-                            ['qty', 'Quantity (units)', '×', 'Ilang units'],
+                            ['sellingPrice', 'Selling Price (per unit)', '₱', 'Price the customer pays'],
+                            ['productCost', 'Product Cost / COGS', '₱', 'Your cost per unit'],
+                            ['shippingCharged', 'Shipping Charged', '₱', 'If the customer pays for shipping'],
+                            ['shippingCost', 'Shipping Cost (actual)', '₱', 'Actual amount paid to courier'],
+                            ['feePercent', 'Marketplace/Payment Fee', '%', 'e.g. Shopee/Lazada commission'],
+                            ['adCost', 'Ad Spend (per unit)', '₱', 'Ad cost per sale'],
+                            ['otherCost', 'Other Costs', '₱', 'Packaging, etc.'],
+                            ['qty', 'Quantity (units)', '×', 'Number of units'],
                         ];
                     @endphp
                     @foreach ($fields as [$model, $label, $unit, $hint])
@@ -97,7 +97,7 @@
                         </div>
                     </div>
                 </div>
-                <p class="text-xs text-slate-400 text-center">Nagko-compute agad habang nagta-type ka. Walang API key na kailangan.</p>
+                <p class="text-xs text-slate-400 text-center">Computes instantly as you type. No API key required.</p>
             </div>
         </div>
     </div>

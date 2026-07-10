@@ -24,7 +24,7 @@
                 {{ $slot }}
             </div>
 
-            <p class="mt-6 text-xs text-slate-400">© {{ date('Y') }} Incepxion AI · Para sa Pinoy e-commerce sellers</p>
+            <p class="mt-6 text-xs text-slate-400">© {{ date('Y') }} Incepxion AI · E-commerce tools for sellers</p>
         </div>
     </body>
 </html>

@@ -21,7 +21,7 @@ new class extends Component {
         $this->validate([
             'key' => ['required', 'string', 'min:20', 'starts_with:sk-'],
         ], [
-            'key.starts_with' => 'Ang OpenAI key ay dapat nagsisimula sa "sk-".',
+            'key.starts_with' => 'The OpenAI key must start with "sk-".',
         ]);
 
         $record = UserApiKey::firstOrNew([
@@ -57,27 +57,27 @@ new class extends Component {
             {{ __('OpenAI API Key') }}
         </h2>
         <p class="mt-1 text-sm text-gray-600">
-            {{ __('Ilagay ang sarili mong OpenAI API key. Naka-encrypt ito at ginagamit lang kapag nag-generate ka.') }}
+            {{ __('Enter your own OpenAI API key. It is encrypted and only used when you generate.') }}
         </p>
     </header>
 
     @if ($hasKey)
         <div class="mt-4 flex items-center gap-3 rounded-md bg-green-50 border border-green-200 px-4 py-3">
             <span class="text-green-600">🔑</span>
-            <span class="text-sm text-gray-700">Naka-save na ang key mo: <strong>{{ $masked }}</strong></span>
-            <button wire:click="remove" wire:confirm="Tanggalin ang naka-save na API key?"
+            <span class="text-sm text-gray-700">Your key is saved: <strong>{{ $masked }}</strong></span>
+            <button wire:click="remove" wire:confirm="Remove the saved API key?"
                     class="ml-auto text-sm text-red-600 hover:underline">Remove</button>
         </div>
     @endif
 
     <form wire:submit="save" class="mt-6 space-y-6">
         <div>
-            <x-input-label for="key" :value="$hasKey ? __('Palitan ang API Key') : __('OpenAI API Key')" />
+            <x-input-label for="key" :value="$hasKey ? __('Replace API Key') : __('OpenAI API Key')" />
             <x-text-input wire:model="key" id="key" name="key" type="password"
                           class="mt-1 block w-full" placeholder="sk-..." autocomplete="off" />
             <x-input-error class="mt-2" :messages="$errors->get('key')" />
             <p class="mt-1 text-xs text-gray-500">
-                Kunin dito: <a href="https://platform.openai.com/api-keys" target="_blank" class="text-indigo-600 underline">platform.openai.com/api-keys</a>
+                Get one at <a href="https://platform.openai.com/api-keys" target="_blank" class="text-indigo-600 underline">platform.openai.com/api-keys</a>
             </p>
         </div>
 
@@ -87,12 +87,12 @@ new class extends Component {
             @if (session('apikey-status') === 'saved')
                 <p x-data="{ show: true }" x-show="show" x-transition
                    x-init="setTimeout(() => show = false, 2500)" class="text-sm text-green-600">
-                    {{ __('Na-save na!') }}
+                    {{ __('Saved!') }}
                 </p>
             @elseif (session('apikey-status') === 'removed')
                 <p x-data="{ show: true }" x-show="show" x-transition
                    x-init="setTimeout(() => show = false, 2500)" class="text-sm text-gray-600">
-                    {{ __('Na-remove.') }}
+                    {{ __('Removed.') }}
                 </p>
             @endif
         </div>

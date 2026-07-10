@@ -2,8 +2,8 @@
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="text-xl font-bold text-slate-900">Kumusta, {{ explode(' ', auth()->user()->name)[0] }}! 👋</h1>
-                <p class="text-sm text-slate-500">Piliin ang tool na gusto mong gamitin.</p>
+                <h1 class="text-xl font-bold text-slate-900">Hi, {{ explode(' ', auth()->user()->name)[0] }}! 👋</h1>
+                <p class="text-sm text-slate-500">Choose the tool you want to use.</p>
             </div>
             <div class="text-sm text-slate-500">
                 Plan: <strong class="text-slate-700">{{ auth()->user()->plan?->name ?? '—' }}</strong>
@@ -18,14 +18,14 @@
             <div class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
                 <span class="text-xl">🔑</span>
                 <div class="text-sm text-amber-800">
-                    <strong>Isang hakbang na lang!</strong> Wala ka pang OpenAI API key.
-                    <a href="{{ route('settings') }}" class="font-semibold underline" wire:navigate>Idagdag sa Settings</a>
-                    para magamit ang mga AI tools.
+                    <strong>One more step!</strong> You have no OpenAI API key yet.
+                    <a href="{{ route('settings') }}" class="font-semibold underline" wire:navigate>Add it in Settings</a>
+                    to use the AI tools.
                 </div>
             </div>
         @endunless
 
-        @php $grouped = $tools->groupBy(fn ($t) => $t->category ?? 'Iba pa'); @endphp
+        @php $grouped = $tools->groupBy(fn ($t) => $t->category ?? 'Other'); @endphp
 
         @forelse ($grouped as $category => $items)
             <div class="mb-8">
@@ -48,11 +48,11 @@
                             <div class="mt-4">
                                 @if ($route)
                                     <span class="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600">
-                                        Buksan
+                                        Open
                                         <svg class="w-4 h-4 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">🔜 Malapit na</span>
+                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">🔜 Coming soon</span>
                                 @endif
                             </div>
                         </a>
@@ -60,7 +60,7 @@
                 </div>
             </div>
         @empty
-            <p class="text-slate-500">Wala pang available na tools.</p>
+            <p class="text-slate-500">No tools available yet.</p>
         @endforelse
     </div>
 </x-app-layout>

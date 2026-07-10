@@ -23,7 +23,7 @@ new class extends Component
         } else {
             $this->validate(
                 ['confirm' => ['required', 'in:DELETE']],
-                ['confirm.in' => 'I-type ang salitang DELETE para kumpirmahin.'],
+                ['confirm.in' => 'Type the word DELETE to confirm.'],
             );
         }
 
@@ -37,7 +37,7 @@ new class extends Component
     <header>
         <h2 class="text-lg font-medium text-gray-900">{{ __('Delete Account') }}</h2>
         <p class="mt-1 text-sm text-gray-600">
-            {{ __('Kapag na-delete ang account mo, permanenteng mabubura ang lahat ng data nito. I-download muna ang gusto mong itago.') }}
+            {{ __('Once your account is deleted, all of its data will be permanently removed. Please download anything you want to keep first.') }}
         </p>
     </header>
 
@@ -47,10 +47,10 @@ new class extends Component
 
     <x-modal name="confirm-user-deletion" :show="$errors->isNotEmpty()" focusable>
         <form wire:submit="deleteUser" class="p-6">
-            <h2 class="text-lg font-medium text-gray-900">{{ __('Sigurado ka bang i-delete ang account mo?') }}</h2>
+            <h2 class="text-lg font-medium text-gray-900">{{ __('Are you sure you want to delete your account?') }}</h2>
 
             @if (auth()->user()->password)
-                <p class="mt-1 text-sm text-gray-600">{{ __('Ilagay ang password para kumpirmahin ang pagbura ng account.') }}</p>
+                <p class="mt-1 text-sm text-gray-600">{{ __('Enter your password to confirm account deletion.') }}</p>
                 <div class="mt-6">
                     <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
                     <x-text-input wire:model="password" id="password" name="password" type="password"
@@ -58,7 +58,7 @@ new class extends Component
                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
                 </div>
             @else
-                <p class="mt-1 text-sm text-gray-600">{{ __('Naka-connect ka via Google. I-type ang salitang') }} <strong>DELETE</strong> {{ __('para kumpirmahin.') }}</p>
+                <p class="mt-1 text-sm text-gray-600">{{ __('You are connected via Google. Type the word') }} <strong>DELETE</strong> {{ __('to confirm.') }}</p>
                 <div class="mt-6">
                     <x-input-label for="confirm" value="DELETE" class="sr-only" />
                     <x-text-input wire:model="confirm" id="confirm" name="confirm" type="text"

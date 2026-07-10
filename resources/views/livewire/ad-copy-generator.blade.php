@@ -5,20 +5,20 @@
         <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">📣 AI Ad Copy Generator</h1>
-                <p class="text-sm text-gray-500">High-converting Facebook ad copy para sa Pinoy market.</p>
+                <p class="text-sm text-gray-500">High-converting Facebook ad copy for the Filipino market.</p>
             </div>
             <div class="flex items-center gap-3">
                 <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
-                    {{ $remaining }}/{{ $quota }} natitira ngayon
+                    {{ $remaining }}/{{ $quota }} left today
                 </span>
             </div>
         </div>
 
         @unless ($hasKey)
             <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                ⚠️ Wala ka pang OpenAI API key.
-                <a href="{{ route('settings') }}" class="font-semibold underline">Magdagdag sa Settings</a>
-                bago ka mag-generate.
+                ⚠️ You have no OpenAI API key yet.
+                <a href="{{ route('settings') }}" class="font-semibold underline">Add it in Settings</a>
+                before generating.
             </div>
         @endunless
 
@@ -28,21 +28,21 @@
             <form wire:submit="generate" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
-                    <input type="text" wire:model="product_name" placeholder="hal. GlowUp Vitamin C Serum"
+                    <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum"
                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                     @error('product_name') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea wire:model="product_description" rows="4" placeholder="Ano ang product, benefits, presyo, offer..."
+                    <textarea wire:model="product_description" rows="4" placeholder="What is the product, benefits, price, offer..."
                               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
                     @error('product_description') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Target Audience <span class="text-gray-400">(optional)</span></label>
-                    <input type="text" wire:model="audience" placeholder="hal. Moms 25-40, budget-conscious"
+                    <input type="text" wire:model="audience" placeholder="e.g. Moms 25-40, budget-conscious"
                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                 </div>
 
@@ -79,7 +79,7 @@
                         class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                         wire:loading.attr="disabled" wire:target="generate">
                     <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
-                    <span wire:loading wire:target="generate">Ginagawa ng AI...</span>
+                    <span wire:loading wire:target="generate">Generating...</span>
                 </button>
             </form>
 
@@ -128,7 +128,7 @@
                         @unless ($error)
                             <div class="flex flex-col items-center justify-center min-h-[340px] rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-center p-10">
                                 <div class="text-4xl mb-3">📝</div>
-                                <p>Punan ang form sa kaliwa at i-click ang <strong>Generate</strong>.<br>Lalabas dito ang ad copy variants.</p>
+                                <p>Fill in the form on the left and click <strong>Generate</strong>.<br>Your ad copy variants will appear here.</p>
                             </div>
                         @endunless
                     @endforelse

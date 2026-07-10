@@ -3,6 +3,7 @@
         ['route' => 'dashboard', 'label' => 'Tools', 'icon' => 'M4 5h6v6H4V5zm10 0h6v6h-6V5zM4 15h6v4H4v-4zm10 0h6v4h-6v-4z'],
     ];
     $user = auth()->user();
+    $approved = $user->isApproved();
 @endphp
 
 <!-- Overlay (mobile) -->
@@ -21,53 +22,61 @@
         </div>
     </div>
 
-    <!-- Nav -->
+    <!-- Nav (approved users only) -->
     <nav class="flex-1 px-3 py-4 space-y-1">
-        <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Menu</p>
-        @foreach ($nav as $item)
-            @php $active = request()->routeIs($item['route']); @endphp
-            <a href="{{ route($item['route']) }}" wire:navigate
-               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                      {{ $active ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
-                </svg>
-                {{ $item['label'] }}
-            </a>
-        @endforeach
+        @if ($approved)
+            <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Menu</p>
+            @foreach ($nav as $item)
+                @php $active = request()->routeIs($item['route']); @endphp
+                <a href="{{ route($item['route']) }}" wire:navigate
+                   class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                          {{ $active ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
+                    </svg>
+                    {{ $item['label'] }}
+                </a>
+            @endforeach
 
-        @if ($user->isAdmin())
-            @php $adminActive = request()->routeIs('admin.*'); @endphp
-            <a href="{{ route('admin.users') }}" wire:navigate
-               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
-                      {{ $adminActive ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                Admin
-            </a>
+            @if ($user->isAdmin())
+                @php $adminActive = request()->routeIs('admin.*'); @endphp
+                <a href="{{ route('admin.users') }}" wire:navigate
+                   class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+                          {{ $adminActive ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Admin
+                </a>
+            @endif
+        @else
+            <div class="px-3 py-2 text-xs text-slate-500">
+                Your account is pending approval. Tools will appear here once approved.
+            </div>
         @endif
     </nav>
 
-    <!-- Plan usage -->
-    <div class="px-4 pb-3">
-        <div class="rounded-lg bg-slate-800/60 p-3">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-                <span>{{ $user->plan?->name ?? 'Free' }} plan</span>
-                <span>{{ $user->remainingQuota() }}/{{ $user->dailyQuota() }}</span>
-            </div>
-            @php $pct = $user->dailyQuota() > 0 ? min(100, round($user->usageToday() / $user->dailyQuota() * 100)) : 0; @endphp
-            <div class="mt-2 h-1.5 w-full rounded-full bg-slate-700">
-                <div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ $pct }}%"></div>
+    <!-- Plan usage (approved users only) -->
+    @if ($approved)
+        <div class="px-4 pb-3">
+            <div class="rounded-lg bg-slate-800/60 p-3">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>{{ $user->plan?->name ?? 'Free' }} plan</span>
+                    <span>{{ $user->remainingQuota() }}/{{ $user->dailyQuota() }}</span>
+                </div>
+                @php $pct = $user->dailyQuota() > 0 ? min(100, round($user->usageToday() / $user->dailyQuota() * 100)) : 0; @endphp
+                <div class="mt-2 h-1.5 w-full rounded-full bg-slate-700">
+                    <div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ $pct }}%"></div>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
 
-    <!-- Account (click to reveal Profile & Logout) -->
+    <!-- Account (click to reveal Profile, Settings & Log out) -->
     <div class="border-t border-slate-800 p-3" x-data="{ accountOpen: false }" @click.outside="accountOpen = false">
 
-        <!-- Dropdown menu (pops up on click) -->
+        <!-- Dropdown menu -->
         <div x-show="accountOpen" x-transition style="display:none"
              class="mb-2 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shadow-lg">
             <a href="{{ route('profile') }}" wire:navigate
@@ -97,7 +106,7 @@
             </form>
         </div>
 
-        <!-- Account chip (button) -->
+        <!-- Account chip -->
         <button @click="accountOpen = !accountOpen"
                 class="w-full flex items-center gap-3 rounded-lg p-1.5 hover:bg-slate-800 transition">
             @if ($user->avatar)

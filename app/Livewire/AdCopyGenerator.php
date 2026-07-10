@@ -139,6 +139,36 @@ class AdCopyGenerator extends Component
         }
     }
 
+    /** Dedicated button: generate ONLY the Key Features with AI and fill the field. */
+    public function generateFeatures(AdCopyService $service): void
+    {
+        $this->validate([
+            'product_name'        => ['required', 'string', 'max:200'],
+            'product_description' => ['required', 'string', 'max:4000'],
+        ]);
+
+        $user = auth()->user();
+        if (! $user->apiKeyFor('openai')) {
+            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
+
+            return;
+        }
+
+        $tool = Tool::where('slug', 'ad-copy-generator')->first();
+
+        try {
+            $this->sp['PRODUCT_FEATURES'] = $service->generateFeatures($user, [
+                'product_name'        => $this->product_name,
+                'product_description' => $this->product_description,
+                'model'               => $tool->config['default_model'] ?? 'gpt-4o',
+                'features_prompt'     => $tool->config['features_prompt'] ?? null,
+            ]);
+            $this->error = null;
+        } catch (\Throwable $e) {
+            $this->error = $e->getMessage();
+        }
+    }
+
     /** Record that the user copied a specific field of a variant (fires from the Copy button). */
     public function recordCopy(int $index, string $field): void
     {

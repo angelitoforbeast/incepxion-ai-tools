@@ -135,4 +135,30 @@ TXT;
             'output_tokens'    => $response->usage->completionTokens ?? 0,
         ];
     }
+
+    /** Generate ONLY the product's Key Features (used by the dedicated button). */
+    public function generateFeatures(User $user, array $input): string
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
+        }
+
+        $featuresPrompt = trim($input['features_prompt'] ?? '') ?: self::DEFAULT_FEATURES_PROMPT;
+        $model = $input['model'] ?? 'gpt-4o';
+
+        $client = \OpenAI::client($keyRow->plainKey());
+        $response = $client->chat()->create([
+            'model'       => $model,
+            'temperature' => 0.6,
+            'messages'    => [
+                ['role' => 'system', 'content' => $featuresPrompt],
+                ['role' => 'user', 'content' => "Product name: {$input['product_name']}\nProduct description: {$input['product_description']}"],
+            ],
+        ]);
+
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+
+        return trim($response->choices[0]->message->content ?? '');
+    }
 }

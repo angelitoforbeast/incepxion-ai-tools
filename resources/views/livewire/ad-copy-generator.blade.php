@@ -86,10 +86,16 @@
                         @endphp
                         @foreach ($spFields as $k)
                             <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">
-                                    {{ \App\Services\SalesPromptService::FIELDS[$k] }}
-                                    @if ($k === 'PRODUCT_FEATURES')<span class="ml-1 text-[10px] bg-indigo-100 text-indigo-700 rounded px-1.5 py-0.5">AI</span>@endif
-                                </label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-medium text-gray-600">{{ \App\Services\SalesPromptService::FIELDS[$k] }}</label>
+                                    @if ($k === 'PRODUCT_FEATURES')
+                                        <button type="button" wire:click="generateFeatures" wire:loading.attr="disabled" wire:target="generateFeatures"
+                                                class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 disabled:opacity-50">
+                                            <span wire:loading.remove wire:target="generateFeatures">✨ Generate with AI</span>
+                                            <span wire:loading wire:target="generateFeatures">Generating…</span>
+                                        </button>
+                                    @endif
+                                </div>
                                 @if (in_array($k, $spMulti))
                                     <textarea wire:model="sp.{{ $k }}" rows="{{ $k === 'PRODUCT_FEATURES' ? 3 : 2 }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
                                 @else

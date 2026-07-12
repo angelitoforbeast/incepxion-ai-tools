@@ -204,18 +204,32 @@
                             <p class="mt-2 text-xs text-gray-400">The bot sends this as its first reply to any chat.</p>
 
                             <div class="mt-3 border-t border-gray-100 pt-3">
-                                <button type="button" wire:click="generateImage" wire:loading.attr="disabled" wire:target="generateImage"
-                                        class="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
-                                    <span wire:loading.remove wire:target="generateImage">🖼️ Generate promo image</span>
-                                    <span wire:loading wire:target="generateImage" class="inline-flex items-center gap-2">
-                                        <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-                                        Generating image… (~15s)
-                                    </span>
-                                </button>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <button type="button" wire:click="generateImage" wire:loading.attr="disabled" wire:target="generateImage"
+                                            class="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="generateImage">🖼️ Generate promo image</span>
+                                        <span wire:loading wire:target="generateImage" class="inline-flex items-center gap-2">
+                                            <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                            Generating image… (~15s)
+                                        </span>
+                                    </button>
+                                    <label class="text-xs text-gray-500">Size:</label>
+                                    <select wire:model="imageSize" class="rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
+                                        <option value="480">480 × 480</option>
+                                        <option value="640">640 × 640</option>
+                                        <option value="800">800 × 800</option>
+                                        <option value="1024">1024 × 1024 (HD)</option>
+                                    </select>
+                                </div>
                                 @if ($promoImageUrl)
-                                    <div class="mt-3" wire:loading.remove wire:target="generateImage">
-                                        <img src="{{ $promoImageUrl }}" alt="Promo image" class="rounded-lg border border-gray-200 w-full max-w-sm">
+                                    <div class="mt-3" wire:loading.remove wire:target="generateImage" x-data="{ zoom: false }">
+                                        <img src="{{ $promoImageUrl }}" alt="Promo image" @click="zoom = true"
+                                             class="cursor-zoom-in rounded-lg border border-gray-200 w-full max-w-[240px] hover:opacity-90 transition">
                                         <a href="{{ $promoImageUrl }}" download target="_blank" class="mt-1 inline-block text-xs font-semibold text-indigo-600 hover:underline">⬇️ Download image</a>
+                                        <div x-show="zoom" x-transition @click="zoom = false" style="display:none"
+                                             class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 cursor-zoom-out">
+                                            <img src="{{ $promoImageUrl }}" alt="Promo image (zoomed)" class="max-h-full max-w-full rounded-lg shadow-2xl">
+                                        </div>
                                     </div>
                                 @endif
                             </div>

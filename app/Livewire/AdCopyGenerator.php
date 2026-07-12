@@ -47,6 +47,10 @@ class AdCopyGenerator extends Component
     public array $sp = [];
     public ?string $mainFlow = null;
     public ?string $promoImageUrl = null;
+    public string $imageSize = '480'; // square px — best for Messenger
+
+    /** Messenger-friendly square output sizes. */
+    public const IMAGE_SIZES = ['480', '640', '800', '1024'];
     public ?string $generatedPrompt = null;
     public ?string $generatedAfterSalesPrompt = null;
 
@@ -79,6 +83,7 @@ class AdCopyGenerator extends Component
             $this->tone                = $saved['tone'] ?? $this->tone;
             $this->creativity          = $saved['creativity'] ?? $this->creativity;
             $this->variants            = $saved['variants'] ?? $this->variants;
+            $this->imageSize           = $saved['image_size'] ?? $this->imageSize;
         }
 
         $this->sp = $sp;
@@ -95,6 +100,7 @@ class AdCopyGenerator extends Component
             'tone'                => $this->tone,
             'creativity'          => $this->creativity,
             'variants'            => $this->variants,
+            'image_size'          => $this->imageSize,
             'sp'                  => $this->sp,
         ]]);
         session()->flash('sp-msg', 'Saved all inputs as your defaults.');
@@ -342,6 +348,8 @@ class AdCopyGenerator extends Component
         try {
             $bytes = $service->generateImage($user, $prompt, $tool->config['image_model'] ?? 'gpt-image-1');
             if ($bytes !== '') {
+                $size = in_array($this->imageSize, self::IMAGE_SIZES, true) ? (int) $this->imageSize : 480;
+                $bytes = $this->resizeSquare($bytes, $size);
                 $name = 'promo-images/'.\Illuminate\Support\Str::uuid()->toString().'.png';
                 \Illuminate\Support\Facades\Storage::disk('public')->put($name, $bytes);
                 $this->promoImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($name);
@@ -350,6 +358,32 @@ class AdCopyGenerator extends Component
         } catch (\Throwable $e) {
             $this->error = 'Image error: '.$e->getMessage();
         }
+    }
+
+    /** Center-crop to a square and resize to the given pixel size (via GD). */
+    private function resizeSquare(string $bytes, int $size): string
+    {
+        if (! function_exists('imagecreatefromstring')) {
+            return $bytes;
+        }
+        $src = @imagecreatefromstring($bytes);
+        if (! $src) {
+            return $bytes;
+        }
+        $sw = imagesx($src);
+        $sh = imagesy($src);
+        $side = min($sw, $sh);
+        $x = (int) (($sw - $side) / 2);
+        $y = (int) (($sh - $side) / 2);
+        $dst = imagecreatetruecolor($size, $size);
+        imagecopyresampled($dst, $src, 0, 0, $x, $y, $size, $size, $side, $side);
+        ob_start();
+        imagepng($dst);
+        $out = ob_get_clean();
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $out ?: $bytes;
     }
 
     public function testSales(AdCopyService $service): void

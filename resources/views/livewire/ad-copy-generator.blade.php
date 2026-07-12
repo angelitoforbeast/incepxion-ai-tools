@@ -1,18 +1,18 @@
-<div class="py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        <!-- Header -->
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+<div>
+    <!-- Sticky header -->
+    <div class="lg:sticky lg:top-0 lg:z-20 bg-slate-50/95 lg:backdrop-blur border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">📣 AI Ad Copy Generator</h1>
                 <p class="text-sm text-gray-500">High-converting Facebook ad copy for the Filipino market.</p>
             </div>
-            <div class="flex items-center gap-3">
-                <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
-                    {{ $remaining }}/{{ $quota }} left today
-                </span>
-            </div>
+            <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
+                {{ $remaining }}/{{ $quota }} left today
+            </span>
         </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         @unless ($hasKey)
             <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -129,7 +129,7 @@
             </form>
 
             <!-- Results -->
-            <div class="min-w-0 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+            <div class="min-w-0 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
                 @if ($error)
                     <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">⚠️ {{ $error }}</div>
                 @endif

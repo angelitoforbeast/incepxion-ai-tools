@@ -78,8 +78,8 @@
                                                 <div>
                                                     <div class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Quick Replies</div>
                                                     <div class="mt-1 flex flex-col gap-1.5">
-                                                        @foreach ($v['quick_replies'] ?? [] as $qr)
-                                                            <span class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{{ $qr }}</span>
+                                                        @foreach ($v['quick_replies'] ?? [] as $qi => $qr)
+                                                            <span class="rounded px-2 py-1 text-xs {{ $isCopied($vi, 'quick_reply_'.$qi) ? 'bg-emerald-100 ring-1 ring-emerald-300 text-emerald-800' : 'bg-slate-100 text-slate-700' }}">{{ $qr }}</span>
                                                         @endforeach
                                                     </div>
                                                 </div>

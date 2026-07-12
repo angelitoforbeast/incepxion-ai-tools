@@ -156,10 +156,18 @@
                             @endforeach
 
                             <div>
-                                <span class="text-xs uppercase tracking-wide text-gray-400">Quick Replies</span>
-                                <div class="flex flex-wrap gap-2 mt-1">
-                                    @foreach (($v['quick_replies'] ?? []) as $qr)
-                                        <span class="select-none rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-sm text-gray-700">{{ $qr }}</span>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs uppercase tracking-wide text-gray-400">Quick Replies</span>
+                                    <span class="text-[10px] text-gray-300">tap to copy</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (($v['quick_replies'] ?? []) as $qi => $qr)
+                                        <button type="button" x-data
+                                                class="select-none inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-sm text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 transition"
+                                                @click="navigator.clipboard.writeText(@js($qr)); $wire.recordCopy({{ $i }}, 'quick_reply_{{ $qi }}'); $el.querySelector('.qrlabel').innerText='✓ Copied!'; setTimeout(() => $el.querySelector('.qrlabel').innerText=@js($qr), 1200)">
+                                            <span class="qrlabel">{{ $qr }}</span>
+                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                        </button>
                                     @endforeach
                                 </div>
                             </div>

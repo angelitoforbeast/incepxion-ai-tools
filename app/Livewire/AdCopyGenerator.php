@@ -225,9 +225,14 @@ class AdCopyGenerator extends Component
             return;
         }
 
-        $text = $field === 'sales_prompt'
-            ? $this->generatedPrompt
-            : ($this->results[$index][$field] ?? null);
+        if ($field === 'sales_prompt') {
+            $text = $this->generatedPrompt;
+        } elseif (str_starts_with($field, 'quick_reply_')) {
+            $qi = (int) substr($field, strlen('quick_reply_'));
+            $text = $this->results[$index]['quick_replies'][$qi] ?? null;
+        } else {
+            $text = $this->results[$index][$field] ?? null;
+        }
 
         $copies = $generation->copies ?? [];
         $copies[] = [

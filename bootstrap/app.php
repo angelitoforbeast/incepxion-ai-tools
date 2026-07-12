@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'approved' => \App\Http\Middleware\EnsureApproved::class,
             'admin'    => \App\Http\Middleware\EnsureAdmin::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackLastActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -167,7 +167,8 @@ class UserManager extends Component
             ->withMax('generations', 'created_at')
             ->withCount('generations')
             ->when($this->sort === 'active',
-                fn ($q) => $q->orderByRaw('generations_max_created_at IS NULL')
+                fn ($q) => $q->orderByRaw('last_active_at IS NULL')
+                    ->orderByDesc('last_active_at')
                     ->orderByDesc('generations_max_created_at')
                     ->orderByDesc('last_login_at'),
                 fn ($q) => $q->latest(),

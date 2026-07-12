@@ -101,15 +101,18 @@
                         </td>
                         <td class="px-4 py-3">
                             @php
-                                $genAt = $u->generations_max_created_at ? \Illuminate\Support\Carbon::parse($u->generations_max_created_at) : null;
-                                $lastActive = $genAt;
-                                if ($u->last_login_at && (! $lastActive || $u->last_login_at->gt($lastActive))) { $lastActive = $u->last_login_at; }
+                                $lastActive = collect([
+                                    $u->last_active_at,
+                                    $u->last_login_at,
+                                    $u->generations_max_created_at ? \Illuminate\Support\Carbon::parse($u->generations_max_created_at) : null,
+                                ])->filter()->sort()->last();
                                 $isActive = $lastActive && $lastActive->gt(now()->subDays(7));
+                                $isOnline = $lastActive && $lastActive->gt(now()->subMinutes(5));
                             @endphp
                             @if ($lastActive)
                                 <div class="flex items-center gap-1.5">
-                                    <span class="h-2 w-2 rounded-full {{ $isActive ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
-                                    <span class="{{ $isActive ? 'text-emerald-700 font-medium' : 'text-slate-500' }}">{{ $lastActive->diffForHumans() }}</span>
+                                    <span class="h-2 w-2 rounded-full {{ $isOnline ? 'bg-emerald-500 animate-pulse' : ($isActive ? 'bg-emerald-500' : 'bg-slate-300') }}"></span>
+                                    <span class="{{ $isActive ? 'text-emerald-700 font-medium' : 'text-slate-500' }}">{{ $isOnline ? 'Online now' : $lastActive->diffForHumans() }}</span>
                                 </div>
                                 <div class="text-xs text-slate-400">{{ $u->generations_count }} generation{{ $u->generations_count == 1 ? '' : 's' }}</div>
                             @else

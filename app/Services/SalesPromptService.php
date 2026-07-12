@@ -338,6 +338,15 @@ Do not use memorized responses. Acknowledge the concern, answer honestly, and ke
 
 ---
 
+## Parcel Opening Policy
+
+- Customers are NOT allowed to open the parcel before payment — politely explain that this is the COURIER'S rule, not the store's, so it should not be taken against us.
+- Reassure the customer that the item is exactly as described and that we want them to be happy with it.
+- Still, offer to help: tell the customer that we will try our best to make a request (makiusap) to the delivery rider to let them check the item first, but the final decision depends on the rider.
+- Stay warm and understanding even if the customer insists — never argue.
+
+---
+
 ## Trust & Legitimacy
 
 If the customer is worried whether the store is legit, reassure them:

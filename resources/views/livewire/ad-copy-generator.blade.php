@@ -208,7 +208,19 @@
                                         @click="navigator.clipboard.writeText($refs.sp.innerText); $wire.recordCopy(-1, 'sales_prompt'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
                             </div>
                             <div x-ref="sp" class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-800 whitespace-pre-wrap max-h-96 overflow-y-auto font-mono leading-relaxed">{{ $generatedPrompt }}</div>
-                            <p class="mt-2 text-xs text-gray-400">Ready to paste into BotCake AI.</p>
+                            <p class="mt-2 text-xs text-gray-400">For sales. Ready to paste into BotCake AI.</p>
+                        </div>
+                    @endif
+
+                    @if ($generatedAfterSalesPrompt)
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
+                            <div class="flex items-center justify-between mb-2">
+                                <strong class="text-gray-900">🤝 BotCake After-Sales Prompt</strong>
+                                <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                        @click="navigator.clipboard.writeText($refs.asp.innerText); $wire.recordCopy(-1, 'aftersales_prompt'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
+                            </div>
+                            <div x-ref="asp" class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-800 whitespace-pre-wrap max-h-96 overflow-y-auto font-mono leading-relaxed">{{ $generatedAfterSalesPrompt }}</div>
+                            <p class="mt-2 text-xs text-gray-400">For after-sales support. Ready to paste into BotCake AI.</p>
                         </div>
                     @endif
                 </div>

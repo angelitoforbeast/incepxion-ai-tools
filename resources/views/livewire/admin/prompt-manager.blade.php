@@ -54,6 +54,14 @@
             </div>
         </div>
 
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">BotCake After-Sales Prompt Template</label>
+            <textarea wire:model="aftersalesTemplate" rows="14"
+                      class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono leading-relaxed"></textarea>
+            @error('aftersalesTemplate') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            <p class="mt-1 text-xs text-slate-400">Uses the same placeholders as the sales template — for post-purchase / after-sales support.</p>
+        </div>
+
         <div class="flex items-center gap-3">
             <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
                 Save Prompt

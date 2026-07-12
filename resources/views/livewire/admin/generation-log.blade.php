@@ -27,6 +27,7 @@
                         $output = $log->output ?? [];
                         $variants = is_array($output) ? ($output['variants'] ?? (array_is_list($output) ? $output : [])) : [];
                         $salesPrompt = is_array($output) ? ($output['sales_prompt'] ?? null) : null;
+                        $afterSalesPrompt = is_array($output) ? ($output['aftersales_prompt'] ?? null) : null;
                         $copies = collect($log->copies ?? []);
                         $isCopied = fn ($vi, $field) => $copies->contains(fn ($c) => ($c['variant'] ?? null) === $vi && ($c['field'] ?? null) === $field);
                         $reqCount = data_get($log->input, 'variants');
@@ -91,6 +92,13 @@
                                         <div class="rounded-lg border border-slate-200 bg-white p-4">
                                             <div class="text-xs font-bold text-indigo-600 mb-2">🤖 BOTCAKE SALES PROMPT @if ($isCopied(-1, 'sales_prompt'))<span class="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700">copied</span>@endif</div>
                                             <pre class="whitespace-pre-wrap break-words text-xs rounded-md p-2 max-h-72 overflow-auto {{ $isCopied(-1, 'sales_prompt') ? 'bg-emerald-100 ring-1 ring-emerald-300' : 'bg-slate-50' }}">{{ $salesPrompt }}</pre>
+                                        </div>
+                                    @endif
+
+                                    @if ($afterSalesPrompt)
+                                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                            <div class="text-xs font-bold text-indigo-600 mb-2">🤝 BOTCAKE AFTER-SALES PROMPT @if ($isCopied(-1, 'aftersales_prompt'))<span class="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700">copied</span>@endif</div>
+                                            <pre class="whitespace-pre-wrap break-words text-xs rounded-md p-2 max-h-72 overflow-auto {{ $isCopied(-1, 'aftersales_prompt') ? 'bg-emerald-100 ring-1 ring-emerald-300' : 'bg-slate-50' }}">{{ $afterSalesPrompt }}</pre>
                                         </div>
                                     @endif
 

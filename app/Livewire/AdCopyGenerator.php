@@ -41,6 +41,7 @@ class AdCopyGenerator extends Component
     /** BotCake sales-prompt placeholder values, keyed by placeholder name. */
     public array $sp = [];
     public ?string $generatedPrompt = null;
+    public ?string $generatedAfterSalesPrompt = null;
 
     public function mount(): void
     {
@@ -151,8 +152,11 @@ class AdCopyGenerator extends Component
             $values = $this->sp;
             $values['PRODUCT_NAME'] = ($values['PRODUCT_NAME'] ?? '') ?: $this->product_name;
             $values['PRODUCT_INFORMATION'] = ($values['PRODUCT_INFORMATION'] ?? '') ?: $this->product_description;
+            $svc = app(\App\Services\SalesPromptService::class);
             $template = $tool->config['botcake_template'] ?? \App\Services\SalesPromptService::DEFAULT_TEMPLATE;
-            $this->generatedPrompt = app(\App\Services\SalesPromptService::class)->fill($template, $values);
+            $this->generatedPrompt = $svc->fill($template, $values);
+            $aftersalesTemplate = $tool->config['aftersales_template'] ?? \App\Services\SalesPromptService::DEFAULT_AFTERSALES_TEMPLATE;
+            $this->generatedAfterSalesPrompt = $svc->fill($aftersalesTemplate, $values);
 
             $generation = Generation::create([
                 'user_id'       => $user->id,
@@ -168,7 +172,7 @@ class AdCopyGenerator extends Component
                     'variants'            => $this->variants,
                     'sales_prompt_fields' => $values,
                 ],
-                'output'        => ['variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt],
+                'output'        => ['variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt, 'aftersales_prompt' => $this->generatedAfterSalesPrompt],
                 'input_tokens'  => $out['input_tokens'],
                 'output_tokens' => $out['output_tokens'],
                 'status'        => 'success',
@@ -237,6 +241,8 @@ class AdCopyGenerator extends Component
 
         if ($field === 'sales_prompt') {
             $text = $this->generatedPrompt;
+        } elseif ($field === 'aftersales_prompt') {
+            $text = $this->generatedAfterSalesPrompt;
         } elseif (str_starts_with($field, 'quick_reply_')) {
             $qi = (int) substr($field, strlen('quick_reply_'));
             $text = $this->results[$index]['quick_replies'][$qi] ?? null;

@@ -12,9 +12,6 @@ class SalesPromptService
         'PRODUCT_FEATURES'    => 'Key Features',
         'PRODUCT_PRICE'       => 'Price',
         'PROMO'               => 'Promo / Offer',
-        'PACKAGE_CONTENTS'    => 'Package Contents',
-        'PACKAGE_SUMMARY'     => 'Package Summary',
-        'UNIT_NAME'           => 'Unit Name (e.g. box, bottle)',
         'DELIVERY_TIME'       => 'Delivery Time',
         'PAYMENT_METHOD'      => 'Payment Method',
         'LEGITIMACY_INFO'     => 'Legitimacy Info',
@@ -72,10 +69,6 @@ Keep replies concise, natural, and easy to read.
 
 **Price**
 {{PRODUCT_PRICE}}
-
-**Package Contents**
-
-{{PACKAGE_CONTENTS}}
 
 ---
 
@@ -163,8 +156,6 @@ Whenever customers ask about price, clearly mention:
 
 **{{PRODUCT_PRICE}}**
 
-Include that each {{UNIT_NAME}} contains **{{PACKAGE_SUMMARY}}**.
-
 ---
 
 ## Promo / Offer
@@ -224,7 +215,7 @@ Always aim to:
 - Encourage orders naturally without sounding pushy.
 - Provide a smooth and friendly buying experience.
 - Look for buying signals throughout the conversation.
-- Whenever appropriate, ask whether the customer would like to place an order or how many {{UNIT_NAME}} they would like to order.
+- Whenever appropriate, ask whether the customer would like to place an order or how many they would like to order.
 - If the customer shows interest, smoothly transition into the ordering process by collecting their Full Name, Complete Address, Contact Number, and Quantity.
 - If the customer is not yet ready, continue answering their questions and naturally ask again when the conversation leads to it.
 
@@ -276,10 +267,6 @@ Use simple Taglish that every Filipino can easily understand. Keep replies conci
 
 **Price**
 {{PRODUCT_PRICE}}
-
-**Package Contents**
-
-{{PACKAGE_CONTENTS}}
 
 ---
 
@@ -361,7 +348,7 @@ If the customer is worried whether the store is legit, reassure them:
 ## Reorders, Upsells & Promo
 
 - Once the customer is satisfied, gently invite them to reorder or try related items.
-- Mention that each {{UNIT_NAME}} contains **{{PACKAGE_SUMMARY}}** at **{{PRODUCT_PRICE}}**.
+- Mention the product price of **{{PRODUCT_PRICE}}**.
 - If there is an active promo, share it naturally when it fits:
 
 {{PROMO}}

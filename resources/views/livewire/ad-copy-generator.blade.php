@@ -39,6 +39,8 @@
                             <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
                             <span wire:loading wire:target="generate">Generating...</span>
                         </button>
+                        <button type="button" wire:click="fillDemo" wire:loading.attr="disabled" wire:target="generate"
+                                class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 whitespace-nowrap">Fill demo</button>
                         <button type="button" wire:click="saveDefaults" wire:loading.attr="disabled" wire:target="generate"
                                 class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 whitespace-nowrap">Save default</button>
                         <button type="button" wire:click="resetDefaults" wire:loading.attr="disabled" wire:target="generate"
@@ -104,8 +106,8 @@
                 <div class="border-t border-gray-100 pt-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         @php
-                            $spFields = ['STORE_NAME','PRODUCT_PRICE','PROMO','PRODUCT_FEATURES','PACKAGE_CONTENTS','PACKAGE_SUMMARY','UNIT_NAME','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];
-                            $spMulti = ['PRODUCT_FEATURES','PROMO','PACKAGE_CONTENTS','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spFields = ['STORE_NAME','PRODUCT_PRICE','PROMO','PRODUCT_FEATURES','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spMulti = ['PRODUCT_FEATURES','PROMO','LEGITIMACY_INFO','ORDER_FIELDS'];
                             $spFull = ['PRODUCT_FEATURES','LEGITIMACY_INFO','ORDER_FIELDS'];
                         @endphp
                         @foreach ($spFields as $k)

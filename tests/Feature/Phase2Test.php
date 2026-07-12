@@ -73,6 +73,29 @@ class Phase2Test extends TestCase
             ->assertSet('error', fn ($e) => str_contains($e, 'OpenAI API key'));
     }
 
+    public function test_user_can_save_sales_prompt_defaults(): void
+    {
+        $user = $this->approvedUser();
+
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->set('sp.STORE_NAME', 'MyShop')
+            ->set('sp.PAYMENT_METHOD', 'GCash')
+            ->call('saveDefaults');
+
+        $this->assertSame('MyShop', $user->fresh()->sp_defaults['STORE_NAME']);
+        $this->assertSame('GCash', $user->fresh()->sp_defaults['PAYMENT_METHOD']);
+    }
+
+    public function test_system_and_saved_defaults_apply_on_mount(): void
+    {
+        $user = $this->approvedUser();
+        $user->update(['sp_defaults' => ['STORE_NAME' => 'SavedShop']]);
+
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->assertSet('sp.STORE_NAME', 'SavedShop')      // user's saved default
+            ->assertSet('sp.PAYMENT_METHOD', 'COD');       // system default
+    }
+
     public function test_sales_prompt_service_fills_placeholders(): void
     {
         $svc = new \App\Services\SalesPromptService();

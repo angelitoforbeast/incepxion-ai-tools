@@ -13,7 +13,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
     'name', 'email', 'password', 'avatar', 'status', 'role',
-    'plan_id', 'approved_at', 'approved_by', 'last_login_at', 'email_verified_at', 'remarks',
+    'plan_id', 'approved_at', 'approved_by', 'last_login_at', 'email_verified_at', 'remarks', 'sp_defaults',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -34,6 +34,7 @@ class User extends Authenticatable
             'approved_at'       => 'datetime',
             'last_login_at'     => 'datetime',
             'password'          => 'hashed',
+            'sp_defaults'       => 'array',
         ];
     }
 

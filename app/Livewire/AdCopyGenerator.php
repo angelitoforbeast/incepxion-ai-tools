@@ -44,9 +44,35 @@ class AdCopyGenerator extends Component
 
     public function mount(): void
     {
-        foreach (array_keys(\App\Services\SalesPromptService::FIELDS) as $key) {
-            $this->sp[$key] = '';
+        $this->sp = $this->defaultSp();
+    }
+
+    /** System defaults (COD, delivery time) merged with the user's own saved defaults. */
+    private function defaultSp(): array
+    {
+        $sp = array_fill_keys(array_keys(\App\Services\SalesPromptService::FIELDS), '');
+        $sp = array_merge($sp, \App\Services\SalesPromptService::DEFAULTS);
+
+        $saved = auth()->user()->sp_defaults;
+        if (is_array($saved)) {
+            $sp = array_merge($sp, $saved);
         }
+
+        return $sp;
+    }
+
+    /** Save the current sales-prompt field values as this user's defaults. */
+    public function saveDefaults(): void
+    {
+        auth()->user()->update(['sp_defaults' => $this->sp]);
+        session()->flash('sp-msg', 'Saved as your defaults.');
+    }
+
+    /** Reset the fields back to your saved defaults (or the system defaults). */
+    public function resetDefaults(): void
+    {
+        $this->sp = $this->defaultSp();
+        session()->flash('sp-msg', 'Reset to your defaults.');
     }
 
     public function generate(AdCopyService $service): void

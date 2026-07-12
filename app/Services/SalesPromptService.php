@@ -6,7 +6,7 @@ class SalesPromptService
 {
     /** The placeholder keys the template expects (also drives the input form). */
     public const FIELDS = [
-        'STORE_NAME'          => 'Store Name',
+        'STORE_NAME'          => 'Shop Name',
         'PRODUCT_NAME'        => 'Product Name',
         'PRODUCT_INFORMATION' => 'Product Information',
         'PRODUCT_FEATURES'    => 'Key Features',
@@ -19,6 +19,12 @@ class SalesPromptService
         'PAYMENT_METHOD'      => 'Payment Method',
         'LEGITIMACY_INFO'     => 'Legitimacy Info',
         'ORDER_FIELDS'        => 'Extra Order Fields',
+    ];
+
+    /** System default values applied before the user's own saved defaults. */
+    public const DEFAULTS = [
+        'PAYMENT_METHOD' => 'COD',
+        'DELIVERY_TIME'  => '3 to 6 days Luzon, 6 to 10 days Visayas and Mindanao',
     ];
 
     /** Default BotCake AI sales-assistant template. Admin-editable via the tool config. */

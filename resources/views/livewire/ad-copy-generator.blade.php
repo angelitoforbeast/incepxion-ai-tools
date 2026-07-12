@@ -26,6 +26,27 @@
 
             <!-- Form -->
             <form wire:submit="generate" class="lg:w-[480px] lg:flex-shrink-0 lg:overflow-y-auto lg:min-h-0 min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                <div class="lg:sticky lg:top-0 lg:z-10 bg-white pb-3 -mx-6 px-6 -mt-6 pt-6 border-b border-gray-100 space-y-2">
+                    <div class="flex items-center gap-2">
+                        <button type="submit"
+                                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                                wire:loading.attr="disabled" wire:target="generate">
+                            <svg wire:loading wire:target="generate" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
+                            <span wire:loading wire:target="generate">Generating...</span>
+                        </button>
+                        <button type="button" wire:click="saveDefaults" wire:loading.attr="disabled" wire:target="generate"
+                                class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 whitespace-nowrap">Save default</button>
+                        <button type="button" wire:click="resetDefaults" wire:loading.attr="disabled" wire:target="generate"
+                                class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50">Reset</button>
+                    </div>
+                    @if (session('sp-msg'))
+                        <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
+                    @endif
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
                     <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum"
@@ -106,27 +127,6 @@
                     </div>
                 </div>
 
-                <div class="lg:sticky lg:bottom-0 bg-white pt-3 -mx-6 px-6 -mb-6 pb-6 border-t border-gray-100 space-y-2">
-                    @if (session('sp-msg'))
-                        <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
-                    @endif
-                    <div class="flex items-center gap-2">
-                        <button type="submit"
-                                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-                                wire:loading.attr="disabled" wire:target="generate">
-                            <svg wire:loading wire:target="generate" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                            </svg>
-                            <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
-                            <span wire:loading wire:target="generate">Generating...</span>
-                        </button>
-                        <button type="button" wire:click="saveDefaults" wire:loading.attr="disabled" wire:target="generate"
-                                class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 whitespace-nowrap">Save default</button>
-                        <button type="button" wire:click="resetDefaults" wire:loading.attr="disabled" wire:target="generate"
-                                class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50">Reset</button>
-                    </div>
-                </div>
             </form>
 
             <!-- Results -->

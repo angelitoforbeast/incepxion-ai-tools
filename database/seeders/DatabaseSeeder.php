@@ -18,9 +18,9 @@ class DatabaseSeeder extends Seeder
             'price'         => 0,
             'currency'      => 'PHP',
             'interval'      => 'month',
-            'daily_quota'   => 20,
-            'monthly_quota' => 300,
-            'features'      => ['All tools (BYOK)', '20 generations/day'],
+            'daily_quota'   => 1000,
+            'monthly_quota' => 30000,
+            'features'      => ['All tools (BYOK)', '1000 generations/day'],
             'is_active'     => true,
             'sort_order'    => 1,
         ]);
@@ -71,7 +71,8 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($tools as $t) {
-            Tool::updateOrCreate(['slug' => $t['slug']], array_merge($t, ['is_active' => true]));
+            // firstOrCreate so re-seeding never wipes admin-edited config (prompts, template).
+            Tool::firstOrCreate(['slug' => $t['slug']], array_merge($t, ['is_active' => true]));
         }
     }
 }

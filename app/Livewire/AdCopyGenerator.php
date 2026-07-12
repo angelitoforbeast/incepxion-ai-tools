@@ -9,10 +9,15 @@ use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.app')]
 class AdCopyGenerator extends Component
 {
+    use WithFileUploads;
+
+    /** Optional product image the seller uploads (for auto-fill + reference). */
+    public $uploadedImage = null;
     #[Validate('required|string|max:200')]
     public string $product_name = '';
 
@@ -262,6 +267,47 @@ class AdCopyGenerator extends Component
         } catch (\Throwable $e) {
             $this->error = $e->getMessage();
         }
+    }
+
+    /** Auto-fill Product Name + Description from an uploaded product image (GPT-4o vision). */
+    public function autoFillFromImage(AdCopyService $service): void
+    {
+        $this->validate([
+            'uploadedImage' => ['required', 'image', 'max:8192'], // 8MB
+        ], [
+            'uploadedImage.required' => 'Please upload a product image first.',
+        ]);
+
+        $user = auth()->user();
+        if (! $user->apiKeyFor('openai')) {
+            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
+
+            return;
+        }
+
+        $tool = Tool::where('slug', 'ad-copy-generator')->first();
+
+        try {
+            $bytes = file_get_contents($this->uploadedImage->getRealPath());
+            $dataUrl = 'data:'.$this->uploadedImage->getMimeType().';base64,'.base64_encode($bytes);
+
+            $result = $service->analyzeProductImage($user, $dataUrl, $tool->config['default_model'] ?? 'gpt-4o');
+
+            if (! empty($result['product_name'])) {
+                $this->product_name = $result['product_name'];
+            }
+            if (! empty($result['product_description'])) {
+                $this->product_description = $result['product_description'];
+            }
+            $this->error = null;
+        } catch (\Throwable $e) {
+            $this->error = 'Image analysis error: '.$e->getMessage();
+        }
+    }
+
+    public function removeUpload(): void
+    {
+        $this->reset('uploadedImage');
     }
 
     /** Generate a promo image for the Main Flow (DALL·E 3). */

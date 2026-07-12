@@ -238,17 +238,69 @@ TXT;
 
         $client = \OpenAI::client($keyRow->plainKey());
         $response = $client->images()->create([
-            'model'           => 'dall-e-3',
-            'prompt'          => $prompt,
-            'n'               => 1,
-            'size'            => '1024x1024',
-            'response_format' => 'b64_json',
+            'model'  => 'dall-e-3',
+            'prompt' => $prompt,
+            'n'      => 1,
+            'size'   => '1024x1024',
         ]);
 
         $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
 
-        $b64 = $response->data[0]->b64_json ?? '';
+        $url = $response->data[0]->url ?? '';
+        if ($url === '') {
+            return '';
+        }
 
-        return $b64 ? base64_decode($b64) : '';
+        return \Illuminate\Support\Facades\Http::timeout(45)->get($url)->body();
+    }
+
+    /**
+     * Analyze a product image (data URL) and extract product name + description.
+     *
+     * @return array{product_name: string, product_description: string}
+     */
+    public function analyzeProductImage(User $user, string $imageDataUrl, string $model = 'gpt-4o'): array
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
+        }
+
+        $client = \OpenAI::client($keyRow->plainKey());
+        $response = $client->chat()->create([
+            'model'           => $model,
+            'response_format' => [
+                'type'        => 'json_schema',
+                'json_schema' => [
+                    'name'   => 'product_from_image',
+                    'strict' => true,
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => false,
+                        'required'             => ['product_name', 'product_description'],
+                        'properties'           => [
+                            'product_name'        => ['type' => 'string'],
+                            'product_description' => ['type' => 'string'],
+                        ],
+                    ],
+                ],
+            ],
+            'messages' => [[
+                'role'    => 'user',
+                'content' => [
+                    ['type' => 'text', 'text' => 'Look at this product image. Identify the product and write a short, appealing marketing description (2-4 sentences) suitable for a Facebook ad. Return only product_name and product_description.'],
+                    ['type' => 'image_url', 'image_url' => ['url' => $imageDataUrl]],
+                ],
+            ]],
+        ]);
+
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+
+        $parsed = json_decode($response->choices[0]->message->content ?? '', true);
+
+        return [
+            'product_name'        => $parsed['product_name'] ?? '',
+            'product_description' => $parsed['product_description'] ?? '',
+        ];
     }
 }

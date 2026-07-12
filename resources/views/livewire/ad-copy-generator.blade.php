@@ -53,6 +53,29 @@
 
                 <!-- Scrollable inputs -->
                 <div class="lg:flex-1 lg:overflow-y-auto lg:min-h-0 p-6 space-y-4">
+
+                <div class="rounded-lg border border-dashed border-gray-300 p-3">
+                    <label class="block text-xs font-medium text-gray-500 mb-2">📷 Upload product image <span class="text-gray-400">(optional — para sa auto-fill)</span></label>
+                    <input type="file" wire:model="uploadedImage" accept="image/*"
+                           class="block w-full text-xs text-gray-600 file:mr-2 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100">
+                    @error('uploadedImage') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    <div wire:loading wire:target="uploadedImage" class="mt-2 text-xs text-gray-400">Uploading…</div>
+
+                    @if ($uploadedImage)
+                        <div class="mt-3">
+                            <img src="{{ $uploadedImage->temporaryUrl() }}" alt="Uploaded product" class="rounded-lg border border-gray-200 w-full max-w-[200px]">
+                            <div class="mt-2 flex items-center gap-3">
+                                <button type="button" wire:click="autoFillFromImage" wire:loading.attr="disabled" wire:target="autoFillFromImage"
+                                        class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="autoFillFromImage">✨ Auto-fill from image</span>
+                                    <span wire:loading wire:target="autoFillFromImage">Analyzing…</span>
+                                </button>
+                                <button type="button" wire:click="removeUpload" class="text-xs text-gray-400 hover:text-gray-600">Remove</button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
                     <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum"

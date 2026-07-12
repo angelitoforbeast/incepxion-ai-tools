@@ -228,8 +228,8 @@ TXT;
         return trim($response->choices[0]->message->content ?? '');
     }
 
-    /** Generate a promo image with DALL·E 3. Returns raw PNG bytes. */
-    public function generateImage(User $user, string $prompt): string
+    /** Generate a promo image. Returns raw PNG bytes. Model is configurable. */
+    public function generateImage(User $user, string $prompt, string $model = 'gpt-image-1'): string
     {
         $keyRow = $user->apiKeyFor('openai');
         if (! $keyRow) {
@@ -238,7 +238,7 @@ TXT;
 
         $client = \OpenAI::client($keyRow->plainKey());
         $response = $client->images()->create([
-            'model'  => 'dall-e-3',
+            'model'  => $model,
             'prompt' => $prompt,
             'n'      => 1,
             'size'   => '1024x1024',
@@ -246,12 +246,23 @@ TXT;
 
         $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
 
-        $url = $response->data[0]->url ?? '';
-        if ($url === '') {
+        $data = $response->data[0] ?? null;
+        if (! $data) {
             return '';
         }
 
-        return \Illuminate\Support\Facades\Http::timeout(45)->get($url)->body();
+        // gpt-image-1 returns base64; dall-e models return a temporary URL.
+        $b64 = $data->b64_json ?? '';
+        if ($b64 !== '') {
+            return base64_decode($b64);
+        }
+
+        $url = $data->url ?? '';
+        if ($url !== '') {
+            return \Illuminate\Support\Facades\Http::timeout(45)->get($url)->body();
+        }
+
+        return '';
     }
 
     /**

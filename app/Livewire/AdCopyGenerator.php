@@ -332,8 +332,10 @@ class AdCopyGenerator extends Component
             .trim($this->product_description).'. '
             .'Show the product prominently and attractively with clean modern studio lighting, bright eye-catching colors, and a simple background suited for a Facebook Messenger promo. High quality, realistic. Do NOT include any text, words, letters, or watermarks in the image.';
 
+        $tool = Tool::where('slug', 'ad-copy-generator')->first();
+
         try {
-            $bytes = $service->generateImage($user, $prompt);
+            $bytes = $service->generateImage($user, $prompt, $tool->config['image_model'] ?? 'gpt-image-1');
             if ($bytes !== '') {
                 $name = 'promo-images/'.\Illuminate\Support\Str::uuid()->toString().'.png';
                 \Illuminate\Support\Facades\Storage::disk('public')->put($name, $bytes);

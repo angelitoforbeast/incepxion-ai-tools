@@ -21,6 +21,9 @@ class SalesPromptService
         'ORDER_FIELDS'        => 'Extra Order Fields',
     ];
 
+    /** Placeholder fields that must be filled before generating. */
+    public const REQUIRED = ['STORE_NAME', 'PRODUCT_PRICE', 'PROMO'];
+
     /** System default values applied before the user's own saved defaults. */
     public const DEFAULTS = [
         'PAYMENT_METHOD' => 'COD',

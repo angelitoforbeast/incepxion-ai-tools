@@ -96,6 +96,16 @@ class AdCopyGenerator extends Component
     public function generate(AdCopyService $service): void
     {
         $this->validate();
+
+        // Required sales-prompt placeholder fields.
+        $rules = [];
+        $messages = [];
+        foreach (\App\Services\SalesPromptService::REQUIRED as $key) {
+            $rules['sp.'.$key] = ['required', 'string'];
+            $messages['sp.'.$key.'.required'] = \App\Services\SalesPromptService::FIELDS[$key].' is required.';
+        }
+        $this->validate($rules, $messages);
+
         $this->error = null;
         $this->results = [];
 

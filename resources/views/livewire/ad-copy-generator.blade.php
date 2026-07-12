@@ -96,7 +96,7 @@
                         @foreach ($spFields as $k)
                             <div>
                                 <div class="flex items-center justify-between mb-1">
-                                    <label class="block text-xs font-medium text-gray-600">{{ \App\Services\SalesPromptService::FIELDS[$k] }}</label>
+                                    <label class="block text-xs font-medium text-gray-600">{{ \App\Services\SalesPromptService::FIELDS[$k] }}@if (in_array($k, \App\Services\SalesPromptService::REQUIRED))<span class="text-red-500"> *</span>@endif</label>
                                     @if ($k === 'PRODUCT_FEATURES')
                                         <button type="button" wire:click="generateFeatures" wire:loading.attr="disabled" wire:target="generateFeatures"
                                                 class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 disabled:opacity-50">
@@ -110,6 +110,7 @@
                                 @else
                                     <input type="text" wire:model="sp.{{ $k }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 @endif
+                                @error('sp.'.$k) <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                             </div>
                         @endforeach
                     </div>

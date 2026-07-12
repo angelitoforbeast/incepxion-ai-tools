@@ -69,8 +69,25 @@ class Phase2Test extends TestCase
         Livewire::actingAs($user)->test(AdCopyGenerator::class)
             ->set('product_name', 'Test Serum')
             ->set('product_description', 'Vitamin C serum, 299 pesos')
+            ->set('sp.STORE_NAME', 'MyShop')
+            ->set('sp.PRODUCT_PRICE', 'P299')
+            ->set('sp.PROMO', 'Buy 1 Take 1')
             ->call('generate')
             ->assertSet('error', fn ($e) => str_contains($e, 'OpenAI API key'));
+    }
+
+    public function test_generate_requires_shop_name_price_and_promo(): void
+    {
+        $user = $this->approvedUser();
+
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->set('product_name', 'Test')
+            ->set('product_description', 'A description')
+            ->set('sp.STORE_NAME', '')
+            ->set('sp.PRODUCT_PRICE', '')
+            ->set('sp.PROMO', '')
+            ->call('generate')
+            ->assertHasErrors(['sp.STORE_NAME', 'sp.PRODUCT_PRICE', 'sp.PROMO']);
     }
 
     public function test_user_can_save_sales_prompt_defaults(): void
@@ -142,6 +159,9 @@ class Phase2Test extends TestCase
         Livewire::actingAs($user)->test(AdCopyGenerator::class)
             ->set('product_name', 'Test Serum')
             ->set('product_description', 'Vitamin C serum, 299 pesos')
+            ->set('sp.STORE_NAME', 'MyShop')
+            ->set('sp.PRODUCT_PRICE', 'P299')
+            ->set('sp.PROMO', 'Buy 1 Take 1')
             ->call('generate')
             ->assertSet('error', fn ($e) => str_contains($e, 'daily limit'));
     }

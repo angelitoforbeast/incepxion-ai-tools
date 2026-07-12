@@ -44,34 +44,52 @@ class AdCopyGenerator extends Component
 
     public function mount(): void
     {
-        $this->sp = $this->defaultSp();
+        $this->applyDefaults();
     }
 
-    /** System defaults (COD, delivery time) merged with the user's own saved defaults. */
-    private function defaultSp(): array
+    /** Apply system defaults (COD, delivery) + the user's saved defaults to ALL inputs. */
+    private function applyDefaults(): void
     {
         $sp = array_fill_keys(array_keys(\App\Services\SalesPromptService::FIELDS), '');
         $sp = array_merge($sp, \App\Services\SalesPromptService::DEFAULTS);
 
         $saved = auth()->user()->sp_defaults;
         if (is_array($saved)) {
-            $sp = array_merge($sp, $saved);
+            if (isset($saved['sp']) && is_array($saved['sp'])) {
+                $sp = array_merge($sp, $saved['sp']);
+            }
+            $this->product_name        = $saved['product_name'] ?? $this->product_name;
+            $this->product_description = $saved['product_description'] ?? $this->product_description;
+            $this->audience            = $saved['audience'] ?? $this->audience;
+            $this->language            = $saved['language'] ?? $this->language;
+            $this->tone                = $saved['tone'] ?? $this->tone;
+            $this->creativity          = $saved['creativity'] ?? $this->creativity;
+            $this->variants            = $saved['variants'] ?? $this->variants;
         }
 
-        return $sp;
+        $this->sp = $sp;
     }
 
-    /** Save the current sales-prompt field values as this user's defaults. */
+    /** Save ALL current inputs as this user's defaults. */
     public function saveDefaults(): void
     {
-        auth()->user()->update(['sp_defaults' => $this->sp]);
-        session()->flash('sp-msg', 'Saved as your defaults.');
+        auth()->user()->update(['sp_defaults' => [
+            'product_name'        => $this->product_name,
+            'product_description' => $this->product_description,
+            'audience'            => $this->audience,
+            'language'            => $this->language,
+            'tone'                => $this->tone,
+            'creativity'          => $this->creativity,
+            'variants'            => $this->variants,
+            'sp'                  => $this->sp,
+        ]]);
+        session()->flash('sp-msg', 'Saved all inputs as your defaults.');
     }
 
-    /** Reset the fields back to your saved defaults (or the system defaults). */
+    /** Reset all inputs back to your saved defaults (or the system defaults). */
     public function resetDefaults(): void
     {
-        $this->sp = $this->defaultSp();
+        $this->applyDefaults();
         session()->flash('sp-msg', 'Reset to your defaults.');
     }
 

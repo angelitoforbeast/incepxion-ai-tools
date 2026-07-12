@@ -4,37 +4,49 @@
     @include('partials.admin-nav')
 
     <div class="mb-6">
-        <h2 class="text-lg font-semibold text-slate-900">Data Logs</h2>
-        <p class="text-sm text-slate-500">Every generation — inputs, outputs, and what users copied.</p>
+        <h2 class="text-lg font-semibold text-slate-900">Ad Copy Generation History</h2>
+        <p class="text-sm text-slate-500">Every generation — inputs, outputs, and what users copied (highlighted in green).</p>
     </div>
 
     <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-slate-200 text-sm">
             <thead class="bg-slate-50">
                 <tr class="text-left text-xs uppercase tracking-wide text-slate-400">
+                    <th class="px-4 py-3 font-semibold">When</th>
                     <th class="px-4 py-3 font-semibold">User</th>
                     <th class="px-4 py-3 font-semibold">Product</th>
-                    <th class="px-4 py-3 font-semibold">Status</th>
+                    <th class="px-4 py-3 font-semibold">Model</th>
+                    <th class="px-4 py-3 font-semibold">Variants</th>
                     <th class="px-4 py-3 font-semibold">Copied</th>
-                    <th class="px-4 py-3 font-semibold">Tokens</th>
-                    <th class="px-4 py-3 font-semibold">When</th>
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($logs as $log)
+                    @php
+                        $output = $log->output ?? [];
+                        $variants = is_array($output) ? ($output['variants'] ?? (array_is_list($output) ? $output : [])) : [];
+                        $salesPrompt = is_array($output) ? ($output['sales_prompt'] ?? null) : null;
+                        $copies = collect($log->copies ?? []);
+                        $isCopied = fn ($vi, $field) => $copies->contains(fn ($c) => ($c['variant'] ?? null) === $vi && ($c['field'] ?? null) === $field);
+                        $reqCount = data_get($log->input, 'variants');
+                    @endphp
                     <tr class="hover:bg-slate-50 align-top">
+                        <td class="px-4 py-3 text-slate-500 whitespace-nowrap">{{ $log->created_at->format('M d, Y g:i A') }}</td>
                         <td class="px-4 py-3">
                             <div class="font-medium text-slate-800">{{ $log->user?->name ?? '—' }}</div>
                             <div class="text-xs text-slate-400">{{ $log->user?->email }}</div>
                         </td>
                         <td class="px-4 py-3 text-slate-700">{{ data_get($log->input, 'product_name', '—') }}</td>
+                        <td class="px-4 py-3"><span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-mono text-slate-600">{{ $log->model ?? '—' }}</span></td>
+                        <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">req: {{ $reqCount ?? '—' }}<br>got: {{ count($variants) }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $log->status === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">{{ ucfirst($log->status) }}</span>
+                            @if ($copies->count())
+                                <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">{{ $copies->count() }} copied</span>
+                            @else
+                                <span class="text-xs text-slate-400">—</span>
+                            @endif
                         </td>
-                        <td class="px-4 py-3 text-slate-600">{{ is_array($log->copies) ? count($log->copies) : 0 }}</td>
-                        <td class="px-4 py-3 text-slate-500">{{ $log->input_tokens + $log->output_tokens }}</td>
-                        <td class="px-4 py-3 text-slate-500 whitespace-nowrap">{{ $log->created_at->diffForHumans() }}</td>
                         <td class="px-4 py-3 text-right">
                             <button wire:click="toggle({{ $log->id }})" class="text-xs font-semibold text-indigo-600 hover:underline">
                                 {{ $expanded === $log->id ? 'Hide' : 'View' }}
@@ -44,19 +56,48 @@
                     @if ($expanded === $log->id)
                         <tr class="bg-slate-50">
                             <td colspan="7" class="px-4 py-4">
-                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
-                                    <div>
-                                        <div class="font-semibold text-slate-600 mb-1">Input</div>
-                                        <pre class="whitespace-pre-wrap break-words rounded-lg bg-white border border-slate-200 p-3 max-h-64 overflow-auto">{{ json_encode($log->input, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
-                                    </div>
-                                    <div>
-                                        <div class="font-semibold text-slate-600 mb-1">Output</div>
-                                        <pre class="whitespace-pre-wrap break-words rounded-lg bg-white border border-slate-200 p-3 max-h-64 overflow-auto">{{ json_encode($log->output, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
-                                    </div>
-                                    <div>
-                                        <div class="font-semibold text-slate-600 mb-1">Copied</div>
-                                        <pre class="whitespace-pre-wrap break-words rounded-lg bg-white border border-slate-200 p-3 max-h-64 overflow-auto">{{ $log->copies ? json_encode($log->copies, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : 'None' }}</pre>
-                                    </div>
+                                @if ($log->status !== 'success')
+                                    <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">Error: {{ $log->error }}</div>
+                                @endif
+
+                                <div class="space-y-3">
+                                    @foreach ($variants as $vi => $v)
+                                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                            <div class="text-xs font-bold text-indigo-600 mb-3">VARIANT {{ $vi + 1 }}@if (! empty($v['angle'])) · <span class="text-teal-600">{{ $v['angle'] }}</span>@endif</div>
+                                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 text-sm">
+                                                <div>
+                                                    <div class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Primary Text</div>
+                                                    <div class="mt-1 rounded-md px-2 py-1.5 whitespace-pre-wrap {{ $isCopied($vi, 'primary_text') ? 'bg-emerald-100 ring-1 ring-emerald-300' : 'bg-slate-50' }}">{{ $v['primary_text'] ?? '' }}</div>
+                                                    <div class="mt-3 text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Headline</div>
+                                                    <div class="mt-1 rounded-md px-2 py-1.5 font-semibold {{ $isCopied($vi, 'headline') ? 'bg-emerald-100 ring-1 ring-emerald-300' : 'bg-slate-50' }}">{{ $v['headline'] ?? '' }}</div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Messaging Template</div>
+                                                    <div class="mt-1 rounded-md px-2 py-1.5 whitespace-pre-wrap {{ $isCopied($vi, 'messaging_template') ? 'bg-emerald-100 ring-1 ring-emerald-300' : 'bg-slate-50' }}">{{ $v['messaging_template'] ?? '' }}</div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Quick Replies</div>
+                                                    <div class="mt-1 flex flex-col gap-1.5">
+                                                        @foreach ($v['quick_replies'] ?? [] as $qr)
+                                                            <span class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{{ $qr }}</span>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                    @if ($salesPrompt)
+                                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                            <div class="text-xs font-bold text-indigo-600 mb-2">🤖 BOTCAKE SALES PROMPT @if ($isCopied(-1, 'sales_prompt'))<span class="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700">copied</span>@endif</div>
+                                            <pre class="whitespace-pre-wrap break-words text-xs rounded-md p-2 max-h-72 overflow-auto {{ $isCopied(-1, 'sales_prompt') ? 'bg-emerald-100 ring-1 ring-emerald-300' : 'bg-slate-50' }}">{{ $salesPrompt }}</pre>
+                                        </div>
+                                    @endif
+
+                                    <details class="text-xs">
+                                        <summary class="cursor-pointer text-slate-500 font-medium">Raw input</summary>
+                                        <pre class="mt-2 whitespace-pre-wrap break-words rounded bg-white border border-slate-200 p-3 max-h-56 overflow-auto">{{ json_encode($log->input, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                                    </details>
                                 </div>
                             </td>
                         </tr>

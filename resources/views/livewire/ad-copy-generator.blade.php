@@ -26,6 +26,17 @@
 
             <!-- Form -->
             <form wire:submit="generate" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <span class="text-xs font-medium text-gray-400">Your inputs</span>
+                    <div class="flex items-center gap-2">
+                        <button type="button" wire:click="saveDefaults" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">Save as default</button>
+                        <span class="text-gray-300">·</span>
+                        <button type="button" wire:click="resetDefaults" class="text-[11px] font-semibold text-gray-500 hover:text-gray-700">Reset</button>
+                    </div>
+                </div>
+                @if (session('sp-msg'))
+                    <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
+                @endif
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
                     <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum"
@@ -75,19 +86,8 @@
                     <input type="range" wire:model="creativity" min="0" max="1" step="0.1" class="w-full accent-indigo-600">
                 </div>
 
-                <!-- BotCake sales-prompt placeholder details (always visible) -->
+                <!-- Sales-prompt placeholder details (always visible) -->
                 <div class="border-t border-gray-100 pt-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <p class="text-sm font-semibold text-gray-700">🤖 Sales Prompt details (BotCake)</p>
-                        <div class="flex items-center gap-2">
-                            <button type="button" wire:click="saveDefaults" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">Save as default</button>
-                            <span class="text-gray-300">·</span>
-                            <button type="button" wire:click="resetDefaults" class="text-[11px] font-semibold text-gray-500 hover:text-gray-700">Reset</button>
-                        </div>
-                    </div>
-                    @if (session('sp-msg'))
-                        <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="mb-2 text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
-                    @endif
                     <div class="space-y-3">
                         @php
                             $spFields = ['STORE_NAME','PRODUCT_FEATURES','PRODUCT_PRICE','PROMO','PACKAGE_CONTENTS','PACKAGE_SUMMARY','UNIT_NAME','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];

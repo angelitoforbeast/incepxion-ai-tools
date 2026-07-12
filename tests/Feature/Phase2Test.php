@@ -80,20 +80,24 @@ class Phase2Test extends TestCase
         Livewire::actingAs($user)->test(AdCopyGenerator::class)
             ->set('sp.STORE_NAME', 'MyShop')
             ->set('sp.PAYMENT_METHOD', 'GCash')
+            ->set('tone', 'Bold')
             ->call('saveDefaults');
 
-        $this->assertSame('MyShop', $user->fresh()->sp_defaults['STORE_NAME']);
-        $this->assertSame('GCash', $user->fresh()->sp_defaults['PAYMENT_METHOD']);
+        $saved = $user->fresh()->sp_defaults;
+        $this->assertSame('MyShop', $saved['sp']['STORE_NAME']);
+        $this->assertSame('GCash', $saved['sp']['PAYMENT_METHOD']);
+        $this->assertSame('Bold', $saved['tone']);
     }
 
     public function test_system_and_saved_defaults_apply_on_mount(): void
     {
         $user = $this->approvedUser();
-        $user->update(['sp_defaults' => ['STORE_NAME' => 'SavedShop']]);
+        $user->update(['sp_defaults' => ['tone' => 'Bold', 'sp' => ['STORE_NAME' => 'SavedShop']]]);
 
         Livewire::actingAs($user)->test(AdCopyGenerator::class)
             ->assertSet('sp.STORE_NAME', 'SavedShop')      // user's saved default
-            ->assertSet('sp.PAYMENT_METHOD', 'COD');       // system default
+            ->assertSet('sp.PAYMENT_METHOD', 'COD')        // system default
+            ->assertSet('tone', 'Bold');                   // saved ad-field default
     }
 
     public function test_sales_prompt_service_fills_placeholders(): void

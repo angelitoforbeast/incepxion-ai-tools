@@ -40,6 +40,25 @@ Format each on its own line starting with "✅ ". Keep each line short and benef
 Do not invent specs that aren't implied by the description.
 FP;
 
+    /** Default instruction for the "Main Flow" opening auto-reply. Admin-editable. */
+    public const DEFAULT_MAINFLOW_PROMPT = <<<'MF'
+Write ONE attention-grabbing OPENING message that the sales bot sends as its FIRST reply
+to any customer who messages. Make it a high-converting Filipino Facebook Messenger promo
+message. Structure it like this:
+
+- Start with a short bold hook header (e.g. "SPECIAL PROMO!!").
+- Show the regular price CROSSED OUT using unicode strikethrough characters, then the PROMO
+  PRICE clearly highlighted below it. If no regular price is given, invent a believable higher
+  regular price (about 1.5x-2x the promo price).
+- One punchy line about the product's biggest benefit or hook.
+- List the key benefits as a NUMBERED list with emojis (1️⃣, 2️⃣, 3️⃣ ...), each on its own line,
+  short and benefit-driven (ALL CAPS keywords are okay).
+- End with a strong closing hook or soft call to action.
+
+Use real line breaks between lines. Use emojis naturally. Write in {language}. Output plain
+text only — never JSON or code.
+MF;
+
     /**
      * Generate Facebook ad copy variants using the user's own OpenAI key.
      *
@@ -68,6 +87,14 @@ FP;
         $featuresPrompt = trim($input['features_prompt'] ?? '') ?: self::DEFAULT_FEATURES_PROMPT;
         $system .= "\n\n---\n\nAdditionally, produce a \"product_features\" string:\n".$featuresPrompt;
 
+        // Main Flow (opening auto-reply) instruction (admin-editable).
+        $mainflowPrompt = trim($input['mainflow_prompt'] ?? '') ?: self::DEFAULT_MAINFLOW_PROMPT;
+        $mainflowPrompt = str_replace('{language}', $language, $mainflowPrompt);
+        $system .= "\n\n---\n\nAlso produce a \"main_flow\" string:\n".$mainflowPrompt;
+
+        $price = trim($input['price'] ?? '');
+        $promo = trim($input['promo'] ?? '');
+
         $userPrompt = <<<TXT
 Create {$count} completely different Facebook ad copy variants for this product.
 
@@ -75,14 +102,17 @@ Product name: {$input['product_name']}
 Product description: {$input['product_description']}
 Target audience: {$audience}
 Tone: {$tone}
+Promo price: {$price}
+Current promo/offer: {$promo}
 TXT;
 
         $schema = [
             'type'                 => 'object',
             'additionalProperties' => false,
-            'required'             => ['variants', 'product_features'],
+            'required'             => ['variants', 'product_features', 'main_flow'],
             'properties'           => [
                 'product_features' => ['type' => 'string'],
+                'main_flow'        => ['type' => 'string'],
                 'variants' => [
                     'type'  => 'array',
                     'items' => [
@@ -136,6 +166,7 @@ TXT;
         return [
             'variants'         => array_values($parsed['variants']),
             'product_features' => $parsed['product_features'] ?? '',
+            'main_flow'        => $parsed['main_flow'] ?? '',
             'model'            => $model,
             'input_tokens'     => $response->usage->promptTokens ?? 0,
             'output_tokens'    => $response->usage->completionTokens ?? 0,

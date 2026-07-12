@@ -26,6 +26,7 @@
                     @php
                         $output = $log->output ?? [];
                         $variants = is_array($output) ? ($output['variants'] ?? (array_is_list($output) ? $output : [])) : [];
+                        $mainFlow = is_array($output) ? ($output['main_flow'] ?? null) : null;
                         $salesPrompt = is_array($output) ? ($output['sales_prompt'] ?? null) : null;
                         $afterSalesPrompt = is_array($output) ? ($output['aftersales_prompt'] ?? null) : null;
                         $copies = collect($log->copies ?? []);
@@ -62,6 +63,12 @@
                                 @endif
 
                                 <div class="space-y-3">
+                                    @if ($mainFlow)
+                                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                            <div class="text-xs font-bold text-indigo-600 mb-2">📢 MAIN FLOW @if ($isCopied(-1, 'main_flow'))<span class="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700">copied</span>@endif</div>
+                                            <pre class="whitespace-pre-wrap break-words text-xs rounded-md p-2 {{ $isCopied(-1, 'main_flow') ? 'bg-emerald-100 ring-1 ring-emerald-300' : 'bg-slate-50' }}">{{ $mainFlow }}</pre>
+                                        </div>
+                                    @endif
                                     @foreach ($variants as $vi => $v)
                                         <div class="rounded-lg border border-slate-200 bg-white p-4">
                                             <div class="text-xs font-bold text-indigo-600 mb-3">VARIANT {{ $vi + 1 }}@if (! empty($v['angle'])) · <span class="text-teal-600">{{ $v['angle'] }}</span>@endif</div>

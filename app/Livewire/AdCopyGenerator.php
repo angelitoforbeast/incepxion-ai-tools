@@ -40,6 +40,7 @@ class AdCopyGenerator extends Component
 
     /** BotCake sales-prompt placeholder values, keyed by placeholder name. */
     public array $sp = [];
+    public ?string $mainFlow = null;
     public ?string $generatedPrompt = null;
     public ?string $generatedAfterSalesPrompt = null;
 
@@ -170,9 +171,13 @@ class AdCopyGenerator extends Component
                 'model'               => $tool->config['default_model'] ?? 'gpt-4o',
                 'system_prompt'       => $tool->config['system_prompt'] ?? null,
                 'features_prompt'     => $tool->config['features_prompt'] ?? null,
+                'mainflow_prompt'     => $tool->config['mainflow_prompt'] ?? null,
+                'price'               => $this->sp['PRODUCT_PRICE'] ?? '',
+                'promo'               => $this->sp['PROMO'] ?? '',
             ]);
 
             $this->results = $out['variants'];
+            $this->mainFlow = $out['main_flow'] ?? null;
 
             // AI-generated Key Features fill the field if the user left it blank (still editable).
             if (trim($this->sp['PRODUCT_FEATURES'] ?? '') === '') {
@@ -203,7 +208,7 @@ class AdCopyGenerator extends Component
                     'variants'            => $this->variants,
                     'sales_prompt_fields' => $values,
                 ],
-                'output'        => ['variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt, 'aftersales_prompt' => $this->generatedAfterSalesPrompt],
+                'output'        => ['main_flow' => $this->mainFlow, 'variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt, 'aftersales_prompt' => $this->generatedAfterSalesPrompt],
                 'input_tokens'  => $out['input_tokens'],
                 'output_tokens' => $out['output_tokens'],
                 'status'        => 'success',
@@ -306,7 +311,9 @@ class AdCopyGenerator extends Component
             return;
         }
 
-        if ($field === 'sales_prompt') {
+        if ($field === 'main_flow') {
+            $text = $this->mainFlow;
+        } elseif ($field === 'sales_prompt') {
             $text = $this->generatedPrompt;
         } elseif ($field === 'aftersales_prompt') {
             $text = $this->generatedAfterSalesPrompt;

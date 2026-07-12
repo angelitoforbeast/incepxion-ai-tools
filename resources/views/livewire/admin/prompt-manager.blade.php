@@ -44,6 +44,14 @@
         </div>
 
         <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Main Flow Prompt <span class="text-xs font-normal text-slate-400">(the bot's first auto-reply message)</span></label>
+            <textarea wire:model="mainflowPrompt" rows="8"
+                      class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono leading-relaxed"></textarea>
+            @error('mainflowPrompt') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            <p class="mt-1 text-xs text-slate-400">Controls the promo-style opening message. Use <code class="bg-slate-200 px-1 rounded">{language}</code> for the chosen language.</p>
+        </div>
+
+        <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">BotCake Sales Prompt Template</label>
             <textarea wire:model="botcakeTemplate" rows="14"
                       class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono leading-relaxed"></textarea>

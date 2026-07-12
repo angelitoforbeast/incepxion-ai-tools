@@ -170,6 +170,17 @@
                 </div>
 
                 <div wire:loading.remove wire:target="generate" class="space-y-4">
+                    @if ($mainFlow)
+                        <div class="bg-white rounded-xl shadow-sm border-2 border-indigo-200 p-5" x-data>
+                            <div class="flex items-center justify-between mb-2">
+                                <strong class="text-indigo-700">📢 Main Flow — first auto-reply</strong>
+                                <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                        @click="navigator.clipboard.writeText($refs.mf.innerText); $wire.recordCopy(-1, 'main_flow'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
+                            </div>
+                            <div x-ref="mf" class="select-none rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2.5 text-sm text-gray-800 whitespace-pre-wrap break-words">{{ $mainFlow }}</div>
+                            <p class="mt-2 text-xs text-gray-400">The bot sends this as its first reply to any chat.</p>
+                        </div>
+                    @endif
                     @forelse ($results as $i => $v)
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
                             <div class="flex items-center justify-between mb-3">

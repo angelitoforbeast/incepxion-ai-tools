@@ -68,6 +68,19 @@
                 </div>
 
                 <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Key Features <span class="ml-1 text-[10px] bg-indigo-100 text-indigo-700 rounded px-1.5 py-0.5">AI</span></label>
+                        <button type="button" wire:click="generateFeatures" wire:loading.attr="disabled" wire:target="generateFeatures"
+                                class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 disabled:opacity-50">
+                            <span wire:loading.remove wire:target="generateFeatures">✨ Generate with AI</span>
+                            <span wire:loading wire:target="generateFeatures">Generating…</span>
+                        </button>
+                    </div>
+                    <textarea wire:model="sp.PRODUCT_FEATURES" rows="3" placeholder="✅ Feature 1&#10;✅ Feature 2&#10;✅ Feature 3"
+                              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Target Audience <span class="text-gray-400">(optional)</span></label>
                     <input type="text" wire:model="audience" placeholder="e.g. Moms 25-40, budget-conscious"
                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
@@ -85,7 +98,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Variants</label>
                         <select wire:model="variants" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                            @for ($i = 1; $i <= 5; $i++)<option value="{{ $i }}">{{ $i }}</option>@endfor
+                            <option value="1">1</option>
                         </select>
                     </div>
                 </div>
@@ -106,9 +119,9 @@
                 <div class="border-t border-gray-100 pt-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         @php
-                            $spFields = ['STORE_NAME','PRODUCT_PRICE','PROMO','PRODUCT_FEATURES','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];
-                            $spMulti = ['PRODUCT_FEATURES','PROMO','LEGITIMACY_INFO','ORDER_FIELDS'];
-                            $spFull = ['PRODUCT_FEATURES','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spFields = ['STORE_NAME','PRODUCT_PRICE','PROMO','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spMulti = ['PROMO','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spFull = ['LEGITIMACY_INFO','ORDER_FIELDS'];
                         @endphp
                         @foreach ($spFields as $k)
                             <div class="{{ in_array($k, $spFull) ? 'sm:col-span-2' : '' }}">

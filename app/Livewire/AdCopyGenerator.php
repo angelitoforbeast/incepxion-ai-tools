@@ -108,7 +108,7 @@ class AdCopyGenerator extends Component
         $this->audience            = 'Mga nanay at pamilya, health-conscious';
         $this->language            = 'Taglish';
         $this->tone                = 'Friendly at trustworthy';
-        $this->variants            = 3;
+        $this->variants            = 1;
         $this->creativity          = 0.7;
 
         $this->sp = array_merge($this->sp, [
@@ -118,7 +118,7 @@ class AdCopyGenerator extends Component
             'PRODUCT_FEATURES' => "✅ Kills 99.9% of germs\n✅ Long-lasting protection\n✅ Gentle on skin\n✅ Trusted brand",
             'DELIVERY_TIME'    => '3 to 6 days Luzon, 6 to 10 days Visayas and Mindanao',
             'PAYMENT_METHOD'   => 'COD',
-            'LEGITIMACY_INFO'  => 'Registered DTI seller kami na may libo-libong satisfied customers at verified reviews. 100% legit at safe mag-order.',
+            'LEGITIMACY_INFO'  => 'Registered kami sa DTI (DTI Business Name Registration No. 1234567) at may Mayor\'s / Business Permit. May libo-libong satisfied customers at verified reviews — 100% legit at safe mag-order.',
             'ORDER_FIELDS'     => '',
         ]);
 

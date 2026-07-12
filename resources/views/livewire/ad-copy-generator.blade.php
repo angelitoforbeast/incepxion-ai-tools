@@ -1,6 +1,6 @@
-<div>
-    <!-- Sticky header -->
-    <div class="lg:sticky lg:top-0 lg:z-20 bg-slate-50/95 lg:backdrop-blur border-b border-slate-100">
+<div class="lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+    <!-- Header -->
+    <div class="flex-shrink-0 bg-slate-50 border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">📣 AI Ad Copy Generator</h1>
@@ -12,20 +12,20 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
 
         @unless ($hasKey)
-            <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div class="mb-4 flex-shrink-0 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 ⚠️ You have no OpenAI API key yet.
                 <a href="{{ route('settings') }}" class="font-semibold underline">Add it in Settings</a>
                 before generating.
             </div>
         @endunless
 
-        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] gap-6 items-start">
+        <div class="flex flex-col lg:flex-row gap-6 lg:flex-1 lg:min-h-0">
 
             <!-- Form -->
-            <form wire:submit="generate" class="min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+            <form wire:submit="generate" class="lg:w-[480px] lg:flex-shrink-0 lg:overflow-y-auto lg:min-h-0 min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
                     <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum"
@@ -106,30 +106,31 @@
                     </div>
                 </div>
 
-                @if (session('sp-msg'))
-                    <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
-                @endif
-
-                <div class="flex items-center gap-2 pt-1">
-                    <button type="submit"
-                            class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-                            wire:loading.attr="disabled" wire:target="generate">
-                        <svg wire:loading wire:target="generate" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                        </svg>
-                        <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
-                        <span wire:loading wire:target="generate">Generating...</span>
-                    </button>
-                    <button type="button" wire:click="saveDefaults" wire:loading.attr="disabled" wire:target="generate"
-                            class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 whitespace-nowrap">Save default</button>
-                    <button type="button" wire:click="resetDefaults" wire:loading.attr="disabled" wire:target="generate"
-                            class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50">Reset</button>
+                <div class="lg:sticky lg:bottom-0 bg-white pt-3 -mx-6 px-6 -mb-6 pb-6 border-t border-gray-100 space-y-2">
+                    @if (session('sp-msg'))
+                        <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
+                    @endif
+                    <div class="flex items-center gap-2">
+                        <button type="submit"
+                                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                                wire:loading.attr="disabled" wire:target="generate">
+                            <svg wire:loading wire:target="generate" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
+                            <span wire:loading wire:target="generate">Generating...</span>
+                        </button>
+                        <button type="button" wire:click="saveDefaults" wire:loading.attr="disabled" wire:target="generate"
+                                class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 whitespace-nowrap">Save default</button>
+                        <button type="button" wire:click="resetDefaults" wire:loading.attr="disabled" wire:target="generate"
+                                class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50">Reset</button>
+                    </div>
                 </div>
             </form>
 
             <!-- Results -->
-            <div class="min-w-0 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+            <div class="min-w-0 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
                 @if ($error)
                     <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">⚠️ {{ $error }}</div>
                 @endif

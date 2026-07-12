@@ -363,8 +363,8 @@ TXT;
         return trim($response->choices[0]->message->content ?? '');
     }
 
-    /** Generate a promo image. Returns raw PNG bytes. Model is configurable. */
-    public function generateImage(User $user, string $prompt, string $model = 'gpt-image-1'): string
+    /** Generate a promo image (resized to a square of $size px). Returns raw PNG bytes. */
+    public function generateImage(User $user, string $prompt, string $model = 'gpt-image-1', int $size = 480): string
     {
         $keyRow = $user->apiKeyFor('openai');
         if (! $keyRow) {
@@ -387,17 +387,41 @@ TXT;
         }
 
         // gpt-image-1 returns base64; dall-e models return a temporary URL.
+        $bytes = '';
         $b64 = $data->b64_json ?? '';
         if ($b64 !== '') {
-            return base64_decode($b64);
+            $bytes = base64_decode($b64);
+        } elseif (($url = $data->url ?? '') !== '') {
+            $bytes = \Illuminate\Support\Facades\Http::timeout(45)->get($url)->body();
         }
 
-        $url = $data->url ?? '';
-        if ($url !== '') {
-            return \Illuminate\Support\Facades\Http::timeout(45)->get($url)->body();
-        }
+        return $bytes === '' ? '' : $this->resizeSquare($bytes, $size);
+    }
 
-        return '';
+    /** Center-crop to a square and resize to the given pixel size (via GD). */
+    public function resizeSquare(string $bytes, int $size): string
+    {
+        if (! function_exists('imagecreatefromstring')) {
+            return $bytes;
+        }
+        $src = @imagecreatefromstring($bytes);
+        if (! $src) {
+            return $bytes;
+        }
+        $sw = imagesx($src);
+        $sh = imagesy($src);
+        $side = min($sw, $sh);
+        $x = (int) (($sw - $side) / 2);
+        $y = (int) (($sh - $side) / 2);
+        $dst = imagecreatetruecolor($size, $size);
+        imagecopyresampled($dst, $src, 0, 0, $x, $y, $size, $size, $side, $side);
+        ob_start();
+        imagepng($dst);
+        $out = ob_get_clean();
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $out ?: $bytes;
     }
 
     /**

@@ -48,6 +48,8 @@ class AdCopyGenerator extends Component
     public ?string $mainFlow = null;
     public ?string $promoImageUrl = null;
     public string $imageSize = '480'; // square px — best for Messenger
+    public bool $imageGenerating = false;
+    public ?string $imageToken = null;
 
     /** Messenger-friendly square output sizes. */
     public const IMAGE_SIZES = ['480', '640', '800', '1024'];
@@ -389,7 +391,8 @@ class AdCopyGenerator extends Component
     }
 
     /** Generate a promo image for the Main Flow (DALL·E 3). */
-    public function generateImage(AdCopyService $service): void
+    /** Kick off promo image generation in the BACKGROUND (does not block other buttons). */
+    public function generateImage(): void
     {
         $this->validate([
             'product_name'        => ['required', 'string', 'max:200'],
@@ -413,46 +416,37 @@ class AdCopyGenerator extends Component
             .'Modern e-commerce sale-poster style: show the product clearly and attractively, bright vibrant colors, a bold PROMO/SALE badge, clean LARGE READABLE text, professional layout. High quality, realistic product.';
 
         $tool = Tool::where('slug', 'ad-copy-generator')->first();
+        $size = in_array($this->imageSize, self::IMAGE_SIZES, true) ? (int) $this->imageSize : 480;
 
-        try {
-            $bytes = $service->generateImage($user, $prompt, $tool->config['image_model'] ?? 'gpt-image-1');
-            if ($bytes !== '') {
-                $size = in_array($this->imageSize, self::IMAGE_SIZES, true) ? (int) $this->imageSize : 480;
-                $bytes = $this->resizeSquare($bytes, $size);
-                $name = 'promo-images/'.\Illuminate\Support\Str::uuid()->toString().'.png';
-                \Illuminate\Support\Facades\Storage::disk('public')->put($name, $bytes);
-                $this->promoImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($name);
-                $this->error = null;
-            }
-        } catch (\Throwable $e) {
-            $this->error = 'Image error: '.$e->getMessage();
-        }
+        $this->imageToken = \Illuminate\Support\Str::uuid()->toString();
+        $this->promoImageUrl = null;
+        $this->imageGenerating = true;
+        $this->error = null;
+
+        \App\Jobs\GeneratePromoImageJob::dispatch(
+            $user->id, $prompt, $tool->config['image_model'] ?? 'gpt-image-1', $size, $this->imageToken
+        );
     }
 
-    /** Center-crop to a square and resize to the given pixel size (via GD). */
-    private function resizeSquare(string $bytes, int $size): string
+    /** Polled while an image is generating — picks up the finished image from cache. */
+    public function checkImage(): void
     {
-        if (! function_exists('imagecreatefromstring')) {
-            return $bytes;
+        if (! $this->imageGenerating || ! $this->imageToken) {
+            return;
         }
-        $src = @imagecreatefromstring($bytes);
-        if (! $src) {
-            return $bytes;
-        }
-        $sw = imagesx($src);
-        $sh = imagesy($src);
-        $side = min($sw, $sh);
-        $x = (int) (($sw - $side) / 2);
-        $y = (int) (($sh - $side) / 2);
-        $dst = imagecreatetruecolor($size, $size);
-        imagecopyresampled($dst, $src, 0, 0, $x, $y, $size, $size, $side, $side);
-        ob_start();
-        imagepng($dst);
-        $out = ob_get_clean();
-        imagedestroy($src);
-        imagedestroy($dst);
 
-        return $out ?: $bytes;
+        $result = \Illuminate\Support\Facades\Cache::get("promo-image:{$this->imageToken}");
+        if (! $result) {
+            return;
+        }
+
+        if (($result['status'] ?? '') === 'done') {
+            $this->promoImageUrl = $result['url'];
+            $this->imageGenerating = false;
+        } elseif (($result['status'] ?? '') === 'error') {
+            $this->error = 'Image error: '.($result['error'] ?? 'unknown');
+            $this->imageGenerating = false;
+        }
     }
 
     public function testSales(AdCopyService $service): void

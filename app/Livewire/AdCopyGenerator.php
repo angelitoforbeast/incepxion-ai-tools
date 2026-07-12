@@ -299,6 +299,9 @@ class AdCopyGenerator extends Component
             if (! empty($result['product_description'])) {
                 $this->product_description = $result['product_description'];
             }
+            if (! empty($result['product_features'])) {
+                $this->sp['PRODUCT_FEATURES'] = $result['product_features'];
+            }
             $this->error = null;
         } catch (\Throwable $e) {
             $this->error = 'Image analysis error: '.$e->getMessage();

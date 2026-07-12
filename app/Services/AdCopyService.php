@@ -255,9 +255,9 @@ TXT;
     }
 
     /**
-     * Analyze a product image (data URL) and extract product name + description.
+     * Analyze a product image (data URL) and extract product name, description, and key features.
      *
-     * @return array{product_name: string, product_description: string}
+     * @return array{product_name: string, product_description: string, product_features: string}
      */
     public function analyzeProductImage(User $user, string $imageDataUrl, string $model = 'gpt-4o'): array
     {
@@ -277,10 +277,11 @@ TXT;
                     'schema' => [
                         'type'                 => 'object',
                         'additionalProperties' => false,
-                        'required'             => ['product_name', 'product_description'],
+                        'required'             => ['product_name', 'product_description', 'product_features'],
                         'properties'           => [
                             'product_name'        => ['type' => 'string'],
                             'product_description' => ['type' => 'string'],
+                            'product_features'    => ['type' => 'string'],
                         ],
                     ],
                 ],
@@ -288,7 +289,7 @@ TXT;
             'messages' => [[
                 'role'    => 'user',
                 'content' => [
-                    ['type' => 'text', 'text' => 'Look at this product image. Identify the product and write a short, appealing marketing description (2-4 sentences) suitable for a Facebook ad. Return only product_name and product_description.'],
+                    ['type' => 'text', 'text' => 'Look at this product image. Return: (1) product_name, (2) product_description — a short appealing marketing description (2-4 sentences) for a Facebook ad, and (3) product_features — 4-6 key features/benefits, each on its own line starting with "✅ ". Do not invent specs that are not visible or implied.'],
                     ['type' => 'image_url', 'image_url' => ['url' => $imageDataUrl]],
                 ],
             ]],
@@ -301,6 +302,7 @@ TXT;
         return [
             'product_name'        => $parsed['product_name'] ?? '',
             'product_description' => $parsed['product_description'] ?? '',
+            'product_features'    => $parsed['product_features'] ?? '',
         ];
     }
 }

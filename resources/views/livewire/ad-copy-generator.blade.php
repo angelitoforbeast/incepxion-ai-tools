@@ -22,21 +22,10 @@
             </div>
         @endunless
 
-        <div class="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] gap-6 items-start">
 
             <!-- Form -->
-            <form wire:submit="generate" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
-                <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-                    <span class="text-xs font-medium text-gray-400">Your inputs</span>
-                    <div class="flex items-center gap-2">
-                        <button type="button" wire:click="saveDefaults" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">Save as default</button>
-                        <span class="text-gray-300">·</span>
-                        <button type="button" wire:click="resetDefaults" class="text-[11px] font-semibold text-gray-500 hover:text-gray-700">Reset</button>
-                    </div>
-                </div>
-                @if (session('sp-msg'))
-                    <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
-                @endif
+            <form wire:submit="generate" class="min-w-0 bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
                     <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum"
@@ -88,13 +77,14 @@
 
                 <!-- Sales-prompt placeholder details (always visible) -->
                 <div class="border-t border-gray-100 pt-4">
-                    <div class="space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         @php
-                            $spFields = ['STORE_NAME','PRODUCT_FEATURES','PRODUCT_PRICE','PROMO','PACKAGE_CONTENTS','PACKAGE_SUMMARY','UNIT_NAME','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spFields = ['STORE_NAME','PRODUCT_PRICE','PROMO','PRODUCT_FEATURES','PACKAGE_CONTENTS','PACKAGE_SUMMARY','UNIT_NAME','DELIVERY_TIME','PAYMENT_METHOD','LEGITIMACY_INFO','ORDER_FIELDS'];
                             $spMulti = ['PRODUCT_FEATURES','PROMO','PACKAGE_CONTENTS','LEGITIMACY_INFO','ORDER_FIELDS'];
+                            $spFull = ['PRODUCT_FEATURES','LEGITIMACY_INFO','ORDER_FIELDS'];
                         @endphp
                         @foreach ($spFields as $k)
-                            <div>
+                            <div class="{{ in_array($k, $spFull) ? 'sm:col-span-2' : '' }}">
                                 <div class="flex items-center justify-between mb-1">
                                     <label class="block text-xs font-medium text-gray-600">{{ \App\Services\SalesPromptService::FIELDS[$k] }}@if (in_array($k, \App\Services\SalesPromptService::REQUIRED))<span class="text-red-500"> *</span>@endif</label>
                                     @if ($k === 'PRODUCT_FEATURES')
@@ -116,16 +106,30 @@
                     </div>
                 </div>
 
-                <button type="submit"
-                        class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                        wire:loading.attr="disabled" wire:target="generate">
-                    <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
-                    <span wire:loading wire:target="generate">Generating...</span>
-                </button>
+                @if (session('sp-msg'))
+                    <p x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 2500)" class="text-xs text-emerald-600">✓ {{ session('sp-msg') }}</p>
+                @endif
+
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="submit"
+                            class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                            wire:loading.attr="disabled" wire:target="generate">
+                        <svg wire:loading wire:target="generate" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="generate">✨ Generate Ad Copy</span>
+                        <span wire:loading wire:target="generate">Generating...</span>
+                    </button>
+                    <button type="button" wire:click="saveDefaults" wire:loading.attr="disabled" wire:target="generate"
+                            class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 whitespace-nowrap">Save default</button>
+                    <button type="button" wire:click="resetDefaults" wire:loading.attr="disabled" wire:target="generate"
+                            class="rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50">Reset</button>
+                </div>
             </form>
 
             <!-- Results -->
-            <div>
+            <div class="min-w-0">
                 @if ($error)
                     <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">⚠️ {{ $error }}</div>
                 @endif

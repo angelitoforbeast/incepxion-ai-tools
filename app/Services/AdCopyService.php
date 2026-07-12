@@ -42,21 +42,27 @@ FP;
 
     /** Default instruction for the "Main Flow" opening auto-reply. Admin-editable. */
     public const DEFAULT_MAINFLOW_PROMPT = <<<'MF'
-Write ONE attention-grabbing OPENING message that the sales bot sends as its FIRST reply
-to any customer who messages. Make it a high-converting Filipino Facebook Messenger promo
-message. Structure it like this:
+Write ONE warm, complete, high-converting OPENING message that the sales bot sends as its
+FIRST reply to any customer who messages. This is the "main flow" opening. Follow this flow:
 
-- Start with a short bold hook header (e.g. "SPECIAL PROMO!!").
-- Show the regular price CROSSED OUT using unicode strikethrough characters, then the PROMO
-  PRICE clearly highlighted below it. If no regular price is given, invent a believable higher
-  regular price (about 1.5x-2x the promo price).
-- One punchy line about the product's biggest benefit or hook.
-- List the key benefits as a NUMBERED list with emojis (1️⃣, 2️⃣, 3️⃣ ...), each on its own line,
-  short and benefit-driven (ALL CAPS keywords are okay).
-- End with a strong closing hook or soft call to action.
+1. GREETING first — a friendly, warm rapport line (e.g. "Hi po! 😊 Salamat sa pag-message!").
+2. A short attention hook about the offer (e.g. "LIMITED TIME OFFER na po ito! 🔥").
+3. PRICING — show the OLD/regular price with a REAL crossed-out line using unicode combining
+   strikethrough characters so it literally looks like this: ₱̶3̶6̶0̶ (each digit has a line
+   through it). Then, on the NEXT line, EMPHASIZE the promo price boldly in CAPS with emojis
+   (e.g. "👉 PROMO PRICE: ₱240 NA LANG! 🎉"). If no old price is given, invent a believable
+   higher one (about 1.5x the promo price).
+4. One punchy hook line about the biggest benefit.
+5. A NUMBERED list of key benefits with emojis (1️⃣, 2️⃣, 3️⃣ ...), each on its own line,
+   benefit-driven (ALL CAPS keywords are okay).
+6. Close with a strong but warm call to action (e.g. "Gusto niyo po bang mag-order? Reply lang po! 😊").
 
-Use real line breaks between lines. Use emojis naturally. Write in {language}. Output plain
-text only — never JSON or code.
+FORMATTING RULES (very important):
+- This is pasted into Facebook Messenger, which does NOT render markdown. NEVER use **asterisks**,
+  ~tildes~, backticks, or markdown of any kind. For emphasis use CAPS, emojis, and REAL unicode
+  strikethrough (combining long stroke overlay) for the old price — never tildes.
+- Use real line breaks. Make it engaging and complete — do NOT make it too short.
+- Write in {language}. Output plain text only (no JSON).
 MF;
 
     /**
@@ -220,5 +226,29 @@ TXT;
         $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
 
         return trim($response->choices[0]->message->content ?? '');
+    }
+
+    /** Generate a promo image with DALL·E 3. Returns raw PNG bytes. */
+    public function generateImage(User $user, string $prompt): string
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
+        }
+
+        $client = \OpenAI::client($keyRow->plainKey());
+        $response = $client->images()->create([
+            'model'           => 'dall-e-3',
+            'prompt'          => $prompt,
+            'n'               => 1,
+            'size'            => '1024x1024',
+            'response_format' => 'b64_json',
+        ]);
+
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+
+        $b64 = $response->data[0]->b64_json ?? '';
+
+        return $b64 ? base64_decode($b64) : '';
     }
 }

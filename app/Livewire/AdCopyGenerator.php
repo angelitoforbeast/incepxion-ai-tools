@@ -41,6 +41,7 @@ class AdCopyGenerator extends Component
     /** BotCake sales-prompt placeholder values, keyed by placeholder name. */
     public array $sp = [];
     public ?string $mainFlow = null;
+    public ?string $promoImageUrl = null;
     public ?string $generatedPrompt = null;
     public ?string $generatedAfterSalesPrompt = null;
 
@@ -260,6 +261,38 @@ class AdCopyGenerator extends Component
             $this->error = null;
         } catch (\Throwable $e) {
             $this->error = $e->getMessage();
+        }
+    }
+
+    /** Generate a promo image for the Main Flow (DALL·E 3). */
+    public function generateImage(AdCopyService $service): void
+    {
+        $this->validate([
+            'product_name'        => ['required', 'string', 'max:200'],
+            'product_description' => ['required', 'string', 'max:4000'],
+        ]);
+
+        $user = auth()->user();
+        if (! $user->apiKeyFor('openai')) {
+            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
+
+            return;
+        }
+
+        $prompt = "A vibrant, professional e-commerce promotional product photo for \"{$this->product_name}\". "
+            .trim($this->product_description).'. '
+            .'Show the product prominently and attractively with clean modern studio lighting, bright eye-catching colors, and a simple background suited for a Facebook Messenger promo. High quality, realistic. Do NOT include any text, words, letters, or watermarks in the image.';
+
+        try {
+            $bytes = $service->generateImage($user, $prompt);
+            if ($bytes !== '') {
+                $name = 'promo-images/'.\Illuminate\Support\Str::uuid()->toString().'.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($name, $bytes);
+                $this->promoImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($name);
+                $this->error = null;
+            }
+        } catch (\Throwable $e) {
+            $this->error = 'Image error: '.$e->getMessage();
         }
     }
 

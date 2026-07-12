@@ -238,9 +238,9 @@
                                 </div>
                                 <div wire:loading wire:target="testSales" class="mt-2 text-xs text-gray-400">AI is replying…</div>
                                 @if ($salesTestReply)
-                                    <div wire:loading.remove wire:target="testSales" class="mt-2 rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
+                                    <div wire:loading.remove wire:target="testSales" class="mt-2">
                                         <span class="text-[10px] uppercase tracking-wide text-indigo-400 block mb-1">Assistant reply</span>
-                                        {{ $salesTestReply }}
+                                        <div class="inline-block max-w-full rounded-2xl rounded-tl-sm bg-indigo-100 px-4 py-2.5 text-sm text-gray-800 whitespace-pre-wrap break-words">{{ $salesTestReply }}</div>
                                     </div>
                                 @endif
                             </div>
@@ -270,9 +270,9 @@
                                 </div>
                                 <div wire:loading wire:target="testAfterSales" class="mt-2 text-xs text-gray-400">AI is replying…</div>
                                 @if ($afterSalesTestReply)
-                                    <div wire:loading.remove wire:target="testAfterSales" class="mt-2 rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
+                                    <div wire:loading.remove wire:target="testAfterSales" class="mt-2">
                                         <span class="text-[10px] uppercase tracking-wide text-indigo-400 block mb-1">Assistant reply</span>
-                                        {{ $afterSalesTestReply }}
+                                        <div class="inline-block max-w-full rounded-2xl rounded-tl-sm bg-indigo-100 px-4 py-2.5 text-sm text-gray-800 whitespace-pre-wrap break-words">{{ $afterSalesTestReply }}</div>
                                     </div>
                                 @endif
                             </div>

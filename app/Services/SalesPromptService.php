@@ -15,7 +15,7 @@ class SalesPromptService
         'DELIVERY_TIME'       => 'Delivery Time',
         'PAYMENT_METHOD'      => 'Payment Method',
         'LEGITIMACY_INFO'     => 'Legitimacy Info',
-        'ORDER_FIELDS'        => 'Extra Order Fields',
+        'ORDER_FIELDS'        => 'Additional Instructions',
     ];
 
     /** Placeholder fields that must be filled before generating. */

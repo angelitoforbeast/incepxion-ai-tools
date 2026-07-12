@@ -197,8 +197,15 @@
                         <div class="bg-white rounded-xl shadow-sm border-2 border-indigo-200 p-5" x-data>
                             <div class="flex items-center justify-between mb-2">
                                 <strong class="text-indigo-700">📢 Main Flow — first auto-reply</strong>
-                                <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
-                                        @click="navigator.clipboard.writeText($refs.mf.innerText); $wire.recordCopy(-1, 'main_flow'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" wire:click="regenerateMainFlow" wire:loading.attr="disabled" wire:target="regenerateMainFlow"
+                                            title="Regenerate main flow" class="text-gray-400 hover:text-indigo-600">
+                                        <svg wire:loading.remove wire:target="regenerateMainFlow" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        <svg wire:loading wire:target="regenerateMainFlow" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                    </button>
+                                    <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                            @click="navigator.clipboard.writeText($refs.mf.innerText); $wire.recordCopy(-1, 'main_flow'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
+                                </div>
                             </div>
                             <div x-ref="mf" class="select-none rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2.5 text-sm text-gray-800 whitespace-pre-wrap break-words">{{ $mainFlow }}</div>
                             <p class="mt-2 text-xs text-gray-400">The bot sends this as its first reply to any chat.</p>
@@ -238,7 +245,16 @@
                     @forelse ($results as $i => $v)
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
                             <div class="flex items-center justify-between mb-3">
-                                <strong class="text-gray-900">Ad Creatives{{ count($results) > 1 ? ' '.($i + 1) : '' }}</strong>
+                                <div class="flex items-center gap-2">
+                                    <strong class="text-gray-900">Ad Creatives{{ count($results) > 1 ? ' '.($i + 1) : '' }}</strong>
+                                    @if ($i === 0)
+                                        <button type="button" wire:click="regenerateAdCreatives" wire:loading.attr="disabled" wire:target="regenerateAdCreatives"
+                                                title="Regenerate ad creatives" class="text-gray-400 hover:text-indigo-600">
+                                            <svg wire:loading.remove wire:target="regenerateAdCreatives" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            <svg wire:loading wire:target="regenerateAdCreatives" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                        </button>
+                                    @endif
+                                </div>
                                 <span class="text-xs font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 rounded-full px-3 py-1">{{ $v['angle'] ?? 'Ad' }}</span>
                             </div>
 

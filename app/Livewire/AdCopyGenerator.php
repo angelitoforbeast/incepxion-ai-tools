@@ -275,6 +275,75 @@ class AdCopyGenerator extends Component
         }
     }
 
+    /** Refresh ONLY the Ad Creatives (variants). */
+    public function regenerateAdCreatives(AdCopyService $service): void
+    {
+        $this->validate([
+            'product_name'        => ['required', 'string', 'max:200'],
+            'product_description' => ['required', 'string', 'max:4000'],
+        ]);
+
+        $user = auth()->user();
+        if (! $user->apiKeyFor('openai')) {
+            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
+
+            return;
+        }
+
+        $tool = Tool::where('slug', 'ad-copy-generator')->first();
+
+        try {
+            $this->results = $service->generateVariants($user, [
+                'product_name'        => $this->product_name,
+                'product_description' => $this->product_description,
+                'audience'            => $this->audience,
+                'language'            => $this->language,
+                'tone'                => $this->tone,
+                'variants'            => $this->variants,
+                'creativity'          => $this->creativity,
+                'model'               => $tool->config['default_model'] ?? 'gpt-4o',
+                'system_prompt'       => $tool->config['system_prompt'] ?? null,
+            ]);
+            $this->error = null;
+        } catch (\Throwable $e) {
+            $this->error = $e->getMessage();
+        }
+    }
+
+    /** Refresh ONLY the Main Flow message. */
+    public function regenerateMainFlow(AdCopyService $service): void
+    {
+        $this->validate([
+            'product_name'        => ['required', 'string', 'max:200'],
+            'product_description' => ['required', 'string', 'max:4000'],
+        ]);
+
+        $user = auth()->user();
+        if (! $user->apiKeyFor('openai')) {
+            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
+
+            return;
+        }
+
+        $tool = Tool::where('slug', 'ad-copy-generator')->first();
+
+        try {
+            $this->mainFlow = $service->generateMainFlowOnly($user, [
+                'product_name'        => $this->product_name,
+                'product_description' => $this->product_description,
+                'features'            => $this->sp['PRODUCT_FEATURES'] ?? '',
+                'price'               => $this->sp['PRODUCT_PRICE'] ?? '',
+                'promo'               => $this->sp['PROMO'] ?? '',
+                'language'            => $this->language,
+                'model'               => $tool->config['default_model'] ?? 'gpt-4o',
+                'mainflow_prompt'     => $tool->config['mainflow_prompt'] ?? null,
+            ]);
+            $this->error = null;
+        } catch (\Throwable $e) {
+            $this->error = $e->getMessage();
+        }
+    }
+
     /** Auto-fill Product Name + Description from an uploaded product image (GPT-4o vision). */
     public function autoFillFromImage(AdCopyService $service): void
     {

@@ -30,6 +30,9 @@ Rules:
   begin with "✅ ", each on its own separate line, then (3) a closing call-to-action
   line. Put a real line break between every line (use \n in the JSON string).
 - Quick replies (in {language}): exactly 3 short button labels, each under 25 characters.
+- Do NOT include any specific PRICE or PROMO amount in the variants (headline, primary text,
+  messaging template, quick replies). Keep them benefit- and hook-focused only. The price and
+  promo belong ONLY in the separate main_flow message.
 - No fabricated medical/financial claims. Keep it honest and compliant.
 SYS;
 
@@ -177,6 +180,104 @@ TXT;
             'input_tokens'     => $response->usage->promptTokens ?? 0,
             'output_tokens'    => $response->usage->completionTokens ?? 0,
         ];
+    }
+
+    /** Regenerate ONLY the ad-copy variants (per-part refresh). */
+    public function generateVariants(User $user, array $input): array
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
+        }
+
+        $count      = (int) ($input['variants'] ?? 1);
+        $language   = $input['language'] ?? 'Taglish';
+        $tone       = $input['tone'] ?? 'Friendly at persuasive';
+        $audience   = trim($input['audience'] ?? '');
+        $creativity = (float) ($input['creativity'] ?? 0.7);
+        $model      = $input['model'] ?? 'gpt-4o';
+
+        $template = trim($input['system_prompt'] ?? '') ?: self::DEFAULT_SYSTEM;
+        $system = str_replace('{language}', $language, $template);
+
+        $userPrompt = "Create {$count} completely different Facebook ad copy variants for this product.\n\n"
+            ."Product name: {$input['product_name']}\n"
+            ."Product description: {$input['product_description']}\n"
+            ."Target audience: {$audience}\n"
+            ."Tone: {$tone}";
+
+        $schema = [
+            'type'                 => 'object',
+            'additionalProperties' => false,
+            'required'             => ['variants'],
+            'properties'           => [
+                'variants' => [
+                    'type'  => 'array',
+                    'items' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => false,
+                        'required'             => ['angle', 'headline', 'primary_text', 'messaging_template', 'quick_replies'],
+                        'properties'           => [
+                            'angle'              => ['type' => 'string'],
+                            'headline'           => ['type' => 'string'],
+                            'primary_text'       => ['type' => 'string'],
+                            'messaging_template' => ['type' => 'string'],
+                            'quick_replies'      => ['type' => 'array', 'items' => ['type' => 'string']],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $client = \OpenAI::client($keyRow->plainKey());
+        $response = $client->chat()->create([
+            'model'           => $model,
+            'temperature'     => $creativity,
+            'messages'        => [
+                ['role' => 'system', 'content' => $system],
+                ['role' => 'user', 'content' => $userPrompt],
+            ],
+            'response_format' => ['type' => 'json_schema', 'json_schema' => ['name' => 'ad_variants', 'strict' => true, 'schema' => $schema]],
+        ]);
+
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+        $parsed = json_decode($response->choices[0]->message->content ?? '', true);
+
+        return array_values($parsed['variants'] ?? []);
+    }
+
+    /** Regenerate ONLY the Main Flow opening message (per-part refresh). */
+    public function generateMainFlowOnly(User $user, array $input): string
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
+        }
+
+        $language = $input['language'] ?? 'Taglish';
+        $model    = $input['model'] ?? 'gpt-4o';
+        $mainflowPrompt = trim($input['mainflow_prompt'] ?? '') ?: self::DEFAULT_MAINFLOW_PROMPT;
+        $system = str_replace('{language}', $language, $mainflowPrompt);
+
+        $userMsg = "Product name: {$input['product_name']}\n"
+            ."Product description: {$input['product_description']}\n"
+            ."Key features:\n".trim($input['features'] ?? '')."\n"
+            ."Promo price: ".trim($input['price'] ?? '')."\n"
+            ."Current promo/offer: ".trim($input['promo'] ?? '');
+
+        $client = \OpenAI::client($keyRow->plainKey());
+        $response = $client->chat()->create([
+            'model'       => $model,
+            'temperature' => 0.85,
+            'messages'    => [
+                ['role' => 'system', 'content' => $system],
+                ['role' => 'user', 'content' => $userMsg],
+            ],
+        ]);
+
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+
+        return trim($response->choices[0]->message->content ?? '');
     }
 
     /** Generate ONLY the product's Key Features (used by the dedicated button). */

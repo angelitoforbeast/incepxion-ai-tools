@@ -43,6 +43,12 @@ class AdCopyGenerator extends Component
     public ?string $generatedPrompt = null;
     public ?string $generatedAfterSalesPrompt = null;
 
+    // Prompt playground (test a customer message against the generated prompt)
+    public string $salesTestInput = '';
+    public ?string $salesTestReply = null;
+    public string $afterSalesTestInput = '';
+    public ?string $afterSalesTestReply = null;
+
     public function mount(): void
     {
         $this->applyDefaults();
@@ -224,6 +230,42 @@ class AdCopyGenerator extends Component
             $this->error = null;
         } catch (\Throwable $e) {
             $this->error = $e->getMessage();
+        }
+    }
+
+    public function testSales(AdCopyService $service): void
+    {
+        $this->runTest($service, 'sales');
+    }
+
+    public function testAfterSales(AdCopyService $service): void
+    {
+        $this->runTest($service, 'aftersales');
+    }
+
+    /** Run one customer message against the generated prompt and show the AI reply. */
+    private function runTest(AdCopyService $service, string $type): void
+    {
+        $prompt = $type === 'aftersales' ? $this->generatedAfterSalesPrompt : $this->generatedPrompt;
+        $message = trim($type === 'aftersales' ? $this->afterSalesTestInput : $this->salesTestInput);
+
+        if (! $prompt || $message === '') {
+            return;
+        }
+
+        $user = auth()->user();
+        $tool = Tool::where('slug', 'ad-copy-generator')->first();
+
+        try {
+            $reply = $service->testChat($user, $prompt, $message, $tool->config['default_model'] ?? 'gpt-4o');
+        } catch (\Throwable $e) {
+            $reply = '⚠️ '.$e->getMessage();
+        }
+
+        if ($type === 'aftersales') {
+            $this->afterSalesTestReply = $reply;
+        } else {
+            $this->salesTestReply = $reply;
         }
     }
 

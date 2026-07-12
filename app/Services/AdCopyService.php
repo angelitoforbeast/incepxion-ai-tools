@@ -167,4 +167,27 @@ TXT;
 
         return trim($response->choices[0]->message->content ?? '');
     }
+
+    /** Test a prompt: run a single customer message against the given system prompt. */
+    public function testChat(User $user, string $systemPrompt, string $message, string $model = 'gpt-4o'): string
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
+        }
+
+        $client = \OpenAI::client($keyRow->plainKey());
+        $response = $client->chat()->create([
+            'model'       => $model,
+            'temperature' => 0.7,
+            'messages'    => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $message],
+            ],
+        ]);
+
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+
+        return trim($response->choices[0]->message->content ?? '');
+    }
 }

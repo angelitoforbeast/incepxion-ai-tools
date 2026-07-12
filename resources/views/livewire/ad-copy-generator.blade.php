@@ -209,6 +209,26 @@
                             </div>
                             <div x-ref="sp" class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-800 whitespace-pre-wrap max-h-96 overflow-y-auto font-mono leading-relaxed">{{ $generatedPrompt }}</div>
                             <p class="mt-2 text-xs text-gray-400">For sales. Ready to paste into BotCake AI.</p>
+
+                            <div class="mt-3 border-t border-gray-100 pt-3">
+                                <label class="text-xs font-semibold text-gray-500">🧪 Test this prompt — type a customer message:</label>
+                                <div class="flex gap-2 mt-1">
+                                    <input type="text" wire:model="salesTestInput" wire:keydown.enter.prevent="testSales" placeholder="e.g. Magkano po? Legit ba kayo?"
+                                           class="flex-1 rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <button type="button" wire:click="testSales" wire:loading.attr="disabled" wire:target="testSales"
+                                            class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="testSales">Send</span>
+                                        <span wire:loading wire:target="testSales">…</span>
+                                    </button>
+                                </div>
+                                <div wire:loading wire:target="testSales" class="mt-2 text-xs text-gray-400">AI is replying…</div>
+                                @if ($salesTestReply)
+                                    <div wire:loading.remove wire:target="testSales" class="mt-2 rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
+                                        <span class="text-[10px] uppercase tracking-wide text-indigo-400 block mb-1">Assistant reply</span>
+                                        {{ $salesTestReply }}
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @endif
 
@@ -221,6 +241,26 @@
                             </div>
                             <div x-ref="asp" class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-800 whitespace-pre-wrap max-h-96 overflow-y-auto font-mono leading-relaxed">{{ $generatedAfterSalesPrompt }}</div>
                             <p class="mt-2 text-xs text-gray-400">For after-sales support. Ready to paste into BotCake AI.</p>
+
+                            <div class="mt-3 border-t border-gray-100 pt-3">
+                                <label class="text-xs font-semibold text-gray-500">🧪 Test this prompt — type a customer message:</label>
+                                <div class="flex gap-2 mt-1">
+                                    <input type="text" wire:model="afterSalesTestInput" wire:keydown.enter.prevent="testAfterSales" placeholder="e.g. Nasaan na po order ko? Pwede po bang buksan?"
+                                           class="flex-1 rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <button type="button" wire:click="testAfterSales" wire:loading.attr="disabled" wire:target="testAfterSales"
+                                            class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="testAfterSales">Send</span>
+                                        <span wire:loading wire:target="testAfterSales">…</span>
+                                    </button>
+                                </div>
+                                <div wire:loading wire:target="testAfterSales" class="mt-2 text-xs text-gray-400">AI is replying…</div>
+                                @if ($afterSalesTestReply)
+                                    <div wire:loading.remove wire:target="testAfterSales" class="mt-2 rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
+                                        <span class="text-[10px] uppercase tracking-wide text-indigo-400 block mb-1">Assistant reply</span>
+                                        {{ $afterSalesTestReply }}
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     @endif
                 </div>

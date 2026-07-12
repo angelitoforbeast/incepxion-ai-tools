@@ -238,7 +238,7 @@
                     @forelse ($results as $i => $v)
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
                             <div class="flex items-center justify-between mb-3">
-                                <strong class="text-gray-900">Variant {{ $i + 1 }}</strong>
+                                <strong class="text-gray-900">Ad Creatives{{ count($results) > 1 ? ' '.($i + 1) : '' }}</strong>
                                 <span class="text-xs font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 rounded-full px-3 py-1">{{ $v['angle'] ?? 'Ad' }}</span>
                             </div>
 

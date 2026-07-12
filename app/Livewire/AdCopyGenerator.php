@@ -328,9 +328,14 @@ class AdCopyGenerator extends Component
             return;
         }
 
-        $prompt = "A vibrant, professional e-commerce promotional product photo for \"{$this->product_name}\". "
-            .trim($this->product_description).'. '
-            .'Show the product prominently and attractively with clean modern studio lighting, bright eye-catching colors, and a simple background suited for a Facebook Messenger promo. High quality, realistic. Do NOT include any text, words, letters, or watermarks in the image.';
+        $price = trim($this->sp['PRODUCT_PRICE'] ?? '');
+        $promo = trim($this->sp['PROMO'] ?? '');
+
+        $prompt = "Create an eye-catching Facebook Messenger PROMO GRAPHIC (sale poster) for the product \"{$this->product_name}\". "
+            .trim($this->product_description).' '
+            .($price !== '' ? "Display the PROMO PRICE prominently as bold text: \"{$price}\". " : '')
+            .($promo !== '' ? "Also show the offer clearly as bold text: \"{$promo}\". " : '')
+            .'Modern e-commerce sale-poster style: show the product clearly and attractively, bright vibrant colors, a bold PROMO/SALE badge, clean LARGE READABLE text, professional layout. High quality, realistic product.';
 
         $tool = Tool::where('slug', 'ad-copy-generator')->first();
 

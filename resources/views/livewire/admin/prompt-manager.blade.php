@@ -16,19 +16,24 @@
         @endif
 
         <form wire:submit="save" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+        @php
+            $modelOptions = collect(['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4-turbo'])->push($model)->unique()->values();
+            $imageOptions = collect(['gpt-image-1', 'dall-e-3', 'dall-e-2'])->push($imageModel)->unique()->values();
+        @endphp
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Default Model</label>
-            <input type="text" wire:model="model"
-                   class="w-full sm:w-64 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-            <p class="mt-1 text-xs text-slate-400">e.g. gpt-4o, gpt-4o-mini, gpt-4-turbo</p>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Default Model <span class="text-xs font-normal text-slate-400">(text generation)</span></label>
+            <select wire:model="model" class="w-full sm:w-64 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                @foreach ($modelOptions as $m)<option value="{{ $m }}">{{ $m }}</option>@endforeach
+            </select>
             @error('model') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Image Model <span class="text-xs font-normal text-slate-400">(for promo image generation)</span></label>
-            <input type="text" wire:model="imageModel"
-                   class="w-full sm:w-64 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-            <p class="mt-1 text-xs text-slate-400">e.g. gpt-image-1 (newest), dall-e-3, or dall-e-2. If one errors ("model does not exist" / "must be verified"), try another.</p>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Image Model <span class="text-xs font-normal text-slate-400">(promo image generation)</span></label>
+            <select wire:model="imageModel" class="w-full sm:w-64 rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                @foreach ($imageOptions as $m)<option value="{{ $m }}">{{ $m }}</option>@endforeach
+            </select>
+            <p class="mt-1 text-xs text-slate-400">gpt-image-1 = best (renders text). If it errors ("must be verified"), try dall-e-2.</p>
             @error('imageModel') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 

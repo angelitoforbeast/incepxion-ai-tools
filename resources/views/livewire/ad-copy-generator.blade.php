@@ -135,6 +135,14 @@
                 @endif
 
                 <div wire:loading wire:target="generate" class="space-y-4">
+                    <div class="flex flex-col items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50/60 py-8 text-center">
+                        <svg class="animate-spin w-9 h-9 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <p class="mt-3 text-sm font-semibold text-indigo-700">Generating your ad copy…</p>
+                        <p class="text-xs text-indigo-400">The AI is writing {{ $variants }} variant{{ $variants > 1 ? 's' : '' }} + sales prompt. This takes a few seconds.</p>
+                    </div>
                     @for ($i = 0; $i < $variants; $i++)
                         <div class="h-40 rounded-xl bg-gray-200 animate-pulse"></div>
                     @endfor

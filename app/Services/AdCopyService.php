@@ -25,11 +25,13 @@ Rules:
   proof, urgency/scarcity, curiosity).
 - Headline (in {language}): max 10 words, scroll-stopping.
 - Primary text (in {language}): 1-4 short lines, high CTR, ends with a clear call to action.
-- Messaging template (in {language}): a warm, multi-line Messenger auto-reply. Structure it as:
-  (1) a friendly greeting line, then (2) EXACTLY 3 benefit/feature lines that each
-  begin with "✅ ", each on its own separate line, then (3) a closing call-to-action
-  line. Put a real line break between every line (use \n in the JSON string).
-- Quick replies (in {language}): exactly 3 short button labels, each under 25 characters.
+- Messaging template (in {language}): the ACTUAL warm Messenger auto-reply written as ONE
+  plain-text string — NOT a JSON object, NOT key-value pairs. Do NOT wrap it in { } and do NOT
+  use keys like "greeting", "benefits", or "cta". Just write the message itself, structured as:
+  a friendly greeting line, then EXACTLY 3 benefit lines each starting with "✅ " on its own
+  separate line, then a closing call-to-action line. Separate every line with a real line break.
+- Quick replies (in {language}): exactly 3 short button labels. Each must be DIFFERENT and unique
+  (no repeats/duplicates), each under 25 characters.
 - Do NOT include any specific PRICE or PROMO amount in the variants (headline, primary text,
   messaging template, quick replies). Keep them benefit- and hook-focused only. The price and
   promo belong ONLY in the separate main_flow message.
@@ -173,7 +175,7 @@ TXT;
         $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
 
         return [
-            'variants'         => array_values($parsed['variants']),
+            'variants'         => $this->normalizeVariants(array_values($parsed['variants'])),
             'product_features' => $parsed['product_features'] ?? '',
             'main_flow'        => $parsed['main_flow'] ?? '',
             'model'            => $model,
@@ -243,7 +245,39 @@ TXT;
         $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
         $parsed = json_decode($response->choices[0]->message->content ?? '', true);
 
-        return array_values($parsed['variants'] ?? []);
+        return $this->normalizeVariants(array_values($parsed['variants'] ?? []));
+    }
+
+    /** Clean up AI variants: fix JSON-in-messaging_template and de-duplicate quick replies. */
+    private function normalizeVariants(array $variants): array
+    {
+        foreach ($variants as &$v) {
+            $mt = $v['messaging_template'] ?? '';
+            if (is_string($mt) && str_starts_with(trim($mt), '{')) {
+                $decoded = json_decode($mt, true);
+                if (is_array($decoded)) {
+                    $v['messaging_template'] = trim(implode("\n", array_map(
+                        fn ($x) => is_array($x) ? implode("\n", $x) : (string) $x,
+                        $decoded
+                    )));
+                }
+            }
+
+            if (! empty($v['quick_replies']) && is_array($v['quick_replies'])) {
+                $seen = [];
+                $unique = [];
+                foreach ($v['quick_replies'] as $qr) {
+                    $key = mb_strtolower(trim((string) $qr));
+                    if ($key !== '' && ! isset($seen[$key])) {
+                        $seen[$key] = true;
+                        $unique[] = trim((string) $qr);
+                    }
+                }
+                $v['quick_replies'] = $unique;
+            }
+        }
+
+        return $variants;
     }
 
     /** Regenerate ONLY the Main Flow opening message (per-part refresh). */

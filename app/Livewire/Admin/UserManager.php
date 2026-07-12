@@ -20,6 +20,9 @@ class UserManager extends Component
     #[Url]
     public string $search = '';
 
+    #[Url]
+    public string $sort = 'newest'; // newest | active
+
     // Reject-with-remarks modal state
     public ?int $rejectingId = null;
     public string $rejectRemarks = '';
@@ -31,7 +34,7 @@ class UserManager extends Component
 
     public function updating($name): void
     {
-        if (in_array($name, ['filter', 'search'])) {
+        if (in_array($name, ['filter', 'search', 'sort'])) {
             $this->resetPage();
         }
     }
@@ -161,16 +164,23 @@ class UserManager extends Component
                 ->where('name', 'like', "%{$this->search}%")
                 ->orWhere('email', 'like', "%{$this->search}%")))
             ->with('plan')
-            ->latest()
+            ->withMax('generations', 'created_at')
+            ->withCount('generations')
+            ->when($this->sort === 'active',
+                fn ($q) => $q->orderByRaw('generations_max_created_at IS NULL')
+                    ->orderByDesc('generations_max_created_at')
+                    ->orderByDesc('last_login_at'),
+                fn ($q) => $q->latest(),
+            )
             ->paginate(12);
 
         return view('livewire.admin.user-manager', [
             'users' => $users,
             'stats' => [
-                'total'    => User::count(),
-                'pending'  => User::where('status', 'pending')->count(),
-                'approved' => User::where('status', 'approved')->count(),
-                'gensToday' => Generation::whereDate('created_at', today())->count(),
+                'total'     => User::count(),
+                'pending'   => User::where('status', 'pending')->count(),
+                'approved'  => User::where('status', 'approved')->count(),
+                'active7d'  => User::whereHas('generations', fn ($q) => $q->where('created_at', '>=', now()->subDays(7)))->count(),
             ],
         ]);
     }

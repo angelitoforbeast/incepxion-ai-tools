@@ -20,7 +20,7 @@
             ['Total Users', $stats['total'], 'text-slate-900'],
             ['Pending', $stats['pending'], 'text-amber-600'],
             ['Approved', $stats['approved'], 'text-emerald-600'],
-            ['Generations Today', $stats['gensToday'], 'text-indigo-600'],
+            ['Active (7 days)', $stats['active7d'], 'text-indigo-600'],
         ] as [$label, $val, $color])
             <div class="rounded-xl bg-white border border-slate-200 p-4 shadow-sm">
                 <p class="text-xs text-slate-400">{{ $label }}</p>
@@ -45,8 +45,14 @@
                 </button>
             @endforeach
         </div>
-        <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search name/email..."
-               class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 w-full sm:w-64">
+        <div class="flex items-center gap-2">
+            <select wire:model.live="sort" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <option value="newest">Sort: Newest</option>
+                <option value="active">Sort: Most active</option>
+            </select>
+            <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search name/email..."
+                   class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 w-full sm:w-56">
+        </div>
     </div>
 
     <!-- Table -->
@@ -57,6 +63,7 @@
                     <th class="px-4 py-3 font-semibold">User</th>
                     <th class="px-4 py-3 font-semibold">Plan</th>
                     <th class="px-4 py-3 font-semibold">Status</th>
+                    <th class="px-4 py-3 font-semibold">Last active</th>
                     <th class="px-4 py-3 font-semibold">Joined</th>
                     <th class="px-4 py-3 font-semibold text-right">Actions</th>
                 </tr>
@@ -91,6 +98,23 @@
                                 'suspended' => 'bg-slate-200 text-slate-600',
                             ][$u->status] ?? 'bg-slate-100 text-slate-600'; @endphp
                             <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $badge }}">{{ ucfirst($u->status) }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            @php
+                                $genAt = $u->generations_max_created_at ? \Illuminate\Support\Carbon::parse($u->generations_max_created_at) : null;
+                                $lastActive = $genAt;
+                                if ($u->last_login_at && (! $lastActive || $u->last_login_at->gt($lastActive))) { $lastActive = $u->last_login_at; }
+                                $isActive = $lastActive && $lastActive->gt(now()->subDays(7));
+                            @endphp
+                            @if ($lastActive)
+                                <div class="flex items-center gap-1.5">
+                                    <span class="h-2 w-2 rounded-full {{ $isActive ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                                    <span class="{{ $isActive ? 'text-emerald-700 font-medium' : 'text-slate-500' }}">{{ $lastActive->diffForHumans() }}</span>
+                                </div>
+                                <div class="text-xs text-slate-400">{{ $u->generations_count }} generation{{ $u->generations_count == 1 ? '' : 's' }}</div>
+                            @else
+                                <span class="text-xs text-slate-400">Never used</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-slate-500">{{ $u->created_at->format('M d, Y') }}</td>
                         <td class="px-4 py-3">
@@ -127,7 +151,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No users in this filter.</td></tr>
+                    <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400">No users in this filter.</td></tr>
                 @endforelse
             </tbody>
         </table>

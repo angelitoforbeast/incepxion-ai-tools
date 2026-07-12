@@ -129,7 +129,7 @@
             </form>
 
             <!-- Results -->
-            <div class="min-w-0">
+            <div class="min-w-0 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
                 @if ($error)
                     <div class="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">⚠️ {{ $error }}</div>
                 @endif

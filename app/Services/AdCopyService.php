@@ -70,6 +70,84 @@ FORMATTING RULES (very important):
 - Write in {language}. Output plain text only (no JSON).
 MF;
 
+    /** Default instruction for the follow-up SEQUENCE messages. Admin-editable. {language} replaced at runtime. */
+    public const DEFAULT_SEQUENCE_PROMPT = <<<'SEQ'
+You are a Filipino e-commerce follow-up copywriter for Facebook Messenger (BotCake broadcast/sequence).
+Write {count} SHORT follow-up messages that re-engage a customer who has NOT yet completed their order.
+These are sent one at a time over the next hours/days to push the customer to finally buy.
+
+STYLE (very important):
+- Language: {language} (Taglish by default) — punchy, hype, kabog, conversational. Feels like a real seller chasing a warm lead.
+- Each message = ONE strong scroll-stopping HOOK (often in BOLD unicode letters or CAPS) + 1-2 short lines + the form call.
+- ANGLES must be DIFFERENT every message — vary across: "swerte ka / napili ka", last-few-minutes urgency, "wag mag-scroll", price crashed / parang walang tubo, free shipping, "di lahat nabibigyan ng chance", last day, gentle guilt/FOMO, exclusivity, curiosity. NO two messages may use the same hook or opening line.
+- Use emojis naturally (not on every line). Keep each message short enough to fit one Messenger bubble.
+- Sound urgent and exciting but still honest — no fake medical/financial claims.
+
+PLACEHOLDERS — insert these LITERALLY, do NOT replace or translate them:
+- {{first_name}}  = the customer's first name
+- {{PRICING}}     = the promo price / offer
+- {{FFORM}}       = the order-form call-to-action — put it on its OWN line, usually at the end of each message
+
+Return ONLY the messages (as an array of strings), one hook per message. Do NOT number them and do NOT add any commentary.
+SEQ;
+
+    /**
+     * Generate N follow-up SEQUENCE messages (BotCake broadcast style). Returns an array of message strings.
+     *
+     * @return array<int, string>
+     */
+    public function generateSequence(User $user, array $input, int $count): array
+    {
+        $keyRow = $user->apiKeyFor('openai');
+        if (! $keyRow) {
+            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
+        }
+
+        $count    = max(1, min(20, $count));
+        $language = $input['language'] ?? 'Taglish';
+        $model    = $input['model'] ?? 'gpt-4o';
+
+        $template = trim($input['sequence_prompt'] ?? '') ?: self::DEFAULT_SEQUENCE_PROMPT;
+        $system = str_replace(['{count}', '{language}'], [(string) $count, $language], $template);
+
+        $userMsg = "Product name: {$input['product_name']}\n"
+            ."Product description: {$input['product_description']}\n"
+            ."Key features:\n".trim($input['features'] ?? '')."\n"
+            ."Promo price: ".trim($input['price'] ?? '')."\n"
+            ."Current promo/offer: ".trim($input['promo'] ?? '')."\n\n"
+            ."Write exactly {$count} follow-up messages.";
+
+        $schema = [
+            'type'                 => 'object',
+            'additionalProperties' => false,
+            'required'             => ['messages'],
+            'properties'           => [
+                'messages' => ['type' => 'array', 'items' => ['type' => 'string']],
+            ],
+        ];
+
+        $client = \OpenAI::client($keyRow->plainKey());
+        $response = $client->chat()->create([
+            'model'           => $model,
+            'temperature'     => 0.95,
+            'messages'        => [
+                ['role' => 'system', 'content' => $system],
+                ['role' => 'user', 'content' => $userMsg],
+            ],
+            'response_format' => ['type' => 'json_schema', 'json_schema' => ['name' => 'followup_sequence', 'strict' => true, 'schema' => $schema]],
+        ]);
+
+        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
+
+        $parsed = json_decode($response->choices[0]->message->content ?? '', true);
+        $messages = array_values(array_filter(array_map(
+            fn ($m) => trim((string) $m),
+            $parsed['messages'] ?? []
+        ), fn ($m) => $m !== ''));
+
+        return array_slice($messages, 0, $count);
+    }
+
     /**
      * Generate Facebook ad copy variants using the user's own OpenAI key.
      *

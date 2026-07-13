@@ -56,6 +56,11 @@ class AdCopyGenerator extends Component
     public ?string $generatedPrompt = null;
     public ?string $generatedAfterSalesPrompt = null;
 
+    /** Follow-up SEQUENCE (BotCake broadcast messages). */
+    #[Validate('required|integer|min:1|max:20')]
+    public int $sequenceCount = 10;
+    public array $sequenceMessages = [];
+
     // Prompt playground (test a customer message against the generated prompt)
     public string $salesTestInput = '';
     public ?string $salesTestReply = null;
@@ -340,6 +345,41 @@ class AdCopyGenerator extends Component
                 'model'               => $tool->config['default_model'] ?? 'gpt-4o',
                 'mainflow_prompt'     => $tool->config['mainflow_prompt'] ?? null,
             ]);
+            $this->error = null;
+        } catch (\Throwable $e) {
+            $this->error = $e->getMessage();
+        }
+    }
+
+    /** Generate the follow-up SEQUENCE (N broadcast messages) for the customer. */
+    public function generateSequence(AdCopyService $service): void
+    {
+        $this->validate([
+            'product_name'        => ['required', 'string', 'max:200'],
+            'product_description' => ['required', 'string', 'max:4000'],
+            'sequenceCount'       => ['required', 'integer', 'min:1', 'max:20'],
+        ]);
+
+        $user = auth()->user();
+        if (! $user->apiKeyFor('openai')) {
+            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
+
+            return;
+        }
+
+        $tool = Tool::where('slug', 'ad-copy-generator')->first();
+
+        try {
+            $this->sequenceMessages = $service->generateSequence($user, [
+                'product_name'        => $this->product_name,
+                'product_description' => $this->product_description,
+                'features'            => $this->sp['PRODUCT_FEATURES'] ?? '',
+                'price'               => $this->sp['PRODUCT_PRICE'] ?? '',
+                'promo'               => $this->sp['PROMO'] ?? '',
+                'language'            => $this->language,
+                'model'               => $tool->config['default_model'] ?? 'gpt-4o',
+                'sequence_prompt'     => $tool->config['sequence_prompt'] ?? null,
+            ], $this->sequenceCount);
             $this->error = null;
         } catch (\Throwable $e) {
             $this->error = $e->getMessage();

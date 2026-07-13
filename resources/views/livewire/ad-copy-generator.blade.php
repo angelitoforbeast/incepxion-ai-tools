@@ -360,6 +360,53 @@
                             </div>
                         </div>
                     @endif
+
+                    {{-- Follow-up SEQUENCE (BotCake broadcast messages) --}}
+                    @if ($generatedPrompt)
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
+                            <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+                                <strong class="text-gray-900">🔁 Follow-up Sequence <span class="text-xs font-normal text-gray-400">(BotCake broadcast)</span></strong>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-gray-500">Messages:</label>
+                                    <select wire:model="sequenceCount" @disabled($generatedPrompt === null) wire:loading.attr="disabled" wire:target="generateSequence"
+                                            class="rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
+                                        @for ($n = 1; $n <= 20; $n++)<option value="{{ $n }}">{{ $n }}</option>@endfor
+                                    </select>
+                                    <button type="button" wire:click="generateSequence" wire:loading.attr="disabled" wire:target="generateSequence"
+                                            class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="generateSequence">Generate sequence</span>
+                                        <span wire:loading wire:target="generateSequence" class="inline-flex items-center gap-1.5">
+                                            <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                            Generating…
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3">Follow-up messages to re-engage customers who haven't ordered yet. Uses <code class="bg-gray-100 px-1 rounded">@{{first_name}}</code>, <code class="bg-gray-100 px-1 rounded">@{{PRICING}}</code>, <code class="bg-gray-100 px-1 rounded">@{{FFORM}}</code> placeholders.</p>
+
+                            <div wire:loading wire:target="generateSequence" class="text-xs text-gray-400">Writing {{ $sequenceCount }} follow-ups…</div>
+
+                            @if (count($sequenceMessages))
+                                <div wire:loading.remove wire:target="generateSequence" class="space-y-2" x-data>
+                                    <div class="flex justify-end">
+                                        <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                                @click="navigator.clipboard.writeText($refs.seqall.innerText); $el.innerText='✓ Copied all!'; setTimeout(() => $el.innerText='Copy all', 1400)">Copy all</button>
+                                    </div>
+                                    <div x-ref="seqall" class="hidden">{{ implode("\n\n-\n\n", $sequenceMessages) }}</div>
+                                    @foreach ($sequenceMessages as $si => $msg)
+                                        <div class="rounded-lg bg-gray-50 border border-gray-200 p-3" x-data>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <span class="text-[10px] uppercase tracking-wide text-indigo-400">Sequence {{ $si + 1 }}</span>
+                                                <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                                        @click="navigator.clipboard.writeText($refs.seq{{ $si }}.innerText); $el.innerText='✓'; setTimeout(() => $el.innerText='Copy', 1200)">Copy</button>
+                                            </div>
+                                            <div x-ref="seq{{ $si }}" class="select-none whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">{{ $msg }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

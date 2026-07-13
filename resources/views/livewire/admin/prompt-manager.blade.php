@@ -83,6 +83,17 @@
             <p class="mt-1 text-xs text-slate-400">Uses the same placeholders as the sales template — for post-purchase / after-sales support.</p>
         </div>
 
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Follow-up Sequence Prompt <span class="text-xs font-normal text-slate-400">(BotCake broadcast messages)</span></label>
+            <textarea wire:model="sequencePrompt" rows="14"
+                      class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono leading-relaxed"></textarea>
+            @error('sequencePrompt') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            <div class="mt-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-500">
+                💡 Use <code class="bg-slate-200 px-1 rounded">{count}</code> (number of messages) and <code class="bg-slate-200 px-1 rounded">{language}</code>.
+                The AI keeps <code class="bg-slate-200 px-1 rounded">@{{first_name}}</code>, <code class="bg-slate-200 px-1 rounded">@{{PRICING}}</code>, <code class="bg-slate-200 px-1 rounded">@{{FFORM}}</code> as literal BotCake placeholders.
+            </div>
+        </div>
+
         <div class="flex items-center gap-3">
             <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
                 Save Prompt

@@ -19,6 +19,7 @@ class PromptManager extends Component
     public string $mainflowPrompt = '';
     public string $botcakeTemplate = '';
     public string $aftersalesTemplate = '';
+    public string $sequencePrompt = '';
 
     public function mount(): void
     {
@@ -31,6 +32,7 @@ class PromptManager extends Component
         $this->mainflowPrompt = $config['mainflow_prompt'] ?? AdCopyService::DEFAULT_MAINFLOW_PROMPT;
         $this->botcakeTemplate = $config['botcake_template'] ?? SalesPromptService::DEFAULT_TEMPLATE;
         $this->aftersalesTemplate = $config['aftersales_template'] ?? SalesPromptService::DEFAULT_AFTERSALES_TEMPLATE;
+        $this->sequencePrompt = $config['sequence_prompt'] ?? AdCopyService::DEFAULT_SEQUENCE_PROMPT;
     }
 
     private function tool(): Tool
@@ -48,6 +50,7 @@ class PromptManager extends Component
             'mainflowPrompt'  => ['required', 'string', 'min:10'],
             'botcakeTemplate' => ['required', 'string', 'min:20'],
             'aftersalesTemplate' => ['required', 'string', 'min:20'],
+            'sequencePrompt'  => ['required', 'string', 'min:20'],
         ]);
 
         $tool = $this->tool();
@@ -59,6 +62,7 @@ class PromptManager extends Component
         $config['mainflow_prompt']     = trim($this->mainflowPrompt);
         $config['botcake_template']    = trim($this->botcakeTemplate);
         $config['aftersales_template'] = trim($this->aftersalesTemplate);
+        $config['sequence_prompt']     = trim($this->sequencePrompt);
         $tool->update(['config' => $config]);
 
         // Snapshot this version into history.

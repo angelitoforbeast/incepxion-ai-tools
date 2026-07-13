@@ -26,7 +26,9 @@ class GeneratePromoImageJob implements ShouldQueue
         public string $model,
         public int $size,
         public string $token,
-    ) {}
+    ) {
+        $this->onQueue('images'); // dedicated worker
+    }
 
     public function handle(AdCopyService $service): void
     {

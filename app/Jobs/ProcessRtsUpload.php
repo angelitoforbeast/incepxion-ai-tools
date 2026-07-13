@@ -25,7 +25,10 @@ class ProcessRtsUpload implements ShouldQueue
     private const INSERT_CHUNK = 1000;
     private const CONFLICT_SAMPLE = 25;
 
-    public function __construct(public int $uploadId, public bool $confirmed = false) {}
+    public function __construct(public int $uploadId, public bool $confirmed = false)
+    {
+        $this->onQueue('rts'); // dedicated worker
+    }
 
     public function handle(RtsFileParser $parser): void
     {
@@ -78,20 +81,15 @@ class ProcessRtsUpload implements ShouldQueue
 
             $this->apply($upload, $rows, $existing);
 
-            // Success — remove the raw file (data is now in from_jnts).
-            try {
-                if ($upload->path && Storage::disk($disk)->exists($upload->path)) {
-                    Storage::disk($disk)->delete($upload->path);
-                }
-            } catch (\Throwable $e) {
-                // non-fatal
-            }
+            $this->deleteSource($upload); // data is now in from_jnts
 
             $upload->forceFill([
                 'status'      => 'done',
                 'finished_at' => Carbon::now('Asia/Manila'),
             ])->save();
         } catch (\Throwable $e) {
+            $this->deleteSource($upload); // auto-clean even on failure (no retries)
+
             $upload->forceFill([
                 'status'        => 'failed',
                 'error_message' => mb_substr($e->getMessage(), 0, 1000),
@@ -99,6 +97,19 @@ class ProcessRtsUpload implements ShouldQueue
             ])->save();
 
             throw $e;
+        }
+    }
+
+    /** Remove the raw uploaded file from storage (best-effort). */
+    private function deleteSource(RtsUpload $upload): void
+    {
+        try {
+            $disk = $upload->disk ?: 'local';
+            if ($upload->path && Storage::disk($disk)->exists($upload->path)) {
+                Storage::disk($disk)->delete($upload->path);
+            }
+        } catch (\Throwable $e) {
+            // non-fatal
         }
     }
 

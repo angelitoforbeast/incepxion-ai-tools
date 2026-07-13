@@ -103,6 +103,21 @@ class RtsProcessorTest extends TestCase
         $upload->refresh();
         $this->assertSame('failed', $upload->status);
         $this->assertStringContainsString('Wrong File', (string) $upload->error_message);
+        // Source file is auto-deleted even on failure.
+        Storage::disk('local')->assertMissing($upload->path);
+    }
+
+    public function test_source_file_deleted_after_success(): void
+    {
+        $user = User::factory()->create();
+        $csv = "Waybill Number,Status,Submission Time\nWBZ,In Transit,2026-07-05 09:00:00\n";
+        $upload = $this->makeUpload($user, $csv);
+
+        ProcessRtsUpload::dispatchSync($upload->id);
+        $upload->refresh();
+
+        $this->assertSame('done', $upload->status);
+        Storage::disk('local')->assertMissing($upload->path);
     }
 
     public function test_scoping_is_per_user(): void

@@ -90,7 +90,7 @@
             @error('sequencePrompt') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             <div class="mt-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-500">
                 💡 Use <code class="bg-slate-200 px-1 rounded">{count}</code> (number of messages) and <code class="bg-slate-200 px-1 rounded">{language}</code>.
-                The AI keeps <code class="bg-slate-200 px-1 rounded">@{{first_name}}</code>, <code class="bg-slate-200 px-1 rounded">@{{PRICING}}</code>, <code class="bg-slate-200 px-1 rounded">@{{FFORM}}</code> as literal BotCake placeholders.
+                The AI keeps <code class="bg-slate-200 px-1 rounded">@{{first_name}}</code> and <code class="bg-slate-200 px-1 rounded">@{{PRICING}}</code> as literal BotCake placeholders.
             </div>
         </div>
 

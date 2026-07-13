@@ -91,21 +91,25 @@ VARY THE PERSUASION ANGLE — every message must use a DIFFERENT framework. Rota
 - REASSURANCE / objection-handling (COD, legit, easy return — para mawala ang duda)
 
 VARY THE LENGTH — this is important, huwag pare-pareho:
-- Some messages must be SHORT: 1 punchy hook line + {{FFORM}} (parang teaser).
+- Some messages must be SHORT: 1 punchy hook line + a quick order call (parang teaser).
 - Some must be MEDIUM: a hook + 2-3 lines of substance.
 - Some must be LONGER: a strong hook, then 3-5 lines (mini-story, benefits list na may emoji bullets,
-  price anchor, o objection-handling), then a warm CTA + {{FFORM}}.
+  price anchor, o objection-handling), then a warm order call.
 - Mix them up randomly across the sequence — magkakaibang haba, magkakaibang laman.
+
+CALL TO ACTION: end most messages with a natural order/reply prompt in {language}
+(e.g. "Order na po? Reply lang! 😊", "Send niyo na po pangalan, number, at address 📩",
+"G na po ba? 🛒"). Vary the wording — HUWAG gumamit ng anumang placeholder o token para dito.
 
 FORMATTING:
 - This is pasted into Messenger which does NOT render markdown. Never use **asterisks**, ~tildes~, or backticks.
   For emphasis use CAPS, BOLD unicode letters, or emojis. Emojis dapat natural, hindi sa bawat linya.
 - Use real line breaks inside a message. No fake medical/financial claims — honest pa rin.
 
-PLACEHOLDERS — insert these LITERALLY, do NOT replace, translate, or invent values for them:
+PLACEHOLDERS — insert these LITERALLY, do NOT replace, translate, or invent values for them.
+These are the ONLY two allowed placeholders — do NOT output any other {{...}} token:
 - {{first_name}}  = the customer's first name (sprinkle naturally, not in every single message)
 - {{PRICING}}     = the promo price / offer
-- {{FFORM}}       = the order-form call-to-action — put it on its OWN line, usually at the end
 
 Return ONLY the messages as an array of strings (one full message per array item).
 Do NOT number them and do NOT add any commentary.
@@ -160,10 +164,14 @@ SEQ;
         $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
 
         $parsed = json_decode($response->choices[0]->message->content ?? '', true);
-        $messages = array_values(array_filter(array_map(
-            fn ($m) => trim((string) $m),
-            $parsed['messages'] ?? []
-        ), fn ($m) => $m !== ''));
+        $messages = array_values(array_filter(array_map(function ($m) {
+            $m = (string) $m;
+            // Defensive: strip any {{FFORM}} token (internal placeholder) and clean up blank lines it leaves.
+            $m = preg_replace('/\h*\{\{\s*FFORM\s*\}\}\h*/i', '', $m);
+            $m = preg_replace("/\n{3,}/", "\n\n", $m);
+
+            return trim($m);
+        }, $parsed['messages'] ?? []), fn ($m) => $m !== ''));
 
         return array_slice($messages, 0, $count);
     }

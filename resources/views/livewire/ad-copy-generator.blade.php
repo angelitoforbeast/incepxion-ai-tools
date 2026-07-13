@@ -382,7 +382,7 @@
                                     </span>
                                 </button>
                             </div>
-                            <p class="text-xs text-gray-400 mb-3">Set the count in <strong>Follow-up messages</strong> on the left. Uses <code class="bg-gray-100 px-1 rounded">@{{first_name}}</code>, <code class="bg-gray-100 px-1 rounded">@{{PRICING}}</code>, <code class="bg-gray-100 px-1 rounded">@{{FFORM}}</code> placeholders.</p>
+                            <p class="text-xs text-gray-400 mb-3">Set the count in <strong>Follow-up messages</strong> on the left. Uses <code class="bg-gray-100 px-1 rounded">@{{first_name}}</code> and <code class="bg-gray-100 px-1 rounded">@{{PRICING}}</code> placeholders.</p>
 
                             <div wire:loading wire:target="generateSequence" class="text-xs text-gray-400">Writing {{ $sequenceCount }} follow-ups…</div>
 

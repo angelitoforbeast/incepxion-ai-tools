@@ -34,6 +34,7 @@
                     @foreach ($items as $tool)
                         @php $route = match ($tool->slug) {
                             'ad-copy-generator'  => route('tools.ad-copy'),
+                            'rts-processor'      => route('tools.rts'),
                             'profit-computation' => route('tools.profit'),
                             default              => null,
                         }; @endphp

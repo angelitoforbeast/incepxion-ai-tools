@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\AdCopyGenerator;
+use App\Livewire\RtsProcessor;
 use App\Livewire\Admin\GenerationLog;
 use App\Livewire\Admin\PromptManager;
 use App\Livewire\Admin\UserManager;
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     })->name('dashboard');
 
     Route::get('tools/ad-copy-generator', AdCopyGenerator::class)->name('tools.ad-copy');
+    Route::get('tools/rts-processor', RtsProcessor::class)->name('tools.rts');
     Route::view('tools/profit-calculator', 'tools.profit-calculator')->name('tools.profit');
 });
 

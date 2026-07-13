@@ -216,7 +216,7 @@
                                             class="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-60">
                                         @if ($imageGenerating)
                                             <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-                                            Generating in background…
+                                            Generating…
                                         @else
                                             🖼️ Generate promo image
                                         @endif
@@ -229,9 +229,6 @@
                                         <option value="1024">1024 × 1024 (HD)</option>
                                     </select>
                                 </div>
-                                @if ($imageGenerating)
-                                    <p class="mt-2 text-xs text-gray-400">⏳ Ginagawa sa background — pwede mo nang gamitin ang ibang buttons. (~15–30s)</p>
-                                @endif
                                 @if ($promoImageUrl)
                                     <div class="mt-3" x-data="{ zoom: false }">
                                         <img src="{{ $promoImageUrl }}" alt="Promo image" @click="zoom = true"

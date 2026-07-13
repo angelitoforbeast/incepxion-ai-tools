@@ -138,6 +138,13 @@
                     <input type="range" wire:model="creativity" min="0" max="1" step="0.1" class="w-full accent-indigo-600">
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Follow-up messages <span class="text-gray-400 font-normal">(sequence)</span></label>
+                    <select wire:model="sequenceCount" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        @for ($n = 1; $n <= 20; $n++)<option value="{{ $n }}">{{ $n }} message{{ $n > 1 ? 's' : '' }}</option>@endfor
+                    </select>
+                </div>
+
                 <!-- Sales-prompt placeholder details (always visible) -->
                 <div class="border-t border-gray-100 pt-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -365,24 +372,17 @@
                     @if ($generatedPrompt)
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
                             <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
-                                <strong class="text-gray-900">🔁 Follow-up Sequence <span class="text-xs font-normal text-gray-400">(BotCake broadcast)</span></strong>
-                                <div class="flex items-center gap-2">
-                                    <label class="text-xs text-gray-500">Messages:</label>
-                                    <select wire:model="sequenceCount" @disabled($generatedPrompt === null) wire:loading.attr="disabled" wire:target="generateSequence"
-                                            class="rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500 py-1.5">
-                                        @for ($n = 1; $n <= 20; $n++)<option value="{{ $n }}">{{ $n }}</option>@endfor
-                                    </select>
-                                    <button type="button" wire:click="generateSequence" wire:loading.attr="disabled" wire:target="generateSequence"
-                                            class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-                                        <span wire:loading.remove wire:target="generateSequence">Generate sequence</span>
-                                        <span wire:loading wire:target="generateSequence" class="inline-flex items-center gap-1.5">
-                                            <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-                                            Generating…
-                                        </span>
-                                    </button>
-                                </div>
+                                <strong class="text-gray-900">🔁 Follow-up Sequence <span class="text-xs font-normal text-gray-400">({{ $sequenceCount }} msg · BotCake broadcast)</span></strong>
+                                <button type="button" wire:click="generateSequence" wire:loading.attr="disabled" wire:target="generateSequence"
+                                        class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="generateSequence">{{ count($sequenceMessages) ? 'Regenerate' : 'Generate sequence' }}</span>
+                                    <span wire:loading wire:target="generateSequence" class="inline-flex items-center gap-1.5">
+                                        <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                        Generating…
+                                    </span>
+                                </button>
                             </div>
-                            <p class="text-xs text-gray-400 mb-3">Follow-up messages to re-engage customers who haven't ordered yet. Uses <code class="bg-gray-100 px-1 rounded">@{{first_name}}</code>, <code class="bg-gray-100 px-1 rounded">@{{PRICING}}</code>, <code class="bg-gray-100 px-1 rounded">@{{FFORM}}</code> placeholders.</p>
+                            <p class="text-xs text-gray-400 mb-3">Set the count in <strong>Follow-up messages</strong> on the left. Uses <code class="bg-gray-100 px-1 rounded">@{{first_name}}</code>, <code class="bg-gray-100 px-1 rounded">@{{PRICING}}</code>, <code class="bg-gray-100 px-1 rounded">@{{FFORM}}</code> placeholders.</p>
 
                             <div wire:loading wire:target="generateSequence" class="text-xs text-gray-400">Writing {{ $sequenceCount }} follow-ups…</div>
 

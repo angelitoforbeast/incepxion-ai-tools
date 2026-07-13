@@ -469,67 +469,6 @@ TXT;
         return trim($response->choices[0]->message->content ?? '');
     }
 
-    /** Generate a promo image (resized to a square of $size px). Returns raw PNG bytes. */
-    public function generateImage(User $user, string $prompt, string $model = 'gpt-image-1', int $size = 480): string
-    {
-        $keyRow = $user->apiKeyFor('openai');
-        if (! $keyRow) {
-            throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
-        }
-
-        $client = \OpenAI::client($keyRow->plainKey());
-        $response = $client->images()->create([
-            'model'  => $model,
-            'prompt' => $prompt,
-            'n'      => 1,
-            'size'   => '1024x1024',
-        ]);
-
-        $keyRow->forceFill(['last_used_at' => now(), 'is_valid' => true])->save();
-
-        $data = $response->data[0] ?? null;
-        if (! $data) {
-            return '';
-        }
-
-        // gpt-image-1 returns base64; dall-e models return a temporary URL.
-        $bytes = '';
-        $b64 = $data->b64_json ?? '';
-        if ($b64 !== '') {
-            $bytes = base64_decode($b64);
-        } elseif (($url = $data->url ?? '') !== '') {
-            $bytes = \Illuminate\Support\Facades\Http::timeout(45)->get($url)->body();
-        }
-
-        return $bytes === '' ? '' : $this->resizeSquare($bytes, $size);
-    }
-
-    /** Center-crop to a square and resize to the given pixel size (via GD). */
-    public function resizeSquare(string $bytes, int $size): string
-    {
-        if (! function_exists('imagecreatefromstring')) {
-            return $bytes;
-        }
-        $src = @imagecreatefromstring($bytes);
-        if (! $src) {
-            return $bytes;
-        }
-        $sw = imagesx($src);
-        $sh = imagesy($src);
-        $side = min($sw, $sh);
-        $x = (int) (($sw - $side) / 2);
-        $y = (int) (($sh - $side) / 2);
-        $dst = imagecreatetruecolor($size, $size);
-        imagecopyresampled($dst, $src, 0, 0, $x, $y, $size, $size, $side, $side);
-        ob_start();
-        imagepng($dst);
-        $out = ob_get_clean();
-        imagedestroy($src);
-        imagedestroy($dst);
-
-        return $out ?: $bytes;
-    }
-
     /**
      * Analyze a product image (data URL) and extract product name, description, and key features.
      *

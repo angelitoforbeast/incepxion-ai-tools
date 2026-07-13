@@ -46,13 +46,6 @@ class AdCopyGenerator extends Component
     /** BotCake sales-prompt placeholder values, keyed by placeholder name. */
     public array $sp = [];
     public ?string $mainFlow = null;
-    public ?string $promoImageUrl = null;
-    public string $imageSize = '480'; // square px — best for Messenger
-    public bool $imageGenerating = false;
-    public ?string $imageToken = null;
-
-    /** Messenger-friendly square output sizes. */
-    public const IMAGE_SIZES = ['480', '640', '800', '1024'];
     public ?string $generatedPrompt = null;
     public ?string $generatedAfterSalesPrompt = null;
 
@@ -90,7 +83,6 @@ class AdCopyGenerator extends Component
             $this->tone                = $saved['tone'] ?? $this->tone;
             $this->creativity          = $saved['creativity'] ?? $this->creativity;
             $this->variants            = $saved['variants'] ?? $this->variants;
-            $this->imageSize           = $saved['image_size'] ?? $this->imageSize;
         }
 
         $this->sp = $sp;
@@ -107,7 +99,6 @@ class AdCopyGenerator extends Component
             'tone'                => $this->tone,
             'creativity'          => $this->creativity,
             'variants'            => $this->variants,
-            'image_size'          => $this->imageSize,
             'sp'                  => $this->sp,
         ]]);
         session()->flash('sp-msg', 'Saved all inputs as your defaults.');
@@ -428,65 +419,6 @@ class AdCopyGenerator extends Component
     public function removeUpload(): void
     {
         $this->reset('uploadedImage');
-    }
-
-    /** Generate a promo image for the Main Flow (DALL·E 3). */
-    /** Kick off promo image generation in the BACKGROUND (does not block other buttons). */
-    public function generateImage(): void
-    {
-        $this->validate([
-            'product_name'        => ['required', 'string', 'max:200'],
-            'product_description' => ['required', 'string', 'max:4000'],
-        ]);
-
-        $user = auth()->user();
-        if (! $user->apiKeyFor('openai')) {
-            $this->error = 'You have no OpenAI API key yet. Add one in Settings before generating.';
-
-            return;
-        }
-
-        $price = trim($this->sp['PRODUCT_PRICE'] ?? '');
-        $promo = trim($this->sp['PROMO'] ?? '');
-
-        $prompt = "Create an eye-catching Facebook Messenger PROMO GRAPHIC (sale poster) for the product \"{$this->product_name}\". "
-            .trim($this->product_description).' '
-            .($price !== '' ? "Display the PROMO PRICE prominently as bold text: \"{$price}\". " : '')
-            .($promo !== '' ? "Also show the offer clearly as bold text: \"{$promo}\". " : '')
-            .'Modern e-commerce sale-poster style: show the product clearly and attractively, bright vibrant colors, a bold PROMO/SALE badge, clean LARGE READABLE text, professional layout. High quality, realistic product.';
-
-        $tool = Tool::where('slug', 'ad-copy-generator')->first();
-        $size = in_array($this->imageSize, self::IMAGE_SIZES, true) ? (int) $this->imageSize : 480;
-
-        $this->imageToken = \Illuminate\Support\Str::uuid()->toString();
-        $this->promoImageUrl = null;
-        $this->imageGenerating = true;
-        $this->error = null;
-
-        \App\Jobs\GeneratePromoImageJob::dispatch(
-            $user->id, $prompt, $tool->config['image_model'] ?? 'gpt-image-1', $size, $this->imageToken
-        );
-    }
-
-    /** Polled while an image is generating — picks up the finished image from cache. */
-    public function checkImage(): void
-    {
-        if (! $this->imageGenerating || ! $this->imageToken) {
-            return;
-        }
-
-        $result = \Illuminate\Support\Facades\Cache::get("promo-image:{$this->imageToken}");
-        if (! $result) {
-            return;
-        }
-
-        if (($result['status'] ?? '') === 'done') {
-            $this->promoImageUrl = $result['url'];
-            $this->imageGenerating = false;
-        } elseif (($result['status'] ?? '') === 'error') {
-            $this->error = 'Image error: '.($result['error'] ?? 'unknown');
-            $this->imageGenerating = false;
-        }
     }
 
     public function testSales(AdCopyService $service): void

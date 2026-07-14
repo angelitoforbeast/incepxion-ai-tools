@@ -111,31 +111,6 @@ class AdCopyGenerator extends Component
         session()->flash('sp-msg', 'Reset to your defaults.');
     }
 
-    /** Fill every field with a ready-to-test demo (Safeguard soap). */
-    public function fillDemo(): void
-    {
-        $this->product_name        = 'Safeguard Soap';
-        $this->product_description = 'Safeguard antibacterial soap na proteksyon ng buong pamilya laban sa 99.9% ng germs. Long-lasting protection, gentle sa balat, at trusted brand na.';
-        $this->audience            = 'Mga nanay at pamilya, health-conscious';
-        $this->language            = 'Taglish';
-        $this->tone                = 'Friendly at trustworthy';
-        $this->variants            = 1;
-        $this->creativity          = 0.7;
-
-        $this->sp = array_merge($this->sp, [
-            'STORE_NAME'       => 'HealthyHome PH',
-            'PRODUCT_PRICE'    => '₱120 per pack of 3',
-            'PROMO'            => 'Buy 2 packs, get 1 FREE! Ngayong buwan lang.',
-            'PRODUCT_FEATURES' => "✅ Kills 99.9% of germs\n✅ Long-lasting protection\n✅ Gentle on skin\n✅ Trusted brand",
-            'DELIVERY_TIME'    => '3 to 6 days Luzon, 6 to 10 days Visayas and Mindanao',
-            'PAYMENT_METHOD'   => 'COD',
-            'LEGITIMACY_INFO'  => 'Registered kami sa DTI (DTI Business Name Registration No. 1234567) at may Mayor\'s / Business Permit. May libo-libong satisfied customers at verified reviews — 100% legit at safe mag-order.',
-            'ORDER_FIELDS'     => '',
-        ]);
-
-        session()->flash('sp-msg', 'Demo values filled (Safeguard).');
-    }
-
     public function generate(AdCopyService $service): void
     {
         $this->validate();

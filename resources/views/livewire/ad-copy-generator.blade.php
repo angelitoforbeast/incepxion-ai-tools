@@ -216,60 +216,6 @@
                             <p class="mt-2 text-xs text-gray-400">The bot sends this as its first reply to any chat.</p>
                         </div>
                     @endif
-                    @forelse ($results as $i => $v)
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-2">
-                                    <strong class="text-gray-900">Ad Creatives{{ count($results) > 1 ? ' '.($i + 1) : '' }}</strong>
-                                    @if ($i === 0)
-                                        <button type="button" wire:click="regenerateAdCreatives" wire:loading.attr="disabled" wire:target="regenerateAdCreatives"
-                                                title="Regenerate ad creatives" class="text-gray-400 hover:text-indigo-600">
-                                            <svg wire:loading.remove wire:target="regenerateAdCreatives" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                            <svg wire:loading wire:target="regenerateAdCreatives" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-                                        </button>
-                                    @endif
-                                </div>
-                                <span class="text-xs font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 rounded-full px-3 py-1">{{ $v['angle'] ?? 'Ad' }}</span>
-                            </div>
-
-                            @foreach (['Headline' => 'headline', 'Primary Text' => 'primary_text', 'Messaging Template' => 'messaging_template'] as $label => $key)
-                                <div class="mb-3">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="text-xs uppercase tracking-wide text-gray-400">{{ $label }}</span>
-                                        <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
-                                                @click="navigator.clipboard.writeText($refs.f{{ $i }}{{ $loop->index }}.innerText); $wire.recordCopy({{ $i }}, '{{ $key }}'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
-                                    </div>
-                                    <div x-ref="f{{ $i }}{{ $loop->index }}"
-                                         class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap {{ $key === 'headline' ? 'font-semibold' : '' }}">{{ $v[$key] ?? '' }}</div>
-                                </div>
-                            @endforeach
-
-                            <div>
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="text-xs uppercase tracking-wide text-gray-400">Quick Replies</span>
-                                    <span class="text-[10px] text-gray-300">tap to copy</span>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach (($v['quick_replies'] ?? []) as $qi => $qr)
-                                        <button type="button" x-data
-                                                class="select-none inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-sm text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 transition"
-                                                @click="navigator.clipboard.writeText(@js($qr)); $wire.recordCopy({{ $i }}, 'quick_reply_{{ $qi }}'); $el.querySelector('.qrlabel').innerText='✓ Copied!'; setTimeout(() => $el.querySelector('.qrlabel').innerText=@js($qr), 1200)">
-                                            <span class="qrlabel">{{ $qr }}</span>
-                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        @unless ($error)
-                            <div class="flex flex-col items-center justify-center min-h-[340px] rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-center p-10">
-                                <div class="text-4xl mb-3">📝</div>
-                                <p>Fill in the form on the left and click <strong>Generate</strong>.<br>Your ad copy variants will appear here.</p>
-                            </div>
-                        @endunless
-                    @endforelse
-
                     @if ($generatedPrompt)
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
                             <div class="flex items-center justify-between mb-2">
@@ -373,6 +319,60 @@
                             @endif
                         </div>
                     @endif
+
+                    @forelse ($results as $i => $v)
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5" x-data>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <strong class="text-gray-900">Ad Creatives{{ count($results) > 1 ? ' '.($i + 1) : '' }}</strong>
+                                    @if ($i === 0)
+                                        <button type="button" wire:click="regenerateAdCreatives" wire:loading.attr="disabled" wire:target="regenerateAdCreatives"
+                                                title="Regenerate ad creatives" class="text-gray-400 hover:text-indigo-600">
+                                            <svg wire:loading.remove wire:target="regenerateAdCreatives" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            <svg wire:loading wire:target="regenerateAdCreatives" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                        </button>
+                                    @endif
+                                </div>
+                                <span class="text-xs font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 rounded-full px-3 py-1">{{ $v['angle'] ?? 'Ad' }}</span>
+                            </div>
+
+                            @foreach (['Headline' => 'headline', 'Primary Text' => 'primary_text', 'Messaging Template' => 'messaging_template'] as $label => $key)
+                                <div class="mb-3">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-xs uppercase tracking-wide text-gray-400">{{ $label }}</span>
+                                        <button type="button" class="text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+                                                @click="navigator.clipboard.writeText($refs.f{{ $i }}{{ $loop->index }}.innerText); $wire.recordCopy({{ $i }}, '{{ $key }}'); $el.innerText='✓ Copied!'; setTimeout(() => $el.innerText='Copy', 1400)">Copy</button>
+                                    </div>
+                                    <div x-ref="f{{ $i }}{{ $loop->index }}"
+                                         class="select-none rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap {{ $key === 'headline' ? 'font-semibold' : '' }}">{{ $v[$key] ?? '' }}</div>
+                                </div>
+                            @endforeach
+
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs uppercase tracking-wide text-gray-400">Quick Replies</span>
+                                    <span class="text-[10px] text-gray-300">tap to copy</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (($v['quick_replies'] ?? []) as $qi => $qr)
+                                        <button type="button" x-data
+                                                class="select-none inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-sm text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 transition"
+                                                @click="navigator.clipboard.writeText(@js($qr)); $wire.recordCopy({{ $i }}, 'quick_reply_{{ $qi }}'); $el.querySelector('.qrlabel').innerText='✓ Copied!'; setTimeout(() => $el.querySelector('.qrlabel').innerText=@js($qr), 1200)">
+                                            <span class="qrlabel">{{ $qr }}</span>
+                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        @unless ($error)
+                            <div class="flex flex-col items-center justify-center min-h-[340px] rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-center p-10">
+                                <div class="text-4xl mb-3">📝</div>
+                                <p>Fill in the form on the left and click <strong>Generate</strong>.<br>Your ad copy variants will appear here.</p>
+                            </div>
+                        @endunless
+                    @endforelse
                 </div>
             </div>
         </div>

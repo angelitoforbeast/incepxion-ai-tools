@@ -130,7 +130,7 @@ SEQ;
             throw new RuntimeException('You have no OpenAI API key yet. Set one up in Settings first.');
         }
 
-        $count    = max(1, min(20, $count));
+        $count    = max(1, min(10, $count));
         $language = $input['language'] ?? 'Taglish';
         $model    = $input['model'] ?? 'gpt-4o';
 

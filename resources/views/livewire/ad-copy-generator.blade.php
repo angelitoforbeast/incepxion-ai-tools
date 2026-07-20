@@ -139,7 +139,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Follow-up messages <span class="text-gray-400 font-normal">(sequence)</span></label>
                     <select wire:model="sequenceCount" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                        @for ($n = 1; $n <= 20; $n++)<option value="{{ $n }}">{{ $n }} message{{ $n > 1 ? 's' : '' }}</option>@endfor
+                        @for ($n = 1; $n <= 10; $n++)<option value="{{ $n }}">{{ $n }} message{{ $n > 1 ? 's' : '' }}</option>@endfor
                     </select>
                 </div>
 

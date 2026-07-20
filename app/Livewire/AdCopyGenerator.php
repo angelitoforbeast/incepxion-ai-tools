@@ -50,7 +50,7 @@ class AdCopyGenerator extends Component
     public ?string $generatedAfterSalesPrompt = null;
 
     /** Follow-up SEQUENCE (BotCake broadcast messages). */
-    #[Validate('required|integer|min:1|max:20')]
+    #[Validate('required|integer|min:1|max:10')]
     public int $sequenceCount = 10;
     public array $sequenceMessages = [];
 
@@ -323,7 +323,7 @@ class AdCopyGenerator extends Component
         $this->validate([
             'product_name'        => ['required', 'string', 'max:200'],
             'product_description' => ['required', 'string', 'max:4000'],
-            'sequenceCount'       => ['required', 'integer', 'min:1', 'max:20'],
+            'sequenceCount'       => ['required', 'integer', 'min:1', 'max:10'],
         ]);
 
         $user = auth()->user();

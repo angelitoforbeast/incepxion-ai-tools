@@ -137,10 +137,33 @@ class RtsProcessorTest extends TestCase
         Livewire::actingAs($user)->test(RtsMonitor::class)
             ->set('from', '2026-07-01')
             ->set('to', '2026-07-31')
-            ->assertViewHas('totalQty', 5)
-            ->assertViewHas('totalDelivered', 1)  // only "Delivered", not "Delivering"
-            ->assertViewHas('totalRts', 2)        // "For Return" + "Returned"
-            ->assertViewHas('totalTransit', 2);   // "Delivering" + "In Transit"
+            ->assertViewHas('full', fn ($f) => $f['total'] === 5
+                && $f['totalDelivered'] === 1   // only "Delivered", not "Delivering"
+                && $f['totalRts'] === 2         // "For Return" + "Returned"
+                && $f['totalTransit'] === 2);   // "Delivering" + "In Transit"
+    }
+
+    public function test_projection_uses_partial_date_window(): void
+    {
+        $user = User::factory()->create();
+        FromJnt::insert([
+            // Early cohort (already settled)
+            ['user_id' => $user->id, 'waybill_number' => 'E1', 'status' => 'Returned',   'submission_time' => '2026-07-02 08:00:00', 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'E2', 'status' => 'Delivered',   'submission_time' => '2026-07-03 08:00:00', 'created_at' => now(), 'updated_at' => now()],
+            // Late cohort (still moving)
+            ['user_id' => $user->id, 'waybill_number' => 'L1', 'status' => 'In Transit',  'submission_time' => '2026-07-19 08:00:00', 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'L2', 'status' => 'In Transit',  'submission_time' => '2026-07-20 08:00:00', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-07-01')
+            ->set('to', '2026-07-21')
+            ->assertViewHas('full', fn ($f) => $f['total'] === 4)
+            ->set('partialDays', 5) // project only Jul 1 → Jul 6 (early cohort only)
+            ->assertViewHas('projection', fn ($p) => $p['total'] === 2
+                && $p['totalRts'] === 1
+                && $p['totalDelivered'] === 1
+                && $p['totalTransit'] === 0);
     }
 
     public function test_monitor_multi_select_item_filter(): void
@@ -155,11 +178,9 @@ class RtsProcessorTest extends TestCase
         Livewire::actingAs($user)->test(RtsMonitor::class)
             ->set('from', '2026-07-01')
             ->set('to', '2026-07-31')
-            ->assertViewHas('totalQty', 2)                     // both items
-            ->set('selectedItems', ['Lip Tattoo'])            // filter to one item
-            ->assertViewHas('totalQty', 1)
-            ->assertViewHas('totalRts', 1)
-            ->assertViewHas('totalDelivered', 0);
+            ->assertViewHas('full', fn ($f) => $f['total'] === 2)   // both items
+            ->set('selectedItems', ['Lip Tattoo'])                 // filter to one item
+            ->assertViewHas('full', fn ($f) => $f['total'] === 1 && $f['totalRts'] === 1 && $f['totalDelivered'] === 0);
     }
 
     public function test_monitor_filter_options_cascade(): void

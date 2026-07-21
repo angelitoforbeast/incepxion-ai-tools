@@ -74,46 +74,49 @@
             <p class="mt-2 text-[11px] text-gray-400">Tip: filters cascade — after Apply, each dropdown only shows values that match your other selections.</p>
         </div>
 
-        {{-- Pie chart summary --}}
-        @php $stop2 = $pctRts + $pctDelivered; @endphp
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
-            <h2 class="text-sm font-semibold text-gray-800 mb-4">Status Breakdown <span class="text-xs font-normal text-gray-400">({{ number_format($totalQty) }} shipments{{ $activeFilters ? ' · filtered' : '' }})</span></h2>
-            <div class="flex flex-wrap items-center gap-8">
-                <div class="relative" style="width:170px;height:170px;flex-shrink:0;">
-                    <div style="width:170px;height:170px;border-radius:9999px;background:conic-gradient(#dc2626 0 {{ $pctRts }}%, #16a34a {{ $pctRts }}% {{ $stop2 }}%, #2563eb {{ $stop2 }}% 100%);"></div>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div style="width:96px;height:96px;background:#fff;border-radius:9999px;" class="flex flex-col items-center justify-center shadow-inner">
-                            <span class="text-xl font-bold text-gray-900">{{ number_format($totalQty) }}</span>
-                            <span class="text-[10px] text-gray-400 uppercase tracking-wide">Total</span>
-                        </div>
+        {{-- Two charts: RTS Projection (partial) + Full range --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+
+            {{-- Chart 1: RTS Projection (slideable partial end date) --}}
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="text-sm font-semibold text-gray-800">🔮 RTS Projection</h2>
+                    <span class="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">Partial cohort</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-3">Older shipments are already settled, so their RTS% projects where the full period is headed.</p>
+
+                <div class="mb-4">
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="text-gray-500">Data up to</span>
+                        <span class="font-semibold text-gray-800">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($partialDate)->format('M j, Y') }}</span>
+                    </div>
+                    <input type="range" min="0" max="{{ max(1, $totalDays) }}" wire:model.live.debounce.400ms="partialDays"
+                           @if ($totalDays === 0) disabled @endif
+                           class="w-full accent-indigo-600 cursor-pointer">
+                    <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+                        <span>{{ \Carbon\Carbon::parse($from)->format('M j') }}</span>
+                        <span>{{ \Carbon\Carbon::parse($to)->format('M j') }}</span>
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <div class="flex items-center gap-3">
-                        <span class="w-3.5 h-3.5 rounded-sm" style="background:#dc2626;"></span>
-                        <span class="text-sm text-gray-700 w-24">RTS</span>
-                        <span class="text-lg font-bold text-red-600">{{ number_format($pctRts, 1) }}%</span>
-                        <span class="text-xs text-gray-400">({{ number_format($totalRts) }})</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="w-3.5 h-3.5 rounded-sm" style="background:#16a34a;"></span>
-                        <span class="text-sm text-gray-700 w-24">Delivered</span>
-                        <span class="text-lg font-bold text-green-600">{{ number_format($pctDelivered, 1) }}%</span>
-                        <span class="text-xs text-gray-400">({{ number_format($totalDelivered) }})</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="w-3.5 h-3.5 rounded-sm" style="background:#2563eb;"></span>
-                        <span class="text-sm text-gray-700 w-24">In Transit</span>
-                        <span class="text-lg font-bold text-blue-600">{{ number_format($pctTransit, 1) }}%</span>
-                        <span class="text-xs text-gray-400">({{ number_format($totalTransit) }})</span>
-                    </div>
+                @include('partials.rts-pie', $projection)
+            </div>
+
+            {{-- Chart 2: Full selected range --}}
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="text-sm font-semibold text-gray-800">📊 Full Range</h2>
+                    <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($to)->format('M j, Y') }}{{ $activeFilters ? ' · filtered' : '' }}</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-3">All shipments in the selected date range (includes those still in transit).</p>
+                <div class="mt-[52px]">
+                    @include('partials.rts-pie', $full)
                 </div>
             </div>
-            <p class="mt-4 text-[11px] text-gray-400">
-                DELIVERED = status is exactly "Delivered" · RTS = "For Return" / "Returned" · IN TRANSIT = all other statuses.
-            </p>
         </div>
+        <p class="text-[11px] text-gray-400 mb-4">
+            DELIVERED = status is exactly "Delivered" · RTS = "For Return" / "Returned" · IN TRANSIT = all other statuses.
+        </p>
 
         {{-- Per-group table --}}
         @if (count($results))

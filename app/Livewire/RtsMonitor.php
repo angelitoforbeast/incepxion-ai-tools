@@ -18,10 +18,24 @@ class RtsMonitor extends Component
     public array $selectedSenders = [];
     public array $selectedCods = [];
 
+    /** Projection cutoff: number of days from $from (partial end date = from + partialDays). */
+    public ?int $partialDays = null;
+
     public function mount(): void
     {
         $this->from = Carbon::now('Asia/Manila')->subMonthNoOverflow()->startOfMonth()->toDateString();
         $this->to   = Carbon::now('Asia/Manila')->toDateString();
+        $this->partialDays = $this->totalDays();
+    }
+
+    public function updatedFrom(): void
+    {
+        $this->partialDays = $this->totalDays();
+    }
+
+    public function updatedTo(): void
+    {
+        $this->partialDays = $this->totalDays();
     }
 
     public function clearFilters(): void
@@ -29,37 +43,72 @@ class RtsMonitor extends Component
         $this->reset('selectedItems', 'selectedSenders', 'selectedCods');
     }
 
-    /** @return array{0: Carbon, 1: Carbon} */
-    private function range(): array
+    private function totalDays(): int
     {
-        return [
-            Carbon::parse($this->from, 'Asia/Manila')->startOfDay(),
-            Carbon::parse($this->to, 'Asia/Manila')->endOfDay(),
-        ];
+        if (! $this->from || ! $this->to) {
+            return 0;
+        }
+
+        return max(0, Carbon::parse($this->from, 'Asia/Manila')->diffInDays(Carbon::parse($this->to, 'Asia/Manila')));
     }
 
-    /** Base query scoped to this user + date range (before the multi-select filters). */
-    private function baseQuery()
+    /** Base query: this user + date range only (used for the cascading option lists). */
+    private function baseQuery(Carbon $fromDt, Carbon $toDt)
     {
-        [$fromDt, $toDt] = $this->range();
-
         return DB::table('from_jnts')
             ->where('user_id', auth()->id())
             ->whereBetween('submission_time', [$fromDt, $toDt]);
     }
 
+    /** Base query + the active multi-select filters. */
+    private function filteredQuery(Carbon $fromDt, Carbon $toDt)
+    {
+        return $this->baseQuery($fromDt, $toDt)
+            ->when($this->selectedItems, fn ($q) => $q->whereIn('item_name', $this->selectedItems))
+            ->when($this->selectedSenders, fn ($q) => $q->whereIn('sender', $this->selectedSenders))
+            ->when($this->selectedCods, fn ($q) => $q->whereIn('cod', $this->selectedCods));
+    }
+
     /**
-     * Cascading option list: distinct values for $column within the date range,
-     * narrowed by the OTHER active filters (its own filter is skipped so the user
-     * can still see/uncheck what they picked).
+     * Status totals + percentages for one date window (applies the active filters).
+     *   - DELIVERED  = status is exactly "Delivered"
+     *   - RTS        = "For Return" / "Returned"
+     *   - IN TRANSIT = everything else
      */
+    private function breakdown(Carbon $fromDt, Carbon $toDt): array
+    {
+        $row = $this->filteredQuery($fromDt, $toDt)->selectRaw("
+            COUNT(*) as quantity,
+            SUM(CASE WHEN LOWER(TRIM(status)) = 'delivered' THEN 1 ELSE 0 END) as delivered,
+            SUM(CASE WHEN LOWER(status) LIKE '%return%' OR LOWER(status) LIKE '%rts%' THEN 1 ELSE 0 END) as rts
+        ")->first();
+
+        $qty = (int) ($row->quantity ?? 0);
+        $rts = (int) ($row->rts ?? 0);
+        $del = (int) ($row->delivered ?? 0);
+        $transit = max(0, $qty - $rts - $del);
+        $base = max(1, $qty);
+
+        return [
+            'total'          => $qty,
+            'totalRts'       => $rts,
+            'totalDelivered' => $del,
+            'totalTransit'   => $transit,
+            'pctRts'         => round($rts / $base * 100, 1),
+            'pctDelivered'   => round($del / $base * 100, 1),
+            'pctTransit'     => round($transit / $base * 100, 1),
+        ];
+    }
+
+    /** Cascading option list: distinct values narrowed by the OTHER active filters. */
     private function optionsFor(string $column, string $skipModel): array
     {
         if (! $this->from || ! $this->to) {
             return [];
         }
 
-        $q = $this->baseQuery();
+        [$fromDt, $toDt] = $this->rangeFull();
+        $q = $this->baseQuery($fromDt, $toDt);
         if ($skipModel !== 'selectedItems' && $this->selectedItems) {
             $q->whereIn('item_name', $this->selectedItems);
         }
@@ -70,42 +119,32 @@ class RtsMonitor extends Component
             $q->whereIn('cod', $this->selectedCods);
         }
 
-        return $q->whereNotNull($column)
-            ->where($column, '<>', '')
-            ->distinct()
-            ->orderBy($column)
-            ->pluck($column)
-            ->all();
+        return $q->whereNotNull($column)->where($column, '<>', '')
+            ->distinct()->orderBy($column)->pluck($column)->all();
     }
 
-    /**
-     * Aggregated RTS rows for the selected filters (this user only).
-     *   - DELIVERED  = status is exactly "Delivered"
-     *   - RTS        = "For Return" / "Returned"
-     *   - IN TRANSIT = everything else
-     */
-    private function results(): array
+    /** @return array{0: Carbon, 1: Carbon} full selected range */
+    private function rangeFull(): array
     {
-        if (! $this->from || ! $this->to) {
-            return [];
-        }
+        return [
+            Carbon::parse($this->from, 'Asia/Manila')->startOfDay(),
+            Carbon::parse($this->to, 'Asia/Manila')->endOfDay(),
+        ];
+    }
 
-        $rows = $this->baseQuery()
-            ->when($this->selectedItems, fn ($q) => $q->whereIn('item_name', $this->selectedItems))
-            ->when($this->selectedSenders, fn ($q) => $q->whereIn('sender', $this->selectedSenders))
-            ->when($this->selectedCods, fn ($q) => $q->whereIn('cod', $this->selectedCods))
-            ->selectRaw("
-                COALESCE(sender,'')    as sender,
-                COALESCE(item_name,'') as item_name,
-                COALESCE(cod,'')       as cod,
-                COUNT(*)               as quantity,
-                MIN(submission_time)   as min_sub,
-                MAX(submission_time)   as max_sub,
-                SUM(CASE WHEN LOWER(TRIM(status)) = 'delivered' THEN 1 ELSE 0 END) as delivered_count,
-                SUM(CASE WHEN LOWER(status) LIKE '%return%' OR LOWER(status) LIKE '%rts%' THEN 1 ELSE 0 END) as rts_count
-            ")
-            ->groupBy('sender', 'item_name', 'cod')
-            ->get();
+    /** Per-group table rows for the full range (with active filters). */
+    private function results(Carbon $fromDt, Carbon $toDt): array
+    {
+        $rows = $this->filteredQuery($fromDt, $toDt)->selectRaw("
+            COALESCE(sender,'')    as sender,
+            COALESCE(item_name,'') as item_name,
+            COALESCE(cod,'')       as cod,
+            COUNT(*)               as quantity,
+            MIN(submission_time)   as min_sub,
+            MAX(submission_time)   as max_sub,
+            SUM(CASE WHEN LOWER(TRIM(status)) = 'delivered' THEN 1 ELSE 0 END) as delivered_count,
+            SUM(CASE WHEN LOWER(status) LIKE '%return%' OR LOWER(status) LIKE '%rts%' THEN 1 ELSE 0 END) as rts_count
+        ")->groupBy('sender', 'item_name', 'cod')->get();
 
         $fmt = function ($v) {
             try {
@@ -124,9 +163,7 @@ class RtsMonitor extends Component
             $rtsPct       = round($rts / $total * 100, 2);
             $deliveredPct = round($delivered / $total * 100, 2);
             $transitPct   = round(max(0, 100 - $rtsPct - $deliveredPct), 2);
-
-            $settled    = $rts + $delivered;
-            $currentRts = $settled > 0 ? round($rts / $settled * 100, 2) : null;
+            $settled      = $rts + $delivered;
 
             return [
                 'date_range'        => $fmt($r->min_sub).' to '.$fmt($r->max_sub),
@@ -140,34 +177,35 @@ class RtsMonitor extends Component
                 'rts_percent'       => $rtsPct,
                 'delivered_percent' => $deliveredPct,
                 'transit_percent'   => $transitPct,
-                'current_rts'       => $currentRts,
+                'current_rts'       => $settled > 0 ? round($rts / $settled * 100, 2) : null,
             ];
         })->sortByDesc('rts_percent')->values()->all();
     }
 
     public function render()
     {
-        $results = $this->results();
+        if (! $this->from || ! $this->to) {
+            return view('livewire.rts-monitor', ['results' => [], 'totalDays' => 0]);
+        }
 
-        $totalQty       = array_sum(array_column($results, 'quantity'));
-        $totalRts       = array_sum(array_column($results, 'rts_count'));
-        $totalDelivered = array_sum(array_column($results, 'delivered_count'));
-        $totalTransit   = array_sum(array_column($results, 'transit_count'));
-        $base = max(1, $totalQty);
+        [$fromDt, $toDt] = $this->rangeFull();
+
+        // Projection window: from → (from + partialDays).
+        $totalDays = $this->totalDays();
+        $days      = max(0, min($totalDays, (int) ($this->partialDays ?? $totalDays)));
+        $partialTo = Carbon::parse($this->from, 'Asia/Manila')->addDays($days)->endOfDay();
 
         return view('livewire.rts-monitor', [
-            'results'        => $results,
-            'itemOptions'    => $this->optionsFor('item_name', 'selectedItems'),
-            'senderOptions'  => $this->optionsFor('sender', 'selectedSenders'),
-            'codOptions'     => $this->optionsFor('cod', 'selectedCods'),
-            'activeFilters'  => count($this->selectedItems) + count($this->selectedSenders) + count($this->selectedCods),
-            'totalQty'       => $totalQty,
-            'totalRts'       => $totalRts,
-            'totalDelivered' => $totalDelivered,
-            'totalTransit'   => $totalTransit,
-            'pctRts'         => round($totalRts / $base * 100, 1),
-            'pctDelivered'   => round($totalDelivered / $base * 100, 1),
-            'pctTransit'     => round($totalTransit / $base * 100, 1),
+            'results'       => $this->results($fromDt, $toDt),
+            'itemOptions'   => $this->optionsFor('item_name', 'selectedItems'),
+            'senderOptions' => $this->optionsFor('sender', 'selectedSenders'),
+            'codOptions'    => $this->optionsFor('cod', 'selectedCods'),
+            'activeFilters' => count($this->selectedItems) + count($this->selectedSenders) + count($this->selectedCods),
+
+            'full'          => $this->breakdown($fromDt, $toDt),
+            'projection'    => $this->breakdown($fromDt, $partialTo),
+            'totalDays'     => $totalDays,
+            'partialDate'   => $partialTo->toDateString(),
         ]);
     }
 }

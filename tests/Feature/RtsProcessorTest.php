@@ -143,6 +143,25 @@ class RtsProcessorTest extends TestCase
             ->assertViewHas('totalTransit', 2);   // "Delivering" + "In Transit"
     }
 
+    public function test_monitor_multi_select_item_filter(): void
+    {
+        $user = User::factory()->create();
+        $now = '2026-07-10 08:00:00';
+        FromJnt::insert([
+            ['user_id' => $user->id, 'waybill_number' => 'A1', 'item_name' => 'Lip Tattoo', 'status' => 'Returned',  'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'B1', 'item_name' => 'Face Wash',  'status' => 'Delivered', 'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-07-01')
+            ->set('to', '2026-07-31')
+            ->assertViewHas('totalQty', 2)                     // both items
+            ->set('selectedItems', ['Lip Tattoo'])            // filter to one item
+            ->assertViewHas('totalQty', 1)
+            ->assertViewHas('totalRts', 1)
+            ->assertViewHas('totalDelivered', 0);
+    }
+
     public function test_scoping_is_per_user(): void
     {
         $userA = User::factory()->create();

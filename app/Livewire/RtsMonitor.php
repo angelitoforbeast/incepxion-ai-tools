@@ -13,17 +13,61 @@ class RtsMonitor extends Component
     public string $from = '';
     public string $to = '';
 
+    /** Multi-select filters (empty = all). */
+    public array $selectedItems = [];
+    public array $selectedSenders = [];
+    public array $selectedCods = [];
+
     public function mount(): void
     {
         $this->from = Carbon::now('Asia/Manila')->subMonthNoOverflow()->startOfMonth()->toDateString();
         $this->to   = Carbon::now('Asia/Manila')->toDateString();
     }
 
+    public function clearFilters(): void
+    {
+        $this->reset('selectedItems', 'selectedSenders', 'selectedCods');
+    }
+
+    /** @return array{0: Carbon, 1: Carbon} */
+    private function range(): array
+    {
+        return [
+            Carbon::parse($this->from, 'Asia/Manila')->startOfDay(),
+            Carbon::parse($this->to, 'Asia/Manila')->endOfDay(),
+        ];
+    }
+
+    /** Base query scoped to this user + date range (before the multi-select filters). */
+    private function baseQuery()
+    {
+        [$fromDt, $toDt] = $this->range();
+
+        return DB::table('from_jnts')
+            ->where('user_id', auth()->id())
+            ->whereBetween('submission_time', [$fromDt, $toDt]);
+    }
+
+    /** Distinct values (within the date range) for a column, for the checkbox lists. */
+    private function distinctValues(string $column): array
+    {
+        if (! $this->from || ! $this->to) {
+            return [];
+        }
+
+        return $this->baseQuery()
+            ->whereNotNull($column)
+            ->where($column, '<>', '')
+            ->distinct()
+            ->orderBy($column)
+            ->pluck($column)
+            ->all();
+    }
+
     /**
-     * Aggregated RTS rows for the selected date range (this user only).
-     * Status classification (based strictly on the status text):
-     *   - DELIVERED = status is exactly "Delivered"
-     *   - RTS       = "For Return" or "Returned"
+     * Aggregated RTS rows for the selected filters (this user only).
+     *   - DELIVERED  = status is exactly "Delivered"
+     *   - RTS        = "For Return" / "Returned"
      *   - IN TRANSIT = everything else
      */
     private function results(): array
@@ -32,12 +76,10 @@ class RtsMonitor extends Component
             return [];
         }
 
-        $fromDt = Carbon::parse($this->from, 'Asia/Manila')->startOfDay();
-        $toDt   = Carbon::parse($this->to, 'Asia/Manila')->endOfDay();
-
-        $rows = DB::table('from_jnts')
-            ->where('user_id', auth()->id())
-            ->whereBetween('submission_time', [$fromDt, $toDt])
+        $rows = $this->baseQuery()
+            ->when($this->selectedItems, fn ($q) => $q->whereIn('item_name', $this->selectedItems))
+            ->when($this->selectedSenders, fn ($q) => $q->whereIn('sender', $this->selectedSenders))
+            ->when($this->selectedCods, fn ($q) => $q->whereIn('cod', $this->selectedCods))
             ->selectRaw("
                 COALESCE(sender,'')    as sender,
                 COALESCE(item_name,'') as item_name,
@@ -69,7 +111,6 @@ class RtsMonitor extends Component
             $deliveredPct = round($delivered / $total * 100, 2);
             $transitPct   = round(max(0, 100 - $rtsPct - $deliveredPct), 2);
 
-            // RTS rate among settled shipments (delivered + returned).
             $settled    = $rts + $delivered;
             $currentRts = $settled > 0 ? round($rts / $settled * 100, 2) : null;
 
@@ -98,11 +139,14 @@ class RtsMonitor extends Component
         $totalRts       = array_sum(array_column($results, 'rts_count'));
         $totalDelivered = array_sum(array_column($results, 'delivered_count'));
         $totalTransit   = array_sum(array_column($results, 'transit_count'));
-
         $base = max(1, $totalQty);
 
         return view('livewire.rts-monitor', [
             'results'        => $results,
+            'itemOptions'    => $this->distinctValues('item_name'),
+            'senderOptions'  => $this->distinctValues('sender'),
+            'codOptions'     => $this->distinctValues('cod'),
+            'activeFilters'  => count($this->selectedItems) + count($this->selectedSenders) + count($this->selectedCods),
             'totalQty'       => $totalQty,
             'totalRts'       => $totalRts,
             'totalDelivered' => $totalDelivered,

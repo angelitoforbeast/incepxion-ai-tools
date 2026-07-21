@@ -199,6 +199,25 @@ class RtsProcessorTest extends TestCase
             ->assertViewHas('full', fn ($f) => $f['total'] === 1 && $f['totalRts'] === 1 && $f['totalDelivered'] === 0);
     }
 
+    public function test_monitor_remove_filter_chip(): void
+    {
+        $user = User::factory()->create();
+        $now = '2026-07-10 08:00:00';
+        FromJnt::insert([
+            ['user_id' => $user->id, 'waybill_number' => 'A1', 'item_name' => 'Lip Tattoo', 'status' => 'Returned',  'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'B1', 'item_name' => 'Face Wash',  'status' => 'Delivered', 'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-07-01')
+            ->set('to', '2026-07-31')
+            ->set('selectedItems', ['Lip Tattoo', 'Face Wash'])
+            ->assertViewHas('full', fn ($f) => $f['total'] === 2)
+            ->call('removeFilter', 'item', 0)          // remove "Lip Tattoo" (index 0)
+            ->assertSet('selectedItems', ['Face Wash'])
+            ->assertViewHas('full', fn ($f) => $f['total'] === 1);
+    }
+
     public function test_monitor_filter_options_cascade(): void
     {
         $user = User::factory()->create();

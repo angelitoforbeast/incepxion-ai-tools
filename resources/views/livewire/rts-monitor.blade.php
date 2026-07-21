@@ -28,7 +28,7 @@
                         <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ $f['label'] }}</label>
                         <div x-data="{ open: false, s: '', count: {{ count($f['selected']) }} }"
                              @change="count = $el.querySelectorAll('input[type=checkbox]:checked').length"
-                             @rts-filters-cleared.window="count = 0"
+                             @rts-filters-updated.window="$nextTick(() => count = $el.querySelectorAll('input[type=checkbox]:checked').length)"
                              class="relative">
                             <button type="button" @click="open = !open"
                                     class="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm bg-white hover:bg-gray-50 min-w-[150px] justify-between"
@@ -73,7 +73,30 @@
                     <input type="text" x-model="q" placeholder="Search sender / item…" class="border border-gray-300 rounded-lg p-2 text-sm min-w-[200px]">
                 </div>
             </div>
-            <p class="mt-2 text-[11px] text-gray-400">Tip: filters cascade — after Apply, each dropdown only shows values that match your other selections.</p>
+            @if ($activeFilters)
+                <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Active</span>
+                    @php
+                        $chipGroups = [
+                            ['type' => 'item',   'values' => $selectedItems,   'cls' => 'bg-teal-50 border-teal-200 text-teal-700',   'x' => 'text-teal-400 hover:bg-teal-100'],
+                            ['type' => 'sender', 'values' => $selectedSenders, 'cls' => 'bg-blue-50 border-blue-200 text-blue-700',   'x' => 'text-blue-400 hover:bg-blue-100'],
+                            ['type' => 'cod',    'values' => $selectedCods,    'cls' => 'bg-amber-50 border-amber-200 text-amber-700', 'x' => 'text-amber-500 hover:bg-amber-100'],
+                        ];
+                    @endphp
+                    @foreach ($chipGroups as $g)
+                        @foreach ($g['values'] as $i => $v)
+                            <span class="inline-flex items-center gap-1 rounded-full border pl-2.5 pr-1 py-0.5 text-xs max-w-[240px] {{ $g['cls'] }}">
+                                <span class="truncate" title="{{ ucfirst($g['type']) }}: {{ $v }}">{{ $v }}</span>
+                                <button type="button" wire:click="removeFilter('{{ $g['type'] }}', {{ $i }})"
+                                        class="flex-shrink-0 w-4 h-4 rounded-full inline-flex items-center justify-center leading-none {{ $g['x'] }}">&times;</button>
+                            </span>
+                        @endforeach
+                    @endforeach
+                    <button type="button" wire:click="clearFilters" class="ml-1 text-xs font-semibold text-gray-500 hover:text-gray-700 underline">Clear all</button>
+                </div>
+            @else
+                <p class="mt-2 text-[11px] text-gray-400">Tip: filters cascade — after Apply, each dropdown only shows values that match your other selections.</p>
+            @endif
         </div>
 
         {{-- Two charts: RTS Projection (partial) + Full range --}}

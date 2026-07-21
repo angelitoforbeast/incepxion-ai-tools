@@ -74,7 +74,24 @@ class RtsMonitor extends Component
     public function clearFilters(): void
     {
         $this->reset('selectedItems', 'selectedSenders', 'selectedCods');
-        $this->dispatch('rts-filters-cleared');
+        $this->dispatch('rts-filters-updated');
+    }
+
+    /** Remove a single selected value (from a chip's ✕). */
+    public function removeFilter(string $type, int $index): void
+    {
+        $prop = ['item' => 'selectedItems', 'sender' => 'selectedSenders', 'cod' => 'selectedCods'][$type] ?? null;
+        if (! $prop) {
+            return;
+        }
+
+        $arr = $this->{$prop};
+        if (array_key_exists($index, $arr)) {
+            unset($arr[$index]);
+            $this->{$prop} = array_values($arr);
+        }
+
+        $this->dispatch('rts-filters-updated');
     }
 
     private function totalDays(): int

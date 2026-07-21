@@ -22,7 +22,6 @@ class RtsProcessor extends Component
 
     // Upload tab
     public $file = null;
-    public ?string $batchAt = null;
     public ?int $currentUploadId = null;
     public ?string $error = null;
 
@@ -47,22 +46,8 @@ class RtsProcessor extends Component
     public function submitUpload(): void
     {
         $this->validate([
-            'file'    => ['required', 'file', 'mimes:zip,csv,xlsx', 'max:102400'],
-            'batchAt' => ['nullable', 'string'],
+            'file' => ['required', 'file', 'mimes:zip,csv,xlsx', 'max:102400'],
         ], [], ['file' => 'file']);
-
-        $batch = null;
-        if (! empty($this->batchAt)) {
-            try {
-                $batch = Carbon::createFromFormat('Y-m-d\TH:i', $this->batchAt, 'Asia/Manila');
-            } catch (\Throwable $e) {
-                try {
-                    $batch = Carbon::parse($this->batchAt, 'Asia/Manila');
-                } catch (\Throwable $e2) {
-                    $batch = null;
-                }
-            }
-        }
 
         $folder   = 'uploads/rts/'.now()->format('Y-m-d');
         $basename = Str::slug(pathinfo($this->file->getClientOriginalName(), PATHINFO_FILENAME));
@@ -75,13 +60,12 @@ class RtsProcessor extends Component
             'disk'          => 'local',
             'path'          => $path,
             'status'        => 'queued',
-            'batch_at'      => $batch,
         ]);
 
         ProcessRtsUpload::dispatch($upload->id);
 
         $this->currentUploadId = $upload->id;
-        $this->reset('file', 'batchAt', 'error');
+        $this->reset('file', 'error');
     }
 
     public function confirmUpload(): void

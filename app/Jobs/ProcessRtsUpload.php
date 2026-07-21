@@ -23,6 +23,7 @@ class ProcessRtsUpload implements ShouldQueue
     public int $tries = 1;
 
     private const INSERT_CHUNK = 1000;
+    private const LOOKUP_CHUNK = 3000;
     private const CONFLICT_SAMPLE = 25;
 
     public function __construct(public int $uploadId, public bool $confirmed = false)
@@ -53,10 +54,18 @@ class ProcessRtsUpload implements ShouldQueue
 
             $waybills = array_keys($rows);
 
-            // Existing statuses for THIS user only.
-            $existing = FromJnt::where('user_id', $upload->user_id)
-                ->whereIn('waybill_number', $waybills)
-                ->pluck('status', 'waybill_number');
+            // Existing statuses for THIS user only. Chunk the IN() lookup so huge files
+            // don't blow past MySQL's prepared-statement placeholder limit (~65k).
+            $existing = [];
+            foreach (array_chunk($waybills, self::LOOKUP_CHUNK) as $chunk) {
+                FromJnt::where('user_id', $upload->user_id)
+                    ->whereIn('waybill_number', $chunk)
+                    ->select('waybill_number', 'status')
+                    ->get()
+                    ->each(function ($r) use (&$existing) {
+                        $existing[$r->waybill_number] = $r->status;
+                    });
+            }
 
             // Detect regressive rows (possible wrong file).
             $conflicts = [];

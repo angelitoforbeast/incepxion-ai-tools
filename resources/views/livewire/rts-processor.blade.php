@@ -32,13 +32,6 @@
                         <div wire:loading wire:target="file" class="text-xs text-gray-400 mt-1">Uploading file…</div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Optional upload date/time</label>
-                        <input type="datetime-local" wire:model="batchAt"
-                               class="block border border-gray-300 rounded-lg p-2 text-sm w-full max-w-xs" />
-                        <p class="text-xs text-gray-500 mt-1">Leave empty to use the current date &amp; time.</p>
-                    </div>
-
                     <button type="submit" wire:loading.attr="disabled" wire:target="file,submitUpload"
                             class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
                         <span wire:loading.remove wire:target="submitUpload">⬆️ Upload &amp; Process</span>

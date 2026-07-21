@@ -8,11 +8,11 @@
             <div class="flex flex-wrap items-end gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">From</label>
-                    <input type="date" wire:model="from" class="border border-gray-300 rounded-lg p-2 text-sm">
+                    <input type="date" wire:model.live="from" class="border border-gray-300 rounded-lg p-2 text-sm">
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">To</label>
-                    <input type="date" wire:model="to" class="border border-gray-300 rounded-lg p-2 text-sm">
+                    <input type="date" wire:model.live="to" class="border border-gray-300 rounded-lg p-2 text-sm">
                 </div>
 
                 @php
@@ -24,7 +24,7 @@
                 @endphp
 
                 @foreach ($filters as $f)
-                    <div>
+                    <div wire:key="filt-{{ $f['model'] }}">
                         <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ $f['label'] }}</label>
                         <div x-data="{ open: false, s: '', count: {{ count($f['selected']) }} }"
                              @change="count = $el.querySelectorAll('input[type=checkbox]:checked').length"
@@ -42,9 +42,10 @@
                                        class="w-full border border-gray-300 rounded p-1.5 text-xs mb-2 focus:border-indigo-500 focus:ring-indigo-500">
                                 <div class="max-h-56 overflow-y-auto space-y-0.5 pr-1">
                                     @forelse ($f['options'] as $opt)
-                                        <label class="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 rounded px-1.5 py-1 cursor-pointer"
+                                        <label wire:key="opt-{{ $f['model'] }}-{{ md5((string) $opt) }}"
+                                               class="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 rounded px-1.5 py-1 cursor-pointer"
                                                x-show="s === '' || (@js(mb_strtolower((string) $opt))).includes(s.toLowerCase())">
-                                            <input type="checkbox" value="{{ $opt }}" wire:model="{{ $f['model'] }}"
+                                            <input type="checkbox" value="{{ $opt }}" wire:model.live="{{ $f['model'] }}"
                                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                             <span class="truncate" title="{{ $opt }}">{{ $opt }}</span>
                                         </label>
@@ -56,9 +57,6 @@
                         </div>
                     </div>
                 @endforeach
-
-                <button wire:click="$refresh"
-                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Apply</button>
 
                 @if ($activeFilters)
                     <button wire:click="clearFilters"
@@ -95,7 +93,7 @@
                     <button type="button" wire:click="clearFilters" class="ml-1 text-xs font-semibold text-gray-500 hover:text-gray-700 underline">Clear all</button>
                 </div>
             @else
-                <p class="mt-2 text-[11px] text-gray-400">Tip: filters cascade — after Apply, each dropdown only shows values that match your other selections.</p>
+                <p class="mt-2 text-[11px] text-gray-400">Tip: filters cascade instantly — checking a value immediately narrows the other dropdowns.</p>
             @endif
         </div>
 

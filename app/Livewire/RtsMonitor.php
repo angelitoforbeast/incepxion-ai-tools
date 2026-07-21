@@ -21,21 +21,54 @@ class RtsMonitor extends Component
     /** Projection cutoff: number of days from $from (partial end date = from + partialDays). */
     public ?int $partialDays = null;
 
+    /** Default projection window aims for at least this many shipments (or all, if fewer). */
+    private const PROJECTION_MIN = 300;
+
     public function mount(): void
     {
         $this->from = Carbon::now('Asia/Manila')->subMonthNoOverflow()->startOfMonth()->toDateString();
         $this->to   = Carbon::now('Asia/Manila')->toDateString();
-        $this->partialDays = $this->totalDays();
+        $this->partialDays = $this->defaultPartialDays();
     }
 
     public function updatedFrom(): void
     {
-        $this->partialDays = $this->totalDays();
+        $this->partialDays = $this->defaultPartialDays();
     }
 
     public function updatedTo(): void
     {
-        $this->partialDays = $this->totalDays();
+        $this->partialDays = $this->defaultPartialDays();
+    }
+
+    /**
+     * Default projection cutoff: the earliest window [from → D] that reaches at least
+     * PROJECTION_MIN shipments. If fewer than that exist, use the whole range.
+     */
+    private function defaultPartialDays(): int
+    {
+        if (! $this->from || ! $this->to) {
+            return 0;
+        }
+
+        [$fromDt, $toDt] = $this->rangeFull();
+
+        // submission_time of the Nth-earliest shipment (N = PROJECTION_MIN).
+        $row = $this->filteredQuery($fromDt, $toDt)
+            ->orderBy('submission_time')
+            ->offset(self::PROJECTION_MIN - 1)
+            ->limit(1)
+            ->get(['submission_time'])
+            ->first();
+
+        if (! $row || empty($row->submission_time)) {
+            return $this->totalDays(); // fewer than PROJECTION_MIN → use all available
+        }
+
+        $days = Carbon::parse($this->from, 'Asia/Manila')
+            ->diffInDays(Carbon::parse($row->submission_time, 'Asia/Manila'));
+
+        return max(0, min($this->totalDays(), $days));
     }
 
     public function clearFilters(): void

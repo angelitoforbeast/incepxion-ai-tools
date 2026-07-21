@@ -166,6 +166,22 @@ class RtsProcessorTest extends TestCase
                 && $p['totalTransit'] === 0);
     }
 
+    public function test_projection_defaults_to_all_when_below_threshold(): void
+    {
+        $user = User::factory()->create();
+        FromJnt::insert([
+            ['user_id' => $user->id, 'waybill_number' => 'X1', 'status' => 'Delivered', 'submission_time' => '2026-07-02 08:00:00', 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'X2', 'status' => 'Returned',  'submission_time' => '2026-07-20 08:00:00', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // Fewer than 300 shipments → default projection window = entire range → projection == full.
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-07-01')
+            ->set('to', '2026-07-21')
+            ->assertViewHas('projection', fn ($p) => $p['total'] === 2)
+            ->assertViewHas('full', fn ($f) => $f['total'] === 2);
+    }
+
     public function test_monitor_multi_select_item_filter(): void
     {
         $user = User::factory()->create();

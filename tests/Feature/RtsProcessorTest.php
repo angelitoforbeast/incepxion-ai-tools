@@ -162,6 +162,24 @@ class RtsProcessorTest extends TestCase
             ->assertViewHas('totalDelivered', 0);
     }
 
+    public function test_monitor_filter_options_cascade(): void
+    {
+        $user = User::factory()->create();
+        $now = '2026-07-10 08:00:00';
+        FromJnt::insert([
+            ['user_id' => $user->id, 'waybill_number' => 'A1', 'item_name' => 'Lip Tattoo', 'sender' => 'ShopA', 'status' => 'Returned',  'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'B1', 'item_name' => 'Face Wash',  'sender' => 'ShopB', 'status' => 'Delivered', 'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-07-01')
+            ->set('to', '2026-07-31')
+            ->assertViewHas('senderOptions', ['ShopA', 'ShopB'])          // all senders shown
+            ->set('selectedItems', ['Lip Tattoo'])
+            ->assertViewHas('senderOptions', ['ShopA'])                   // cascaded: only ShopA carries Lip Tattoo
+            ->assertViewHas('itemOptions', ['Face Wash', 'Lip Tattoo']);  // item list keeps all (skips its own filter)
+    }
+
     public function test_scoping_is_per_user(): void
     {
         $userA = User::factory()->create();

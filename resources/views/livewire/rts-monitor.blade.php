@@ -71,6 +71,7 @@
                     <input type="text" x-model="q" placeholder="Search sender / item…" class="border border-gray-300 rounded-lg p-2 text-sm min-w-[200px]">
                 </div>
             </div>
+            <p class="mt-2 text-[11px] text-gray-400">Tip: filters cascade — after Apply, each dropdown only shows values that match your other selections.</p>
         </div>
 
         {{-- Pie chart summary --}}

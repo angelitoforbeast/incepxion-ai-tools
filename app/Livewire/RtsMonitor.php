@@ -48,15 +48,29 @@ class RtsMonitor extends Component
             ->whereBetween('submission_time', [$fromDt, $toDt]);
     }
 
-    /** Distinct values (within the date range) for a column, for the checkbox lists. */
-    private function distinctValues(string $column): array
+    /**
+     * Cascading option list: distinct values for $column within the date range,
+     * narrowed by the OTHER active filters (its own filter is skipped so the user
+     * can still see/uncheck what they picked).
+     */
+    private function optionsFor(string $column, string $skipModel): array
     {
         if (! $this->from || ! $this->to) {
             return [];
         }
 
-        return $this->baseQuery()
-            ->whereNotNull($column)
+        $q = $this->baseQuery();
+        if ($skipModel !== 'selectedItems' && $this->selectedItems) {
+            $q->whereIn('item_name', $this->selectedItems);
+        }
+        if ($skipModel !== 'selectedSenders' && $this->selectedSenders) {
+            $q->whereIn('sender', $this->selectedSenders);
+        }
+        if ($skipModel !== 'selectedCods' && $this->selectedCods) {
+            $q->whereIn('cod', $this->selectedCods);
+        }
+
+        return $q->whereNotNull($column)
             ->where($column, '<>', '')
             ->distinct()
             ->orderBy($column)
@@ -143,9 +157,9 @@ class RtsMonitor extends Component
 
         return view('livewire.rts-monitor', [
             'results'        => $results,
-            'itemOptions'    => $this->distinctValues('item_name'),
-            'senderOptions'  => $this->distinctValues('sender'),
-            'codOptions'     => $this->distinctValues('cod'),
+            'itemOptions'    => $this->optionsFor('item_name', 'selectedItems'),
+            'senderOptions'  => $this->optionsFor('sender', 'selectedSenders'),
+            'codOptions'     => $this->optionsFor('cod', 'selectedCods'),
             'activeFilters'  => count($this->selectedItems) + count($this->selectedSenders) + count($this->selectedCods),
             'totalQty'       => $totalQty,
             'totalRts'       => $totalRts,

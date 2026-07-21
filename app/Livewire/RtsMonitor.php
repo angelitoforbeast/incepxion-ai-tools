@@ -31,15 +31,18 @@ class RtsMonitor extends Component
         $this->partialDays = $this->defaultPartialDays();
     }
 
-    public function updatedFrom(): void
+    private function refreshProjectionDefault(): void
     {
         $this->partialDays = $this->defaultPartialDays();
     }
 
-    public function updatedTo(): void
-    {
-        $this->partialDays = $this->defaultPartialDays();
-    }
+    // Recompute the projection cohort whenever the date range OR the filters change,
+    // so the "≥300 (or all available)" default always reflects the current dataset.
+    public function updatedFrom(): void            { $this->refreshProjectionDefault(); }
+    public function updatedTo(): void              { $this->refreshProjectionDefault(); }
+    public function updatedSelectedItems(): void   { $this->refreshProjectionDefault(); }
+    public function updatedSelectedSenders(): void { $this->refreshProjectionDefault(); }
+    public function updatedSelectedCods(): void    { $this->refreshProjectionDefault(); }
 
     /**
      * Default projection cutoff: the earliest window [from → D] that reaches at least
@@ -74,6 +77,7 @@ class RtsMonitor extends Component
     public function clearFilters(): void
     {
         $this->reset('selectedItems', 'selectedSenders', 'selectedCods');
+        $this->refreshProjectionDefault();
         $this->dispatch('rts-filters-updated');
     }
 
@@ -91,6 +95,7 @@ class RtsMonitor extends Component
             $this->{$prop} = array_values($arr);
         }
 
+        $this->refreshProjectionDefault();
         $this->dispatch('rts-filters-updated');
     }
 

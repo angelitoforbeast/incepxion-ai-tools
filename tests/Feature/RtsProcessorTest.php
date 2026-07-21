@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Jobs\ProcessRtsUpload;
+use App\Livewire\RtsMonitor;
 use App\Models\FromJnt;
 use App\Models\RtsUpload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class RtsProcessorTest extends TestCase
@@ -118,6 +120,27 @@ class RtsProcessorTest extends TestCase
 
         $this->assertSame('done', $upload->status);
         Storage::disk('local')->assertMissing($upload->path);
+    }
+
+    public function test_monitor_classifies_strictly_by_status(): void
+    {
+        $user = User::factory()->create();
+        $now = '2026-07-10 08:00:00';
+        FromJnt::insert([
+            ['user_id' => $user->id, 'waybill_number' => 'D1', 'status' => 'Delivered',  'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'D2', 'status' => 'Delivering', 'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()], // NOT delivered
+            ['user_id' => $user->id, 'waybill_number' => 'R1', 'status' => 'For Return', 'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'R2', 'status' => 'Returned',   'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'waybill_number' => 'T1', 'status' => 'In Transit', 'submission_time' => $now, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-07-01')
+            ->set('to', '2026-07-31')
+            ->assertViewHas('totalQty', 5)
+            ->assertViewHas('totalDelivered', 1)  // only "Delivered", not "Delivering"
+            ->assertViewHas('totalRts', 2)        // "For Return" + "Returned"
+            ->assertViewHas('totalTransit', 2);   // "Delivering" + "In Transit"
     }
 
     public function test_scoping_is_per_user(): void

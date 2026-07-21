@@ -26,12 +26,14 @@
                 @foreach ($filters as $f)
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">{{ $f['label'] }}</label>
-                        <div x-data="{ open: false, s: '' }" class="relative">
+                        <div x-data="{ open: false, s: '', count: {{ count($f['selected']) }} }"
+                             @change="count = $el.querySelectorAll('input[type=checkbox]:checked').length"
+                             @rts-filters-cleared.window="count = 0"
+                             class="relative">
                             <button type="button" @click="open = !open"
-                                    class="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:bg-gray-50 min-w-[150px] justify-between">
-                                <span class="text-gray-700">
-                                    {{ count($f['selected']) ? count($f['selected']).' selected' : 'All' }}
-                                </span>
+                                    class="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm bg-white hover:bg-gray-50 min-w-[150px] justify-between"
+                                    :class="count ? 'border-indigo-400 text-indigo-700 font-medium' : 'border-gray-300 text-gray-700'">
+                                <span x-text="count ? count + ' selected' : 'All'"></span>
                                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                             <div x-show="open" x-transition @click.outside="open = false" style="display:none"

@@ -74,6 +74,7 @@ class RtsMonitor extends Component
     public function clearFilters(): void
     {
         $this->reset('selectedItems', 'selectedSenders', 'selectedCods');
+        $this->dispatch('rts-filters-cleared');
     }
 
     private function totalDays(): int

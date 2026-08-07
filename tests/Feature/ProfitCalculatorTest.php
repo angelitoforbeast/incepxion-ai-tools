@@ -29,6 +29,22 @@ class ProfitCalculatorTest extends TestCase
         $this->assertEqualsWithDelta(7307.28, (float) $calc->net_profit, 0.01);
     }
 
+    public function test_inputs_are_retained_per_user(): void
+    {
+        $user = User::factory()->create(['status' => 'approved']);
+
+        Livewire::actingAs($user)->test(ProfitCalculator::class)
+            ->set('c1.cpp', 999)
+            ->call('calcNet', 1);
+
+        $user->refresh();
+        $this->assertSame(999, (int) $user->profit_inputs['c1']['cpp']);
+
+        // A fresh visit restores the saved value.
+        Livewire::actingAs($user)->test(ProfitCalculator::class)
+            ->assertSet('c1.cpp', 999);
+    }
+
     public function test_adjustments_error_when_orders_zero(): void
     {
         $user = User::factory()->create(['status' => 'approved']);

@@ -26,9 +26,21 @@ class ProfitCalculator extends Component
 
     public function mount(): void
     {
-        $this->c1 = self::DEFAULTS;
-        $this->c2 = self::DEFAULTS;
+        // Restore this user's last inputs (falls back to the demo defaults).
+        $saved = auth()->user()->profit_inputs ?? [];
+        $this->c1 = array_merge(self::DEFAULTS, is_array($saved['c1'] ?? null) ? $saved['c1'] : []);
+        $this->c2 = array_merge(self::DEFAULTS, is_array($saved['c2'] ?? null) ? $saved['c2'] : []);
     }
+
+    /** Persist the current inputs to the user so they're restored next visit. */
+    private function remember(): void
+    {
+        auth()->user()->forceFill(['profit_inputs' => ['c1' => $this->c1, 'c2' => $this->c2]])->save();
+    }
+
+    // Fires when an input syncs (on blur) — keep the user's inputs saved.
+    public function updatedC1(): void { $this->remember(); }
+    public function updatedC2(): void { $this->remember(); }
 
     private function num($v): float
     {
@@ -72,6 +84,8 @@ class ProfitCalculator extends Component
             'rts'          => $this->num($c['rts'] ?? 0),
             'net_profit'   => round($net, 2),
         ]);
+
+        $this->remember();
     }
 
     public function calcAdj(int $which): void
@@ -109,6 +123,8 @@ class ProfitCalculator extends Component
         } else {
             $this->adj1 = $result;
         }
+
+        $this->remember();
     }
 
     public function render()

@@ -39,7 +39,7 @@
                             @foreach ($fields as $key => $label)
                                 <div class="{{ $key === 'rts' ? 'col-span-2' : '' }}">
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $label }}</label>
-                                    <input type="number" step="any" wire:model="c{{ $n }}.{{ $key }}"
+                                    <input type="number" step="any" wire:model.blur="c{{ $n }}.{{ $key }}"
                                            class="no-spinner w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                             @endforeach
@@ -61,7 +61,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Target Net Profit</label>
-                            <input type="number" step="any" wire:model="c{{ $n }}.target"
+                            <input type="number" step="any" wire:model.blur="c{{ $n }}.target"
                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <button wire:click="calcAdj({{ $n }})"

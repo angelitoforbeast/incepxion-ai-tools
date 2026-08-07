@@ -22,11 +22,11 @@ class ProfitCalculatorTest extends TestCase
             ->assertSet('c1.cpp', 220)          // seeded default
             ->call('calcNet', 1);
 
-        // Net = 68 × [ (1−0.4)(795×0.98 − 150) − (220 + 35.8) ] = 8272.88
+        // Net = 68 × [ (1−0.4)(795×0.98 − 150) − (220 + 50) ] = 7307.28
         $calc = ProfitCalculation::first();
         $this->assertNotNull($calc);
         $this->assertSame($user->id, $calc->user_id);
-        $this->assertEqualsWithDelta(8272.88, (float) $calc->net_profit, 0.01);
+        $this->assertEqualsWithDelta(7307.28, (float) $calc->net_profit, 0.01);
     }
 
     public function test_adjustments_error_when_orders_zero(): void

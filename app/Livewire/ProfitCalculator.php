@@ -20,7 +20,7 @@ class ProfitCalculator extends Component
     public ?array $adj2 = null;
 
     private const DEFAULTS = [
-        'cpp' => 220, 'cogs' => 150, 'sf' => 35.8, 'orders' => 68,
+        'cpp' => 220, 'cogs' => 150, 'sf' => 50, 'orders' => 68,
         'codPrice' => 795, 'codFee' => 0.02, 'rts' => 0.4, 'target' => 100,
     ];
 

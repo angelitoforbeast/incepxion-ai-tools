@@ -53,17 +53,15 @@
 
                         <hr class="my-5 border-gray-100">
 
-                        <div class="flex items-end gap-3">
-                            <div class="flex-1">
-                                <label class="block text-xs font-medium text-gray-600 mb-1">Target Net Profit</label>
-                                <input type="number" step="any" wire:model="c{{ $n }}.target"
-                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            </div>
-                            <button wire:click="calcAdj({{ $n }})"
-                                    class="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 whitespace-nowrap">
-                                Suggest
-                            </button>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Target Net Profit</label>
+                            <input type="number" step="any" wire:model="c{{ $n }}.target"
+                                   class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
+                        <button wire:click="calcAdj({{ $n }})"
+                                class="mt-3 w-full rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+                            Calculate Adjustments
+                        </button>
 
                         @if ($adj)
                             <div class="mt-3 rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm">

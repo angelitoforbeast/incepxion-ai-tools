@@ -4,12 +4,55 @@ namespace App\Livewire\Admin;
 
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\Setting;
+use App\Services\VdoCipherService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
 class CourseManager extends Component
 {
+    // Watermark settings (global)
+    public string $wm_color = '#FF3333';
+    public int $wm_size = 12;
+    public int $wm_opacity = 50;
+    public int $wm_speed = 6000;
+    public bool $wm_two_tone = true;
+    public string $wm_position = 'top-left';
+
+    public function mount(): void
+    {
+        $wm = array_merge(VdoCipherService::watermarkDefaults(), (array) Setting::get('watermark', []));
+        $this->wm_color    = '#'.ltrim((string) $wm['color'], '#');
+        $this->wm_size     = (int) $wm['size'];
+        $this->wm_opacity  = (int) $wm['opacity'];
+        $this->wm_speed    = (int) $wm['speed'];
+        $this->wm_two_tone = (bool) $wm['two_tone'];
+        $this->wm_position = (string) $wm['position'];
+    }
+
+    public function saveWatermark(): void
+    {
+        $this->validate([
+            'wm_color'    => ['required', 'string', 'regex:/^#?[0-9A-Fa-f]{6}$/'],
+            'wm_size'     => ['integer', 'min:6', 'max:60'],
+            'wm_opacity'  => ['integer', 'min:5', 'max:100'],
+            'wm_speed'    => ['integer', 'in:3000,5000,6000,8000'],
+            'wm_position' => ['in:top-left,top-right,bottom-left,bottom-right'],
+        ]);
+
+        Setting::put('watermark', [
+            'color'    => ltrim($this->wm_color, '#'),
+            'size'     => $this->wm_size,
+            'opacity'  => $this->wm_opacity,
+            'speed'    => $this->wm_speed,
+            'two_tone' => $this->wm_two_tone,
+            'position' => $this->wm_position,
+        ]);
+
+        session()->flash('msg', 'Watermark settings saved. Applies to the next video load.');
+    }
+
     // Course form
     public ?int $editingCourseId = null;
     public string $c_title = '';

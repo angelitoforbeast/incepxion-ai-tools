@@ -6,7 +6,9 @@ use App\Livewire\Admin\CourseManager;
 use App\Livewire\Courses\CourseIndex;
 use App\Livewire\Courses\CourseShow;
 use App\Models\Course;
+use App\Models\Setting;
 use App\Models\User;
+use App\Services\VdoCipherService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -64,6 +66,35 @@ class CoursesTest extends TestCase
 
         Livewire::actingAs($user)->test(CourseShow::class, ['course' => $course])
             ->assertSee('not set up');
+    }
+
+    public function test_admin_can_save_watermark_settings(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+
+        Livewire::actingAs($admin)->test(CourseManager::class)
+            ->set('wm_color', '#00FF00')
+            ->set('wm_size', 20)
+            ->set('wm_opacity', 70)
+            ->set('wm_two_tone', false)
+            ->call('saveWatermark')
+            ->assertHasNoErrors();
+
+        $wm = Setting::get('watermark');
+        $this->assertSame('00FF00', $wm['color']);   // stored without #
+        $this->assertSame(20, $wm['size']);
+        $this->assertFalse($wm['two_tone']);
+    }
+
+    public function test_service_reads_saved_watermark_over_defaults(): void
+    {
+        Setting::put('watermark', ['color' => '123456', 'size' => 18]);
+
+        $wm = app(VdoCipherService::class)->watermark();
+
+        $this->assertSame('123456', $wm['color']);     // from saved
+        $this->assertSame(18, $wm['size']);            // from saved
+        $this->assertSame(6000, $wm['speed']);         // fell back to default
     }
 
     public function test_lesson_requires_video_id(): void

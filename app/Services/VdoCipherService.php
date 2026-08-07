@@ -32,42 +32,7 @@ class VdoCipherService
             throw new RuntimeException('VdoCipher is not configured yet. Add VDOCIPHER_API_SECRET to the server .env.');
         }
 
-        // Moving text watermark ("rtext" = repositions every interval ms), so it
-        // can't simply be cropped out, and a leaked screen-recording is traceable.
-        // Hybrid watermark:
-        // (1) a moving/random white mark for anti-crop forensic security, plus
-        // (2) a fixed TWO-TONE mark (black "lining" behind white) near the bottom-left,
-        //     which stays readable over both light and dark footage.
-        $annotate = json_encode([
-            [
-                'type'     => 'rtext',
-                'text'     => $watermarkText,
-                'alpha'    => '0.45',
-                'color'    => '0xFF3333',
-                'size'     => '12',
-                'interval' => '6000',
-            ],
-            // black outline/shadow (offset behind) — x/y are integer pixels
-            [
-                'type'  => 'text',
-                'text'  => $watermarkText,
-                'alpha' => '0.55',
-                'color' => '0x000000',
-                'size'  => '12',
-                'x'     => 42,
-                'y'     => 42,
-            ],
-            // red text on top (black lining behind keeps it readable)
-            [
-                'type'  => 'text',
-                'text'  => $watermarkText,
-                'alpha' => '0.90',
-                'color' => '0xFF3333',
-                'size'  => '12',
-                'x'     => 40,
-                'y'     => 40,
-            ],
-        ]);
+        $annotate = json_encode($this->buildAnnotation($watermarkText));
 
         $response = Http::withHeaders([
             'Authorization' => 'Apisecret '.$secret,
@@ -88,5 +53,65 @@ class VdoCipherService
         }
 
         return ['otp' => $data['otp'], 'playbackInfo' => $data['playbackInfo']];
+    }
+
+    /** Admin-editable watermark defaults (global). */
+    public static function watermarkDefaults(): array
+    {
+        return [
+            'color'    => 'FF3333',   // hex, no #
+            'size'     => 12,
+            'opacity'  => 50,         // percent (0–100)
+            'speed'    => 6000,       // reposition interval in ms
+            'two_tone' => true,       // add the fixed outlined mark
+            'position' => 'top-left', // corner for the fixed mark
+        ];
+    }
+
+    /** Current watermark settings (saved config merged over defaults). */
+    public function watermark(): array
+    {
+        $saved = \App\Models\Setting::get('watermark', []);
+
+        return array_merge(self::watermarkDefaults(), is_array($saved) ? $saved : []);
+    }
+
+    /**
+     * Build the VdoCipher annotation array from the saved watermark settings:
+     *  (1) a moving/random mark (anti-crop, forensic), plus
+     *  (2) an optional fixed TWO-TONE mark (dark lining behind the colored text)
+     *      that stays readable over light and dark footage.
+     */
+    private function buildAnnotation(string $text): array
+    {
+        $wm = $this->watermark();
+
+        $color = '0x'.ltrim(strtoupper((string) $wm['color']), '#');
+        $size  = (string) (int) $wm['size'];
+        $alpha = number_format(max(0, min(100, (int) $wm['opacity'])) / 100, 2);
+
+        $marks = [[
+            'type'     => 'rtext',
+            'text'     => $text,
+            'alpha'    => $alpha,
+            'color'    => $color,
+            'size'     => $size,
+            'interval' => (string) (int) $wm['speed'],
+        ]];
+
+        if (! empty($wm['two_tone'])) {
+            $corners = [
+                'top-left'     => [40, 40],
+                'top-right'    => [900, 40],
+                'bottom-left'  => [40, 620],
+                'bottom-right' => [900, 620],
+            ];
+            [$x, $y] = $corners[$wm['position']] ?? $corners['top-left'];
+
+            $marks[] = ['type' => 'text', 'text' => $text, 'alpha' => '0.60', 'color' => '0x000000', 'size' => $size, 'x' => $x + 2, 'y' => $y + 2];
+            $marks[] = ['type' => 'text', 'text' => $text, 'alpha' => '0.95', 'color' => $color, 'size' => $size, 'x' => $x, 'y' => $y];
+        }
+
+        return $marks;
     }
 }

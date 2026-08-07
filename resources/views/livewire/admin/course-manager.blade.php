@@ -6,6 +6,75 @@
         <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700">✓ {{ session('msg') }}</div>
     @endif
 
+    {{-- Watermark settings (global, applies to all course videos) --}}
+    <div class="mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm p-6" x-data>
+        <h2 class="text-lg font-semibold text-slate-900">🔖 Video Watermark</h2>
+        <p class="text-sm text-slate-500 mb-4">Global settings for the moving watermark shown over every course video (viewer's email + name).</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+                <div class="flex items-center gap-2">
+                    <input type="color" wire:model="wm_color" class="h-9 w-12 rounded border border-slate-300 p-0.5">
+                    <input type="text" wire:model="wm_color" class="w-28 rounded-lg border-slate-300 text-sm font-mono focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                @error('wm_color') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Size <span class="text-slate-400">({{ $wm_size }})</span></label>
+                <input type="range" min="6" max="40" wire:model.live="wm_size" class="w-full accent-indigo-600">
+                @error('wm_size') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Opacity <span class="text-slate-400">({{ $wm_opacity }}%)</span></label>
+                <input type="range" min="5" max="100" step="5" wire:model.live="wm_opacity" class="w-full accent-indigo-600">
+                @error('wm_opacity') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Movement speed</label>
+                <select wire:model="wm_speed" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="8000">Slow (8s)</option>
+                    <option value="6000">Medium (6s)</option>
+                    <option value="5000">Faster (5s)</option>
+                    <option value="3000">Fast (3s)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Two-tone (outline)</label>
+                <label class="inline-flex items-center gap-2 text-sm text-slate-700 h-9">
+                    <input type="checkbox" wire:model.live="wm_two_tone" class="rounded border-slate-300 text-indigo-600">
+                    Add a fixed outlined mark
+                </label>
+            </div>
+
+            @if ($wm_two_tone)
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Outline position</label>
+                    <select wire:model="wm_position" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="top-left">Top-left</option>
+                        <option value="top-right">Top-right</option>
+                        <option value="bottom-left">Bottom-left</option>
+                        <option value="bottom-right">Bottom-right</option>
+                    </select>
+                </div>
+            @endif
+        </div>
+
+        {{-- Live preview --}}
+        <div class="mt-4">
+            <span class="block text-xs font-medium text-slate-500 mb-1">Preview</span>
+            <div class="relative h-24 rounded-lg bg-slate-800 overflow-hidden flex items-center justify-center">
+                <span style="color: {{ $wm_color }}; opacity: {{ $wm_opacity / 100 }}; font-size: {{ $wm_size }}px;">{{ auth()->user()->email }} · {{ auth()->user()->name }}</span>
+            </div>
+        </div>
+
+        <button wire:click="saveWatermark" class="mt-4 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">Save watermark</button>
+    </div>
+
     <div class="flex items-center justify-between mb-4">
         <div>
             <h2 class="text-lg font-semibold text-slate-900">Courses</h2>

@@ -35,12 +35,12 @@ class VdoCipherService
         // Moving text watermark ("rtext" = repositions every interval ms), so it
         // can't simply be cropped out, and a leaked screen-recording is traceable.
         $annotate = json_encode([[
-            'type'     => 'rtext',
+            'type'     => 'rtext',      // random, repositioning text (forensic/anti-crop)
             'text'     => $watermarkText,
-            'alpha'    => '0.60',
-            'color'    => '0xFF3333',
-            'size'     => '15',
-            'interval' => '4000',
+            'alpha'    => '0.50',       // semi-transparent — visible but not distracting
+            'color'    => '0xFFFFFF',   // white — readable over most footage
+            'size'     => '16',
+            'interval' => '5000',       // jumps to a new random spot every 5s
         ]]);
 
         $response = Http::withHeaders([

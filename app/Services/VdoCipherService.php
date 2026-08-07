@@ -43,7 +43,7 @@ class VdoCipherService
                 'type'     => 'rtext',
                 'text'     => $watermarkText,
                 'alpha'    => '0.45',
-                'color'    => '0xFFFFFF',
+                'color'    => '0xFF3333',
                 'size'     => '15',
                 'interval' => '6000',
             ],
@@ -57,12 +57,12 @@ class VdoCipherService
                 'x'     => 42,
                 'y'     => 42,
             ],
-            // white text on top
+            // red text on top (black lining behind keeps it readable)
             [
                 'type'  => 'text',
                 'text'  => $watermarkText,
                 'alpha' => '0.90',
-                'color' => '0xFFFFFF',
+                'color' => '0xFF3333',
                 'size'  => '15',
                 'x'     => 40,
                 'y'     => 40,

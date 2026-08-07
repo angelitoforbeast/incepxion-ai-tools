@@ -62,7 +62,7 @@
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Target Net Profit</label>
                             <input type="number" step="any" wire:model.blur="c{{ $n }}.target"
-                                   class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="no-spinner w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <button wire:click="calcAdj({{ $n }})"
                                 class="mt-3 w-full rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">

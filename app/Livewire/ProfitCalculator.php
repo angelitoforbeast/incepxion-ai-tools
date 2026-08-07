@@ -74,15 +74,17 @@ class ProfitCalculator extends Component
 
         // History — visible to admins only (see Admin → Profit Log).
         ProfitCalculation::create([
-            'user_id'      => auth()->id(),
-            'cpp'          => $this->num($c['cpp'] ?? 0),
-            'cogs'         => $this->num($c['cogs'] ?? 0),
-            'shipping_fee' => $this->num($c['sf'] ?? 0),
-            'orders'       => (int) $this->num($c['orders'] ?? 0),
-            'cod_price'    => $this->num($c['codPrice'] ?? 0),
-            'cod_fee'      => $this->num($c['codFee'] ?? 0),
-            'rts'          => $this->num($c['rts'] ?? 0),
-            'net_profit'   => round($net, 2),
+            'user_id'           => auth()->id(),
+            'type'              => 'net',
+            'cpp'               => $this->num($c['cpp'] ?? 0),
+            'cogs'              => $this->num($c['cogs'] ?? 0),
+            'shipping_fee'      => $this->num($c['sf'] ?? 0),
+            'orders'            => (int) $this->num($c['orders'] ?? 0),
+            'cod_price'         => $this->num($c['codPrice'] ?? 0),
+            'cod_fee'           => $this->num($c['codFee'] ?? 0),
+            'rts'               => $this->num($c['rts'] ?? 0),
+            'net_profit'        => round($net, 2),
+            'target_net_profit' => $this->num($c['target'] ?? 0),
         ]);
 
         $this->remember();
@@ -115,6 +117,23 @@ class ProfitCalculator extends Component
                     'rts_ok' => ($suggestedRts >= 0 && $suggestedRts <= 1),
                     'cpp' => $suggestedCpp,
                 ];
+
+                // History — record the adjustment run too (admin-only).
+                ProfitCalculation::create([
+                    'user_id'           => auth()->id(),
+                    'type'              => 'adjustment',
+                    'cpp'               => $cpp,
+                    'cogs'              => $cogs,
+                    'shipping_fee'      => $sf,
+                    'orders'            => (int) $orders,
+                    'cod_price'         => $codPrice,
+                    'cod_fee'           => $codFee,
+                    'rts'               => $rts,
+                    'net_profit'        => round($this->netProfit($c), 2),
+                    'target_net_profit' => $target,
+                    'suggested_rts'     => round($suggestedRts, 4),
+                    'suggested_cpp'     => round($suggestedCpp, 2),
+                ]);
             }
         }
 

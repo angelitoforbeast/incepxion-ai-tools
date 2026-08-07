@@ -16,16 +16,24 @@ class ProfitHistory extends Component
     public string $sortBy = 'created_at';
     public string $sortDir = 'desc';
 
+    public string $type = '';           // '' | net | adjustment
     public array $selectedUsers = [];
     public array $min = [];
     public array $max = [];
 
-    private const NUMERIC = ['cpp', 'cogs', 'shipping_fee', 'orders', 'cod_price', 'cod_fee', 'rts', 'net_profit'];
+    private const NUMERIC = [
+        'cpp', 'cogs', 'shipping_fee', 'orders', 'cod_price', 'cod_fee', 'rts',
+        'net_profit', 'target_net_profit', 'suggested_rts', 'suggested_cpp',
+    ];
+
+    private function sortable(): array
+    {
+        return array_merge(['created_at', 'user_id', 'type'], self::NUMERIC);
+    }
 
     public function sort(string $col): void
     {
-        $sortable = array_merge(['created_at', 'user_id'], self::NUMERIC);
-        if (! in_array($col, $sortable, true)) {
+        if (! in_array($col, $this->sortable(), true)) {
             return;
         }
         if ($this->sortBy === $col) {
@@ -39,10 +47,11 @@ class ProfitHistory extends Component
 
     public function clearFilters(): void
     {
-        $this->reset('selectedUsers', 'min', 'max');
+        $this->reset('selectedUsers', 'min', 'max', 'type');
         $this->resetPage();
     }
 
+    public function updatedType(): void { $this->resetPage(); }
     public function updatedSelectedUsers(): void { $this->resetPage(); }
     public function updatedMin(): void { $this->resetPage(); }
     public function updatedMax(): void { $this->resetPage(); }
@@ -50,6 +59,7 @@ class ProfitHistory extends Component
     public function render()
     {
         $q = ProfitCalculation::with('user')
+            ->when($this->type, fn ($x) => $x->where('type', $this->type))
             ->when($this->selectedUsers, fn ($x) => $x->whereIn('user_id', $this->selectedUsers));
 
         foreach (self::NUMERIC as $col) {
@@ -61,7 +71,7 @@ class ProfitHistory extends Component
             }
         }
 
-        $sortBy = in_array($this->sortBy, array_merge(['created_at', 'user_id'], self::NUMERIC), true) ? $this->sortBy : 'created_at';
+        $sortBy = in_array($this->sortBy, $this->sortable(), true) ? $this->sortBy : 'created_at';
         $q->orderBy($sortBy, $this->sortDir === 'asc' ? 'asc' : 'desc');
 
         $users = User::whereIn('id', ProfitCalculation::select('user_id')->whereNotNull('user_id')->distinct())
@@ -71,7 +81,7 @@ class ProfitHistory extends Component
             'activeTab'     => 'admin.profit',
             'rows'          => $q->paginate(25),
             'users'         => $users,
-            'activeFilters' => count($this->selectedUsers)
+            'activeFilters' => count($this->selectedUsers) + ($this->type ? 1 : 0)
                 + count(array_filter($this->min, fn ($v) => is_numeric($v)))
                 + count(array_filter($this->max, fn ($v) => is_numeric($v))),
         ]);

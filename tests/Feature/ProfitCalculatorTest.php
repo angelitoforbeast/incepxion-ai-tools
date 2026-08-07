@@ -26,7 +26,38 @@ class ProfitCalculatorTest extends TestCase
         $calc = ProfitCalculation::first();
         $this->assertNotNull($calc);
         $this->assertSame($user->id, $calc->user_id);
+        $this->assertSame('net', $calc->type);
         $this->assertEqualsWithDelta(7307.28, (float) $calc->net_profit, 0.01);
+        $this->assertEqualsWithDelta(100, (float) $calc->target_net_profit, 0.01); // default target logged
+    }
+
+    public function test_calculate_adjustments_logs_history(): void
+    {
+        $user = User::factory()->create(['status' => 'approved']);
+
+        Livewire::actingAs($user)->test(ProfitCalculator::class)
+            ->call('calcAdj', 1);
+
+        $adj = ProfitCalculation::where('type', 'adjustment')->first();
+        $this->assertNotNull($adj);
+        $this->assertSame($user->id, $adj->user_id);
+        $this->assertNotNull($adj->suggested_rts);
+        $this->assertNotNull($adj->suggested_cpp);
+        $this->assertEqualsWithDelta(100, (float) $adj->target_net_profit, 0.01);
+    }
+
+    public function test_history_type_filter(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+        ProfitCalculation::create(['user_id' => $admin->id, 'type' => 'net', 'cpp' => 1, 'cogs' => 1, 'shipping_fee' => 1, 'orders' => 1, 'cod_price' => 1, 'cod_fee' => 0, 'rts' => 0, 'net_profit' => 3131.31]);
+        ProfitCalculation::create(['user_id' => $admin->id, 'type' => 'adjustment', 'cpp' => 1, 'cogs' => 1, 'shipping_fee' => 1, 'orders' => 1, 'cod_price' => 1, 'cod_fee' => 0, 'rts' => 0, 'net_profit' => 4242.42, 'suggested_rts' => 0.5, 'suggested_cpp' => 10]);
+
+        Livewire::actingAs($admin)->test(ProfitHistory::class)
+            ->assertSee('3,131.31')
+            ->assertSee('4,242.42')
+            ->set('type', 'adjustment')
+            ->assertSee('4,242.42')
+            ->assertDontSee('3,131.31');
     }
 
     public function test_inputs_are_retained_per_user(): void

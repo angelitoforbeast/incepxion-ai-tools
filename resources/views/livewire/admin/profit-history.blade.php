@@ -2,34 +2,49 @@
     <h1 class="text-xl font-bold text-slate-900 mb-1">Admin</h1>
     @include('partials.admin-nav')
 
-    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
             <h2 class="text-lg font-semibold text-slate-900">Profit Calculator — History</h2>
-            <p class="text-sm text-slate-500">Sort by any column; filter users (search + checkbox) or number ranges in the header.</p>
+            <p class="text-sm text-slate-500">Net-profit and adjustment runs. Sort any column; filter users / number ranges in the header.</p>
         </div>
-        @if ($activeFilters)
-            <button wire:click="clearFilters" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                Clear filters ({{ $activeFilters }})
-            </button>
-        @endif
+        <div class="flex items-end gap-3">
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Type</label>
+                <select wire:model.live="type" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">All</option>
+                    <option value="net">Net profit</option>
+                    <option value="adjustment">Adjustment</option>
+                </select>
+            </div>
+            @if ($activeFilters)
+                <button wire:click="clearFilters" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                    Clear ({{ $activeFilters }})
+                </button>
+            @endif
+        </div>
     </div>
 
     @php
         $columns = [
-            ['key' => 'created_at',   'label' => 'When',       'type' => 'date', 'align' => 'left'],
-            ['key' => 'user_id',      'label' => 'User',       'type' => 'user', 'align' => 'left'],
-            ['key' => 'cpp',          'label' => 'CPP',        'type' => 'num',  'align' => 'right'],
-            ['key' => 'cogs',         'label' => 'COGS',       'type' => 'num',  'align' => 'right'],
-            ['key' => 'shipping_fee', 'label' => 'Ship',       'type' => 'num',  'align' => 'right'],
-            ['key' => 'orders',       'label' => 'Orders',     'type' => 'num',  'align' => 'right'],
-            ['key' => 'cod_price',    'label' => 'COD',        'type' => 'num',  'align' => 'right'],
-            ['key' => 'cod_fee',      'label' => 'COD Fee',    'type' => 'num',  'align' => 'right'],
-            ['key' => 'rts',          'label' => 'RTS',        'type' => 'num',  'align' => 'right'],
-            ['key' => 'net_profit',   'label' => 'Net Profit', 'type' => 'num',  'align' => 'right'],
+            ['key' => 'created_at',        'label' => 'When',     'type' => 'plain', 'align' => 'left'],
+            ['key' => 'user_id',           'label' => 'User',     'type' => 'user',  'align' => 'left'],
+            ['key' => 'type',              'label' => 'Type',     'type' => 'plain', 'align' => 'left'],
+            ['key' => 'cpp',               'label' => 'CPP',      'type' => 'num',   'align' => 'right'],
+            ['key' => 'cogs',              'label' => 'COGS',     'type' => 'num',   'align' => 'right'],
+            ['key' => 'shipping_fee',      'label' => 'Ship',     'type' => 'num',   'align' => 'right'],
+            ['key' => 'orders',            'label' => 'Orders',   'type' => 'num',   'align' => 'right'],
+            ['key' => 'cod_price',         'label' => 'COD',      'type' => 'num',   'align' => 'right'],
+            ['key' => 'cod_fee',           'label' => 'COD Fee',  'type' => 'num',   'align' => 'right'],
+            ['key' => 'rts',               'label' => 'RTS',      'type' => 'num',   'align' => 'right'],
+            ['key' => 'net_profit',        'label' => 'Net',      'type' => 'num',   'align' => 'right'],
+            ['key' => 'target_net_profit', 'label' => 'Target',   'type' => 'num',   'align' => 'right'],
+            ['key' => 'suggested_rts',     'label' => 'Sug. RTS', 'type' => 'num',   'align' => 'right'],
+            ['key' => 'suggested_cpp',     'label' => 'Sug. CPP', 'type' => 'num',   'align' => 'right'],
         ];
+        $numTrim = fn ($v) => $v === null ? '—' : rtrim(rtrim(number_format($v, 4), '0'), '.');
     @endphp
 
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
             <table class="min-w-full text-xs">
                 <thead class="bg-slate-50 text-slate-600">
@@ -102,17 +117,23 @@
                         <tr class="hover:bg-slate-50">
                             <td class="px-3 py-1.5 whitespace-nowrap text-slate-600">{{ $r->created_at?->timezone('Asia/Manila')->format('M j, g:i A') }}</td>
                             <td class="px-3 py-1.5 text-slate-800 max-w-[200px] truncate" title="{{ $r->user?->email }}">{{ $r->user?->email ?? '—' }}</td>
+                            <td class="px-3 py-1.5">
+                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase {{ $r->type === 'adjustment' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800' }}">{{ $r->type }}</span>
+                            </td>
                             <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->cpp, 2) }}</td>
                             <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->cogs, 2) }}</td>
                             <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->shipping_fee, 2) }}</td>
                             <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->orders) }}</td>
                             <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->cod_price, 2) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ rtrim(rtrim(number_format($r->cod_fee, 4), '0'), '.') }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ rtrim(rtrim(number_format($r->rts, 4), '0'), '.') }}</td>
+                            <td class="px-3 py-1.5 text-right tabular-nums">{{ $numTrim($r->cod_fee) }}</td>
+                            <td class="px-3 py-1.5 text-right tabular-nums">{{ $numTrim($r->rts) }}</td>
                             <td class="px-3 py-1.5 text-right tabular-nums font-semibold {{ $r->net_profit < 0 ? 'text-red-600' : 'text-indigo-700' }}">₱{{ number_format($r->net_profit, 2) }}</td>
+                            <td class="px-3 py-1.5 text-right tabular-nums text-slate-600">{{ $r->target_net_profit !== null ? '₱'.number_format($r->target_net_profit, 2) : '—' }}</td>
+                            <td class="px-3 py-1.5 text-right tabular-nums {{ $r->suggested_rts !== null ? 'text-emerald-700' : 'text-slate-300' }}">{{ $numTrim($r->suggested_rts) }}</td>
+                            <td class="px-3 py-1.5 text-right tabular-nums {{ $r->suggested_cpp !== null ? 'text-emerald-700' : 'text-slate-300' }}">{{ $r->suggested_cpp !== null ? '₱'.number_format($r->suggested_cpp, 2) : '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="10" class="px-3 py-8 text-center text-slate-400">No calculations match these filters.</td></tr>
+                        <tr><td colspan="{{ count($columns) }}" class="px-3 py-8 text-center text-slate-400">No calculations match these filters.</td></tr>
                     @endforelse
                 </tbody>
             </table>

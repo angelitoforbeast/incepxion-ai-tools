@@ -63,15 +63,9 @@ class DatabaseSeeder extends Seeder
                 'config' => ['status' => 'coming_soon'],
             ],
             [
-                'slug' => 'courses', 'name' => 'Courses',
-                'description' => 'Panoorin ang mga training video — protektado at may watermark per account.',
-                'icon' => '🎓', 'category' => 'Learning', 'sort_order' => 3,
-                'config' => [],
-            ],
-            [
                 'slug' => 'profit-computation', 'name' => 'Profit Computation',
                 'description' => 'Kalkulahin ang kita per order/product — kasama ang shipping, fees, at COGS.',
-                'icon' => '💰', 'category' => 'Finance', 'sort_order' => 4,
+                'icon' => '💰', 'category' => 'Finance', 'sort_order' => 3,
                 'config' => ['status' => 'coming_soon'],
             ],
         ];

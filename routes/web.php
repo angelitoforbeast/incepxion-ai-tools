@@ -36,7 +36,8 @@ Route::view('approval/pending', 'approval-pending')
 Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('dashboard', function () {
         return view('dashboard', [
-            'tools' => Tool::where('is_active', true)->orderBy('sort_order')->get(),
+            // Courses is a top-level sidebar item, not a grid tool.
+            'tools' => Tool::where('is_active', true)->where('slug', '!=', 'courses')->orderBy('sort_order')->get(),
         ]);
     })->name('dashboard');
 

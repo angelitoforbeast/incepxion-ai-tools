@@ -41,4 +41,8 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
     ],
 
+    'vdocipher' => [
+        'secret' => env('VDOCIPHER_API_SECRET'),
+    ],
+
 ];

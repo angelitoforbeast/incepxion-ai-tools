@@ -3,6 +3,9 @@
 use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\AdCopyGenerator;
+use App\Livewire\Admin\CourseManager;
+use App\Livewire\Courses\CourseIndex;
+use App\Livewire\Courses\CourseShow;
 use App\Livewire\RtsMonitor;
 use App\Livewire\RtsProcessor;
 use App\Livewire\Admin\GenerationLog;
@@ -40,6 +43,8 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('tools/ad-copy-generator', AdCopyGenerator::class)->name('tools.ad-copy');
     Route::get('tools/rts-processor', RtsProcessor::class)->name('tools.rts');
     Route::get('tools/rts-processor/monitoring', RtsMonitor::class)->name('tools.rts.monitor');
+    Route::get('tools/courses', CourseIndex::class)->name('tools.courses');
+    Route::get('tools/courses/{course:slug}', CourseShow::class)->name('tools.courses.show');
     Route::view('tools/profit-calculator', 'tools.profit-calculator')->name('tools.profit');
 });
 
@@ -48,6 +53,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::redirect('/', '/admin/users');
     Route::get('users', UserManager::class)->name('admin.users');
     Route::get('prompts', PromptManager::class)->name('admin.prompts');
+    Route::get('courses', CourseManager::class)->name('admin.courses');
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
 

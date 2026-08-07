@@ -22,7 +22,8 @@ class GenerationLog extends Component
     public function render()
     {
         return view('livewire.admin.generation-log', [
-            'logs' => Generation::with(['user', 'tool'])->latest()->paginate(20),
+            'activeTab' => 'admin.logs',
+            'logs'      => Generation::with(['user', 'tool'])->latest()->paginate(20),
         ]);
     }
 }

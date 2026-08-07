@@ -90,7 +90,8 @@ class PromptManager extends Component
     public function render()
     {
         return view('livewire.admin.prompt-manager', [
-            'versions' => PromptVersion::where('tool_id', $this->tool()->id)
+            'activeTab' => 'admin.prompts',
+            'versions'  => PromptVersion::where('tool_id', $this->tool()->id)
                 ->with('author')
                 ->latest()
                 ->limit(15)

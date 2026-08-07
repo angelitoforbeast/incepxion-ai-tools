@@ -176,6 +176,7 @@ class UserManager extends Component
             ->paginate(12);
 
         return view('livewire.admin.user-manager', [
+            'activeTab' => 'admin.users',
             'users' => $users,
             'stats' => [
                 'total'     => User::count(),

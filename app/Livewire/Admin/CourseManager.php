@@ -184,6 +184,7 @@ class CourseManager extends Component
     public function render()
     {
         return view('livewire.admin.course-manager', [
+            'activeTab'      => 'admin.courses',
             'courses'        => Course::withCount('lessons')->orderBy('sort_order')->orderBy('id')->get(),
             'managingCourse' => $this->managingCourseId ? Course::with('lessons')->find($this->managingCourseId) : null,
         ]);

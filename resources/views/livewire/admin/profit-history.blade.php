@@ -2,9 +2,20 @@
     <h1 class="text-xl font-bold text-slate-900 mb-1">Admin</h1>
     @include('partials.admin-nav')
 
-    <div class="mb-4">
-        <h2 class="text-lg font-semibold text-slate-900">Profit Calculator — History</h2>
-        <p class="text-sm text-slate-500">Every net-profit calculation, per user. Visible to admins only.</p>
+    <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Profit Calculator — History</h2>
+            <p class="text-sm text-slate-500">Every net-profit calculation, per user. Visible to admins only.</p>
+        </div>
+        <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Filter by user</label>
+            <select wire:model.live="userId" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 min-w-[220px]">
+                <option value="">All users</option>
+                @foreach ($users as $u)
+                    <option value="{{ $u->id }}">{{ $u->name }} — {{ $u->email }}</option>
+                @endforeach
+            </select>
+        </div>
     </div>
 
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">

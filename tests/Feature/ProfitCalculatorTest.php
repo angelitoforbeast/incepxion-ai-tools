@@ -57,4 +57,20 @@ class ProfitCalculatorTest extends TestCase
             ->assertSee($admin->email)
             ->assertSee('8,272.88');
     }
+
+    public function test_admin_history_filters_by_user(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+        $u1 = User::factory()->create();
+        $u2 = User::factory()->create();
+        ProfitCalculation::create(['user_id' => $u1->id, 'cpp' => 1, 'cogs' => 1, 'shipping_fee' => 1, 'orders' => 1, 'cod_price' => 1, 'cod_fee' => 0, 'rts' => 0, 'net_profit' => 1111.11]);
+        ProfitCalculation::create(['user_id' => $u2->id, 'cpp' => 1, 'cogs' => 1, 'shipping_fee' => 1, 'orders' => 1, 'cod_price' => 1, 'cod_fee' => 0, 'rts' => 0, 'net_profit' => 2222.22]);
+
+        Livewire::actingAs($admin)->test(ProfitHistory::class)
+            ->assertSee('1,111.11')
+            ->assertSee('2,222.22')
+            ->set('userId', $u1->id)
+            ->assertSee('1,111.11')
+            ->assertDontSee('2,222.22');
+    }
 }

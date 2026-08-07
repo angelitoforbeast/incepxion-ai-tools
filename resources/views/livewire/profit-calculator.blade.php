@@ -1,4 +1,10 @@
 <div class="lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+    <style>
+        /* Remove number-input up/down spinners — keep free numeric typing. */
+        .no-spinner::-webkit-outer-spin-button,
+        .no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .no-spinner { -moz-appearance: textfield; appearance: textfield; }
+    </style>
     <!-- Frozen header -->
     <div class="flex-shrink-0 bg-slate-50 border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -34,7 +40,7 @@
                                 <div class="{{ $key === 'rts' ? 'col-span-2' : '' }}">
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $label }}</label>
                                     <input type="number" step="any" wire:model="c{{ $n }}.{{ $key }}"
-                                           class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                           class="no-spinner w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                             @endforeach
                         </div>

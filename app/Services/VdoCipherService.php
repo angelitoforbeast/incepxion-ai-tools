@@ -34,14 +34,40 @@ class VdoCipherService
 
         // Moving text watermark ("rtext" = repositions every interval ms), so it
         // can't simply be cropped out, and a leaked screen-recording is traceable.
-        $annotate = json_encode([[
-            'type'     => 'rtext',      // random, repositioning text (forensic/anti-crop)
-            'text'     => $watermarkText,
-            'alpha'    => '0.50',       // semi-transparent — visible but not distracting
-            'color'    => '0xFFFFFF',   // white — readable over most footage
-            'size'     => '16',
-            'interval' => '5000',       // jumps to a new random spot every 5s
-        ]]);
+        // Hybrid watermark:
+        // (1) a moving/random white mark for anti-crop forensic security, plus
+        // (2) a fixed TWO-TONE mark (black "lining" behind white) near the bottom-left,
+        //     which stays readable over both light and dark footage.
+        $annotate = json_encode([
+            [
+                'type'     => 'rtext',
+                'text'     => $watermarkText,
+                'alpha'    => '0.45',
+                'color'    => '0xFFFFFF',
+                'size'     => '15',
+                'interval' => '6000',
+            ],
+            // black outline/shadow (offset behind)
+            [
+                'type'  => 'text',
+                'text'  => $watermarkText,
+                'alpha' => '0.55',
+                'color' => '0x000000',
+                'size'  => '15',
+                'x'     => '0.031',
+                'y'     => '0.93',
+            ],
+            // white text on top
+            [
+                'type'  => 'text',
+                'text'  => $watermarkText,
+                'alpha' => '0.90',
+                'color' => '0xFFFFFF',
+                'size'  => '15',
+                'x'     => '0.03',
+                'y'     => '0.925',
+            ],
+        ]);
 
         $response = Http::withHeaders([
             'Authorization' => 'Apisecret '.$secret,

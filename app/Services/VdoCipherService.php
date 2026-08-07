@@ -47,15 +47,15 @@ class VdoCipherService
                 'size'     => '15',
                 'interval' => '6000',
             ],
-            // black outline/shadow (offset behind)
+            // black outline/shadow (offset behind) — x/y are integer pixels
             [
                 'type'  => 'text',
                 'text'  => $watermarkText,
                 'alpha' => '0.55',
                 'color' => '0x000000',
                 'size'  => '15',
-                'x'     => '0.031',
-                'y'     => '0.93',
+                'x'     => 42,
+                'y'     => 42,
             ],
             // white text on top
             [
@@ -64,8 +64,8 @@ class VdoCipherService
                 'alpha' => '0.90',
                 'color' => '0xFFFFFF',
                 'size'  => '15',
-                'x'     => '0.03',
-                'y'     => '0.925',
+                'x'     => 40,
+                'y'     => 40,
             ],
         ]);
 

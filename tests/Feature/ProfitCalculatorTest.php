@@ -85,8 +85,20 @@ class ProfitCalculatorTest extends TestCase
         Livewire::actingAs($admin)->test(ProfitHistory::class)
             ->assertSee('1,111.11')
             ->assertSee('2,222.22')
-            ->set('userId', $u1->id)
+            ->set('selectedUsers', [$u1->id])
             ->assertSee('1,111.11')
             ->assertDontSee('2,222.22');
+    }
+
+    public function test_history_range_filter_on_net_profit(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'approved']);
+        ProfitCalculation::create(['user_id' => $admin->id, 'cpp' => 1, 'cogs' => 1, 'shipping_fee' => 1, 'orders' => 1, 'cod_price' => 1, 'cod_fee' => 0, 'rts' => 0, 'net_profit' => 250.00]);
+        ProfitCalculation::create(['user_id' => $admin->id, 'cpp' => 1, 'cogs' => 1, 'shipping_fee' => 1, 'orders' => 1, 'cod_price' => 1, 'cod_fee' => 0, 'rts' => 0, 'net_profit' => 5000.00]);
+
+        Livewire::actingAs($admin)->test(ProfitHistory::class)
+            ->set('min.net_profit', 1000)
+            ->assertSee('5,000.00')
+            ->assertDontSee('250.00');
     }
 }

@@ -3,6 +3,7 @@
         ['route' => 'admin.users', 'label' => 'Users'],
         ['route' => 'admin.prompts', 'label' => 'Prompts'],
         ['route' => 'admin.courses', 'label' => 'Courses'],
+        ['route' => 'admin.profit', 'label' => 'Profit Log'],
         ['route' => 'admin.logs', 'label' => 'Data Logs'],
     ];
     // $activeTab is passed by each admin component so the highlight survives Livewire

@@ -4,8 +4,10 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\AdCopyGenerator;
 use App\Livewire\Admin\CourseManager;
+use App\Livewire\Admin\ProfitHistory;
 use App\Livewire\Courses\CourseIndex;
 use App\Livewire\Courses\CourseShow;
+use App\Livewire\ProfitCalculator;
 use App\Livewire\RtsMonitor;
 use App\Livewire\RtsProcessor;
 use App\Livewire\Admin\GenerationLog;
@@ -46,7 +48,7 @@ Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('tools/rts-processor/monitoring', RtsMonitor::class)->name('tools.rts.monitor');
     Route::get('tools/courses', CourseIndex::class)->name('tools.courses');
     Route::get('tools/courses/{course:slug}', CourseShow::class)->name('tools.courses.show');
-    Route::view('tools/profit-calculator', 'tools.profit-calculator')->name('tools.profit');
+    Route::get('tools/profit-calculator', ProfitCalculator::class)->name('tools.profit');
 });
 
 // Admin — separate routes for each section
@@ -55,6 +57,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('users', UserManager::class)->name('admin.users');
     Route::get('prompts', PromptManager::class)->name('admin.prompts');
     Route::get('courses', CourseManager::class)->name('admin.courses');
+    Route::get('profit-history', ProfitHistory::class)->name('admin.profit');
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
 

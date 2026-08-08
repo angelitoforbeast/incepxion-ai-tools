@@ -48,7 +48,13 @@ class CourseShow extends Component
         }
 
         try {
-            $watermark = trim((auth()->user()->email ?? 'guest').' · '.(auth()->user()->name ?? ''));
+            // Per-viewer forensic watermark: email · name · IP (captured at playback time).
+            $parts = array_filter([
+                auth()->user()->email ?? 'guest',
+                auth()->user()->name,
+                request()->ip(),
+            ]);
+            $watermark = implode(' · ', $parts);
             $res = $service->otp($lesson->vdocipher_video_id, $watermark);
             $this->otp = $res['otp'];
             $this->playbackInfo = $res['playbackInfo'];

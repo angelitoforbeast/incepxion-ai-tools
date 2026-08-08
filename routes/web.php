@@ -61,6 +61,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('profit-history', ProfitHistory::class)->name('admin.profit');
     Route::get('access-log', AccessLog::class)->name('admin.access');
     Route::get('subscriptions', \App\Livewire\Admin\SubscriptionManager::class)->name('admin.subscriptions');
+    Route::get('subscriptions/log', \App\Livewire\Admin\SubscriptionLogs::class)->name('admin.subscriptions.log');
     Route::get('billing', \App\Livewire\Admin\BillingSettings::class)->name('admin.billing');
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });

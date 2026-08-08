@@ -71,59 +71,15 @@
         @endif
     </div>
 
-    <!-- Change log -->
-    <div class="mt-8">
-        <h3 class="text-sm font-semibold text-slate-900 mb-2">Recent changes</h3>
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50">
-                        <tr class="text-left text-xs uppercase tracking-wide text-slate-400">
-                            <th class="px-4 py-3 font-semibold">When</th>
-                            <th class="px-4 py-3 font-semibold">User</th>
-                            <th class="px-4 py-3 font-semibold">Action</th>
-                            <th class="px-4 py-3 font-semibold">Change</th>
-                            <th class="px-4 py-3 font-semibold">By</th>
-                            <th class="px-4 py-3 font-semibold">Note</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse ($logs as $log)
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 text-slate-500 whitespace-nowrap">
-                                    {{ $log->created_at->timezone('Asia/Manila')->format('M d, Y g:i A') }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="font-medium text-slate-800">{{ $log->user?->name ?? '—' }}</div>
-                                    <div class="text-xs text-slate-400">{{ $log->user?->email }}</div>
-                                </td>
-                                <td class="px-4 py-3">
-                                    @php $actionBadge = [
-                                        'extend'      => 'bg-indigo-100 text-indigo-700',
-                                        'set'         => 'bg-sky-100 text-sky-700',
-                                        'approve'     => 'bg-emerald-100 text-emerald-700',
-                                        'reinstate'   => 'bg-emerald-100 text-emerald-700',
-                                        'first_login' => 'bg-slate-100 text-slate-600',
-                                    ][$log->action] ?? 'bg-slate-100 text-slate-600'; @endphp
-                                    <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {{ $actionBadge }}">
-                                        {{ $log->action === 'extend' && $log->months ? "+{$log->months}m" : str_replace('_', ' ', $log->action) }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 text-slate-600 whitespace-nowrap">
-                                    <span class="text-slate-400">{{ $log->old_expires_at ? $log->old_expires_at->format('M d, Y') : '—' }}</span>
-                                    <span class="mx-1 text-slate-400">→</span>
-                                    <span class="font-medium text-slate-800">{{ $log->new_expires_at ? $log->new_expires_at->format('M d, Y') : '—' }}</span>
-                                </td>
-                                <td class="px-4 py-3 text-slate-600">{{ $log->admin?->name ?? 'System' }}</td>
-                                <td class="px-4 py-3 text-slate-600">{{ $log->note ?: '—' }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400">No changes logged yet.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <!-- Change log link -->
+    <div class="mt-4">
+        <a href="{{ route('admin.subscriptions.log') }}" wire:navigate
+           class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700">
+            <svg style="width:16px;height:16px" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            View subscription change log →
+        </a>
     </div>
 
     <!-- Manage modal -->

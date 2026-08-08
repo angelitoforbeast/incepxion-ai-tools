@@ -107,16 +107,10 @@ class SubscriptionManager extends Component
 
         $managingUser = $this->managingId ? User::find($this->managingId) : null;
 
-        $logs = SubscriptionLog::with(['user', 'admin'])
-            ->latest()
-            ->limit(50)
-            ->get();
-
         return view('livewire.admin.subscription-manager', [
             'activeTab'    => 'admin.subscriptions',
             'users'        => $users,
             'managingUser' => $managingUser,
-            'logs'         => $logs,
         ]);
     }
 }

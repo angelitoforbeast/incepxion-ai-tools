@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\BillingSettings;
+use App\Livewire\Admin\SubscriptionLogs;
 use App\Livewire\Admin\SubscriptionManager;
 use App\Livewire\Admin\UserManager;
 use App\Models\Plan;
@@ -199,6 +200,37 @@ class AccountValidityTest extends TestCase
     public function test_extend_access_method_removed_from_user_manager(): void
     {
         $this->assertFalse(method_exists(UserManager::class, 'extendAccess'));
+    }
+
+    public function test_admin_can_view_subscription_log_page(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['status' => 'approved', 'name' => 'Loggy McUser', 'email_verified_at' => now(), 'access_expires_at' => now()->addMonth()]);
+
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)
+            ->call('manage', $user->id)
+            ->call('extend', 3);
+
+        $this->actingAs($admin)->get(route('admin.subscriptions.log'))
+            ->assertOk()
+            ->assertSee('Subscription change log')
+            ->assertSee('Loggy McUser');
+    }
+
+    public function test_subscription_log_filters_by_action(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $extended = User::factory()->create(['status' => 'approved', 'name' => 'Extended User', 'email_verified_at' => now(), 'access_expires_at' => now()->addMonth()]);
+        $pending = User::factory()->create(['status' => 'pending', 'name' => 'Approved User', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)->call('manage', $extended->id)->call('extend', 3);
+        Livewire::actingAs($admin)->test(UserManager::class)->call('approve', $pending->id);
+
+        Livewire::actingAs($admin)->test(SubscriptionLogs::class)
+            ->set('action', 'extend')
+            ->assertViewHas('rows', fn ($rows) => $rows->count() === 1
+                && $rows->first()->action === 'extend'
+                && $rows->first()->user->name === 'Extended User');
     }
 
     public function test_admin_can_save_settle_billing_details(): void

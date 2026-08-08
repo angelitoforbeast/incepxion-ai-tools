@@ -19,6 +19,15 @@ class EnsureSingleSession
         $user = Auth::user();
 
         if ($user && $user->current_session_id && $user->current_session_id !== $request->session()->getId()) {
+            // Audit: record the device-conflict sign-out before logging out.
+            \App\Models\AccessLog::create([
+                'user_id'    => $user->id,
+                'type'       => 'device_signout',
+                'ip_address' => $request->ip(),
+                'user_agent' => substr((string) $request->userAgent(), 0, 512),
+                'location'   => \App\Services\GeoIp::locate($request->ip()),
+            ]);
+
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\AdCopyGenerator;
 use App\Livewire\Admin\CourseManager;
+use App\Livewire\Admin\AccessLog;
 use App\Livewire\Admin\ProfitHistory;
 use App\Livewire\Courses\CourseIndex;
 use App\Livewire\Courses\CourseShow;
@@ -58,6 +59,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('prompts', PromptManager::class)->name('admin.prompts');
     Route::get('courses', CourseManager::class)->name('admin.courses');
     Route::get('profit-history', ProfitHistory::class)->name('admin.profit');
+    Route::get('access-log', AccessLog::class)->name('admin.access');
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
 

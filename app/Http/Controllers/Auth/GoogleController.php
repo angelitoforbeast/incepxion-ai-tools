@@ -67,6 +67,15 @@ class GoogleController extends Controller
         session()->regenerate();
         $user->forceFill(['current_session_id' => session()->getId()])->save();
 
+        // Access log (login event) — admin-only audit trail.
+        \App\Models\AccessLog::create([
+            'user_id'    => $user->id,
+            'type'       => 'login',
+            'ip_address' => request()->ip(),
+            'user_agent' => substr((string) request()->userAgent(), 0, 512),
+            'location'   => \App\Services\GeoIp::locate(request()->ip()),
+        ]);
+
         return redirect()->intended(route('dashboard'));
     }
 }

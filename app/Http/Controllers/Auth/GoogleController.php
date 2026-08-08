@@ -67,6 +67,11 @@ class GoogleController extends Controller
         session()->regenerate();
         $user->forceFill(['current_session_id' => session()->getId()])->save();
 
+        // Start the validity clock on first access for approved users without an expiry yet.
+        if ($user->status === 'approved' && is_null($user->access_expires_at)) {
+            $user->forceFill(['access_expires_at' => now()->addMonths(\App\Models\User::DEFAULT_VALIDITY_MONTHS)])->save();
+        }
+
         // Access log (login event) — admin-only audit trail.
         \App\Models\AccessLog::create([
             'user_id'    => $user->id,

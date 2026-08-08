@@ -65,6 +65,7 @@
                     <th class="px-4 py-3 font-semibold">Status</th>
                     <th class="px-4 py-3 font-semibold">Last active</th>
                     <th class="px-4 py-3 font-semibold">Joined</th>
+                    <th class="px-4 py-3 font-semibold">Access</th>
                     <th class="px-4 py-3 font-semibold text-right">Actions</th>
                 </tr>
             </thead>
@@ -121,6 +122,37 @@
                         </td>
                         <td class="px-4 py-3 text-slate-500">{{ $u->created_at->format('M d, Y') }}</td>
                         <td class="px-4 py-3">
+                            @if ($u->status === 'approved' && ! $u->isAdmin())
+                                @php
+                                    $exp = $u->access_expires_at;
+                                    if (! $exp) {
+                                        $accBadge = 'bg-slate-100 text-slate-500'; $accLabel = 'No expiry';
+                                    } elseif ($u->isExpired()) {
+                                        $accBadge = 'bg-rose-100 text-rose-700'; $accLabel = 'Expired';
+                                    } elseif ($u->isExpiringSoon()) {
+                                        $accBadge = 'bg-amber-100 text-amber-700'; $accLabel = 'Expiring soon';
+                                    } else {
+                                        $accBadge = 'bg-emerald-100 text-emerald-700'; $accLabel = 'Active';
+                                    }
+                                @endphp
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $accBadge }}">{{ $accLabel }}</span>
+                                @if ($exp)
+                                    <div class="mt-1 text-xs {{ $u->isExpired() ? 'text-rose-600' : 'text-slate-500' }}">
+                                        {{ $u->isExpired() ? 'Lapsed' : 'Until' }} {{ $exp->format('M d, Y') }}
+                                    </div>
+                                @endif
+                                <div class="mt-1.5 flex flex-wrap items-center gap-1">
+                                    <span class="text-[10px] uppercase tracking-wide text-slate-400">Extend</span>
+                                    @foreach ([1, 3, 6, 12] as $m)
+                                        <button wire:click="extendAccess({{ $u->id }}, {{ $m }})"
+                                            class="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">+{{ $m }}m</button>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-xs text-slate-400">—</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
                             <div class="flex items-center justify-end gap-2">
                                 @if ($u->status === 'pending')
                                     <button wire:click="approve({{ $u->id }})" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
@@ -144,7 +176,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400">No users in this filter.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-10 text-center text-slate-400">No users in this filter.</td></tr>
                 @endforelse
             </tbody>
         </table>

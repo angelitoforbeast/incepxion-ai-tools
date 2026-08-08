@@ -13,7 +13,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
     'name', 'email', 'password', 'avatar', 'status', 'role',
-    'plan_id', 'approved_at', 'approved_by', 'last_login_at', 'last_active_at', 'email_verified_at', 'remarks', 'sp_defaults', 'profit_inputs', 'current_session_id',
+    'plan_id', 'approved_at', 'approved_by', 'access_expires_at', 'last_login_at', 'last_active_at', 'email_verified_at', 'remarks', 'sp_defaults', 'profit_inputs', 'current_session_id',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -35,9 +35,27 @@ class User extends Authenticatable
             'last_login_at'     => 'datetime',
             'last_active_at'    => 'datetime',
             'password'          => 'hashed',
+            'access_expires_at' => 'datetime',
             'sp_defaults'       => 'array',
             'profit_inputs'     => 'array',
         ];
+    }
+
+    /** Default account validity applied on approval. */
+    public const DEFAULT_VALIDITY_MONTHS = 3;
+
+    /** Access has lapsed (has an expiry date and it is in the past). */
+    public function isExpired(): bool
+    {
+        return $this->access_expires_at !== null && $this->access_expires_at->isPast();
+    }
+
+    /** Still valid but within 14 days of expiring. */
+    public function isExpiringSoon(): bool
+    {
+        return $this->access_expires_at !== null
+            && ! $this->access_expires_at->isPast()
+            && $this->access_expires_at->lte(now()->addDays(14));
     }
 
     /** Assign the Free plan to every new user by default. */

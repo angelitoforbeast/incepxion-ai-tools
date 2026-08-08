@@ -35,8 +35,8 @@ Route::view('approval/pending', 'approval-pending')
     ->middleware('auth')
     ->name('approval.pending');
 
-// Dashboard + tools require an approved account
-Route::middleware(['auth', 'verified', 'approved'])->group(function () {
+// Dashboard + tools require an approved AND non-expired account
+Route::middleware(['auth', 'verified', 'approved', 'not-expired'])->group(function () {
     Route::get('dashboard', function () {
         return view('dashboard', [
             // Courses is a top-level sidebar item, not a grid tool.
@@ -60,8 +60,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('courses', CourseManager::class)->name('admin.courses');
     Route::get('profit-history', ProfitHistory::class)->name('admin.profit');
     Route::get('access-log', AccessLog::class)->name('admin.access');
+    Route::get('billing', \App\Livewire\Admin\BillingSettings::class)->name('admin.billing');
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
+
+// Settle / renew page — reachable by approved users even when expired (no not-expired guard).
+Route::get('settle', \App\Livewire\Settle::class)->middleware(['auth', 'approved'])->name('settle');
 
 // Lightweight session heartbeat (used by the course player to stop playback if the
 // account is opened on another device). EnsureSingleSession returns 409 when stale.

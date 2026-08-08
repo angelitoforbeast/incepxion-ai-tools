@@ -13,8 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'approved' => \App\Http\Middleware\EnsureApproved::class,
-            'admin'    => \App\Http\Middleware\EnsureAdmin::class,
+            'approved'    => \App\Http\Middleware\EnsureApproved::class,
+            'admin'       => \App\Http\Middleware\EnsureAdmin::class,
+            'not-expired' => \App\Http\Middleware\EnsureNotExpired::class,
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\EnsureSingleSession::class,

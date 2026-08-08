@@ -70,10 +70,9 @@ class SubscriptionManager extends Component
             return;
         }
 
-        $this->validate(
-            ['newDate' => ['required', 'date', 'after_or_equal:today']],
-            ['newDate.after_or_equal' => 'Pick today or a future date.'],
-        );
+        // Past dates are allowed on purpose — lets an admin force-expire an account
+        // (e.g. to preview the settle page a real expired user would see).
+        $this->validate(['newDate' => ['required', 'date']]);
 
         $user = User::findOrFail($this->managingId);
         $old = $user->access_expires_at;
@@ -83,7 +82,8 @@ class SubscriptionManager extends Component
         SubscriptionLog::record($user, 'set', $old, $new, null, $this->trimmedNote());
 
         $this->note = '';
-        session()->flash('msg', "Set {$user->name}'s access to expire ".$new->format('M d, Y').".");
+        $verb = $new->isPast() ? 'expired' : 'set to expire';
+        session()->flash('msg', "{$user->name}'s access {$verb} ".$new->format('M d, Y').".");
     }
 
     protected function trimmedNote(): ?string

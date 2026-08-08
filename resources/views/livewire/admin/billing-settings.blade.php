@@ -1,4 +1,4 @@
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h1 class="text-xl font-bold text-slate-900 mb-1">Admin</h1>
     @include('partials.admin-nav')
 
@@ -8,10 +8,10 @@
     </div>
 
     @if (session('msg'))
-        <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ session('msg') }}</div>
+        <div class="mb-4 max-w-2xl rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ session('msg') }}</div>
     @endif
 
-    <form wire:submit="save" class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 space-y-5">
+    <form wire:submit="save" class="max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-sm p-6 space-y-5">
         <div>
             <label class="block text-sm font-semibold text-slate-700 mb-1">Message</label>
             <textarea wire:model="message" rows="3" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>

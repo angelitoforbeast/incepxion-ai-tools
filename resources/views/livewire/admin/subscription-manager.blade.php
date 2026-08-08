@@ -176,6 +176,7 @@
                             <button wire:click="setDate"
                                     class="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-900">Set date</button>
                         </div>
+                        <p class="mt-1 text-xs text-slate-400">A past date immediately expires the account (useful for testing the settle page).</p>
                         @error('newDate') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
                 </div>

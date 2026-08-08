@@ -149,8 +149,9 @@ class AccountValidityTest extends TestCase
         $this->assertEquals($target, $user->fresh()->access_expires_at->toDateString());
     }
 
-    public function test_setting_a_past_date_is_rejected(): void
+    public function test_setting_a_past_date_expires_the_account(): void
     {
+        // Past dates are allowed so an admin can force-expire an account for testing.
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'access_expires_at' => now()->addMonth()]);
 
@@ -158,7 +159,9 @@ class AccountValidityTest extends TestCase
             ->call('manage', $user->id)
             ->set('newDate', now()->subDay()->toDateString())
             ->call('setDate')
-            ->assertHasErrors('newDate');
+            ->assertHasNoErrors();
+
+        $this->assertTrue($user->fresh()->isExpired());
     }
 
     public function test_extend_writes_a_subscription_log_with_note(): void

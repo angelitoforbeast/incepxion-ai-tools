@@ -1,4 +1,11 @@
-<div>
+<div x-data="{
+        beat() {
+            fetch('{{ route('session.ping') }}', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                .then(r => { if (r.status === 409 || r.status === 401) { window.location.href = '{{ route('login') }}'; } })
+                .catch(() => {});
+        }
+     }"
+     x-init="beat(); const t = setInterval(() => beat(), 10000); window.addEventListener('beforeunload', () => clearInterval(t));">
     <div class="bg-slate-50 border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <a href="{{ route('tools.courses') }}" wire:navigate class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">← All courses</a>

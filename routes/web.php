@@ -61,6 +61,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
 
+// Lightweight session heartbeat (used by the course player to stop playback if the
+// account is opened on another device). EnsureSingleSession returns 409 when stale.
+Route::get('session/ping', fn () => response()->json(['ok' => true]))
+    ->middleware('auth')->name('session.ping');
+
 // Profile (view-only) is reachable while pending; Settings requires an approved account
 Route::view('profile', 'profile')->middleware(['auth'])->name('profile');
 Route::view('settings', 'settings')->middleware(['auth', 'approved'])->name('settings');

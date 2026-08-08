@@ -23,6 +23,11 @@ class EnsureSingleSession
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
+            // AJAX/heartbeat (e.g. the video page ping) — return a signal the JS can act on.
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'signed_out'], 409);
+            }
+
             return redirect()->route('login')
                 ->with('status', 'You were signed out because your account was opened on another device.');
         }

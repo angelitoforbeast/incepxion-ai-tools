@@ -62,6 +62,11 @@ class GoogleController extends Controller
 
         Auth::login($user, remember: true);
 
+        // Single active session (last-login-wins): record this session; any older
+        // session on another device is signed out by EnsureSingleSession middleware.
+        session()->regenerate();
+        $user->forceFill(['current_session_id' => session()->getId()])->save();
+
         return redirect()->intended(route('dashboard'));
     }
 }

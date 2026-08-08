@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Enforces a single active session per account (last-login-wins). When a user logs
+ * in on another device, that device's session id becomes the account's current one;
+ * any older device fails this check on its next request and is signed out.
+ */
+class EnsureSingleSession
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = Auth::user();
+
+        if ($user && $user->current_session_id && $user->current_session_id !== $request->session()->getId()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->with('status', 'You were signed out because your account was opened on another device.');
+        }
+
+        return $next($request);
+    }
+}

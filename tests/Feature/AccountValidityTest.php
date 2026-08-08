@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\BillingSettings;
+use App\Livewire\Admin\SubscriptionManager;
 use App\Livewire\Admin\UserManager;
 use App\Models\Plan;
 use App\Models\Setting;
@@ -99,7 +100,9 @@ class AccountValidityTest extends TestCase
         $base = now()->addMonth()->startOfDay();
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'access_expires_at' => $base]);
 
-        Livewire::actingAs($admin)->test(UserManager::class)->call('extendAccess', $user->id, 3);
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)
+            ->call('manage', $user->id)
+            ->call('extend', 3);
 
         $this->assertEquals($base->copy()->addMonths(3)->toDateString(), $user->fresh()->access_expires_at->toDateString());
     }
@@ -109,7 +112,9 @@ class AccountValidityTest extends TestCase
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'access_expires_at' => now()->subMonths(2)]);
 
-        Livewire::actingAs($admin)->test(UserManager::class)->call('extendAccess', $user->id, 1);
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)
+            ->call('manage', $user->id)
+            ->call('extend', 1);
 
         $exp = $user->fresh()->access_expires_at;
         $this->assertTrue($exp->isFuture());
@@ -122,9 +127,75 @@ class AccountValidityTest extends TestCase
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'access_expires_at' => now()->addMonth()]);
         $before = $user->access_expires_at->toDateTimeString();
 
-        Livewire::actingAs($admin)->test(UserManager::class)->call('extendAccess', $user->id, 7);
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)
+            ->call('manage', $user->id)
+            ->call('extend', 7);
 
         $this->assertEquals($before, $user->fresh()->access_expires_at->toDateTimeString());
+    }
+
+    public function test_admin_can_set_exact_expiry_date(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'access_expires_at' => now()->addMonth()]);
+        $target = now()->addMonths(5)->toDateString();
+
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)
+            ->call('manage', $user->id)
+            ->set('newDate', $target)
+            ->call('setDate')
+            ->assertHasNoErrors();
+
+        $this->assertEquals($target, $user->fresh()->access_expires_at->toDateString());
+    }
+
+    public function test_setting_a_past_date_is_rejected(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'access_expires_at' => now()->addMonth()]);
+
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)
+            ->call('manage', $user->id)
+            ->set('newDate', now()->subDay()->toDateString())
+            ->call('setDate')
+            ->assertHasErrors('newDate');
+    }
+
+    public function test_extend_writes_a_subscription_log_with_note(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'access_expires_at' => now()->addMonth()]);
+
+        Livewire::actingAs($admin)->test(SubscriptionManager::class)
+            ->call('manage', $user->id)
+            ->set('note', 'Paid 500 via GCash')
+            ->call('extend', 3);
+
+        $this->assertDatabaseHas('subscription_logs', [
+            'user_id'  => $user->id,
+            'admin_id' => $admin->id,
+            'action'   => 'extend',
+            'months'   => 3,
+            'note'     => 'Paid 500 via GCash',
+        ]);
+    }
+
+    public function test_approve_writes_a_subscription_log(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $pending = User::factory()->create(['status' => 'pending', 'email_verified_at' => now(), 'access_expires_at' => null]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)->call('approve', $pending->id);
+
+        $this->assertDatabaseHas('subscription_logs', [
+            'user_id' => $pending->id,
+            'action'  => 'approve',
+        ]);
+    }
+
+    public function test_extend_access_method_removed_from_user_manager(): void
+    {
+        $this->assertFalse(method_exists(UserManager::class, 'extendAccess'));
     }
 
     public function test_admin_can_save_settle_billing_details(): void

@@ -70,26 +70,17 @@ class UserManager extends Component
     public function approve(int $id): void
     {
         $user = User::findOrFail($id);
+        $old = $user->access_expires_at;
+        $new = $old ?? now()->addMonths(User::DEFAULT_VALIDITY_MONTHS);
         $user->update([
             'status'            => 'approved',
             'approved_at'       => now(),
             'approved_by'       => auth()->id(),
             'remarks'           => null,
-            'access_expires_at' => $user->access_expires_at ?? now()->addMonths(User::DEFAULT_VALIDITY_MONTHS),
+            'access_expires_at' => $new,
         ]);
+        \App\Models\SubscriptionLog::record($user, 'approve', $old, $new, null, null);
         session()->flash('msg', "{$user->name} has been approved (valid until ".$user->fresh()->access_expires_at->format('M d, Y').").");
-    }
-
-    /** Extend a user's validity by N months (from their current expiry, or from now if lapsed). */
-    public function extendAccess(int $id, int $months): void
-    {
-        if (! in_array($months, [1, 3, 6, 12], true)) {
-            return;
-        }
-        $user = User::findOrFail($id);
-        $base = ($user->access_expires_at && $user->access_expires_at->isFuture()) ? $user->access_expires_at : now();
-        $user->update(['access_expires_at' => $base->copy()->addMonths($months)]);
-        session()->flash('msg', "Extended {$user->name} by {$months} month(s) — valid until ".$user->fresh()->access_expires_at->format('M d, Y').".");
     }
 
     public function startReject(int $id): void
@@ -132,8 +123,10 @@ class UserManager extends Component
     public function reinstate(int $id): void
     {
         $u = User::findOrFail($id);
-        $expiry = ($u->access_expires_at && $u->access_expires_at->isFuture()) ? $u->access_expires_at : now()->addMonths(User::DEFAULT_VALIDITY_MONTHS);
+        $old = $u->access_expires_at;
+        $expiry = ($old && $old->isFuture()) ? $old : now()->addMonths(User::DEFAULT_VALIDITY_MONTHS);
         $u->update(['status' => 'approved', 'approved_at' => now(), 'approved_by' => auth()->id(), 'remarks' => null, 'access_expires_at' => $expiry]);
+        \App\Models\SubscriptionLog::record($u, 'reinstate', $old, $expiry, null, null);
         session()->flash('msg', 'User reinstated.');
     }
 

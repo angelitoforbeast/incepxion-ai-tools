@@ -141,13 +141,6 @@
                                         {{ $u->isExpired() ? 'Lapsed' : 'Until' }} {{ $exp->format('M d, Y') }}
                                     </div>
                                 @endif
-                                <div class="mt-1.5 flex flex-wrap items-center gap-1">
-                                    <span class="text-[10px] uppercase tracking-wide text-slate-400">Extend</span>
-                                    @foreach ([1, 3, 6, 12] as $m)
-                                        <button wire:click="extendAccess({{ $u->id }}, {{ $m }})"
-                                            class="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">+{{ $m }}m</button>
-                                    @endforeach
-                                </div>
                             @else
                                 <span class="text-xs text-slate-400">—</span>
                             @endif

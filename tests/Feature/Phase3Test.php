@@ -167,22 +167,23 @@ class Phase3Test extends TestCase
         $this->assertNull($fresh->remarks);
     }
 
-    public function test_admin_can_delete_a_user(): void
+    public function test_admin_can_suspend_and_reinstate_instead_of_deleting(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
 
-        Livewire::actingAs($admin)->test(UserManager::class)->call('deleteUser', $user->id);
+        // Suspend keeps the record (no destructive delete).
+        Livewire::actingAs($admin)->test(UserManager::class)->call('suspend', $user->id);
+        $this->assertSame('suspended', $user->fresh()->status);
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
 
-        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        // And can be reinstated.
+        Livewire::actingAs($admin)->test(UserManager::class)->call('reinstate', $user->id);
+        $this->assertSame('approved', $user->fresh()->status);
     }
 
-    public function test_admin_cannot_delete_themselves(): void
+    public function test_delete_user_method_is_removed(): void
     {
-        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
-
-        Livewire::actingAs($admin)->test(UserManager::class)->call('deleteUser', $admin->id);
-
-        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+        $this->assertFalse(method_exists(UserManager::class, 'deleteUser'));
     }
 }

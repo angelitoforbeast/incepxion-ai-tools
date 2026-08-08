@@ -70,6 +70,24 @@
                 <div class="mt-2 h-1.5 w-full rounded-full bg-slate-700">
                     <div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ $pct }}%"></div>
                 </div>
+
+                @if (! $user->isAdmin() && $user->access_expires_at)
+                    @php
+                        $expClass = $user->isExpired() ? 'text-rose-400' : ($user->isExpiringSoon() ? 'text-amber-400' : 'text-slate-400');
+                    @endphp
+                    <div class="mt-2.5 flex items-center gap-1.5 border-t border-slate-700/60 pt-2 text-[11px] {{ $expClass }}">
+                        <svg style="width:13px;height:13px" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        @if ($user->isExpired())
+                            <span class="font-medium">Access expired {{ $user->access_expires_at->format('M d, Y') }}</span>
+                        @elseif ($user->isExpiringSoon())
+                            <span class="font-medium">Expires {{ $user->access_expires_at->format('M d, Y') }}</span>
+                        @else
+                            <span>Access until {{ $user->access_expires_at->format('M d, Y') }}</span>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
     @endif

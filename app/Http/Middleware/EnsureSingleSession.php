@@ -28,8 +28,7 @@ class EnsureSingleSession
                 return response()->json(['message' => 'signed_out'], 409);
             }
 
-            return redirect()->route('login')
-                ->with('status', 'You were signed out because your account was opened on another device.');
+            return redirect()->route('login')->with('deviceSignout', true);
         }
 
         return $next($request);

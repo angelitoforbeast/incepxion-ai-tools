@@ -17,21 +17,6 @@
     </div>
 
     <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {{-- Anti-sharing monitoring notice --}}
-        <div class="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-            <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
-            <span>
-                <strong class="font-semibold">This session is actively monitored.</strong>
-                Your login status, IP address, location, device, and viewing activity are recorded, and every video is
-                watermarked to your account (<span class="font-medium">{{ auth()->user()->email }}</span>).
-                Only one device can watch at a time. Sharing your account or credentials may result in
-                <strong class="font-semibold">immediate suspension</strong>.
-            </span>
-        </div>
-
         <div class="flex flex-col lg:flex-row gap-6">
 
             {{-- Player --}}

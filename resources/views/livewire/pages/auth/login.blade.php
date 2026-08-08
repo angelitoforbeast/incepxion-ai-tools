@@ -6,7 +6,21 @@ use Livewire\Volt\Component;
 new #[Layout('layouts.guest')] class extends Component {}; ?>
 
 <div>
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('deviceSignout'))
+        <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">
+            <p class="flex items-center gap-2 text-sm font-semibold">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zM12 15.75h.007v.008H12v-.008z"/></svg>
+                You were signed out — your account was opened on another device.
+            </p>
+            <p class="mt-1.5 text-xs leading-relaxed">
+                This system is <strong>actively monitored</strong>. Your login status, IP address, location, device, and
+                viewing activity are recorded, and every video is watermarked to your account. Only <strong>one device</strong>
+                may be signed in at a time — sharing your account or credentials may result in <strong>suspension</strong>.
+            </p>
+        </div>
+    @else
+        <x-auth-session-status class="mb-4" :status="session('status')" />
+    @endif
 
     <div class="text-center mb-6">
         <h1 class="text-lg font-semibold text-slate-900">Sign in to Incepxion AI</h1>

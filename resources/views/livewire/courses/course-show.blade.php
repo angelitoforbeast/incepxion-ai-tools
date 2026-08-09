@@ -40,7 +40,9 @@
                     <div class="mt-4">
                         <h2 class="text-lg font-semibold text-gray-900">{{ $currentLesson->title }}</h2>
                         @if ($currentLesson->description)
-                            <p class="mt-1 text-sm text-gray-600 whitespace-pre-wrap">{{ $currentLesson->description }}</p>
+                            <div class="course-desc mt-2 text-sm leading-relaxed text-gray-600">
+                                {!! \App\Support\RichText::render($currentLesson->description) !!}
+                            </div>
                         @endif
                     </div>
                 @endif

@@ -154,7 +154,8 @@ class CourseManager extends Component
         $this->managingCourseId = $l->course_id;
         $this->l_title = $l->title;
         $this->l_video_id = $l->vdocipher_video_id;
-        $this->l_description = (string) $l->description;
+        $desc = (string) $l->description;
+        $this->l_description = ($desc === '' || \App\Support\RichText::isHtml($desc)) ? $desc : nl2br(e($desc));
         $this->l_free = $l->is_free_preview;
         $this->l_sort = $l->sort_order;
         $this->showLessonForm = true;
@@ -165,15 +166,19 @@ class CourseManager extends Component
         $this->validate([
             'l_title'       => ['required', 'string', 'max:200'],
             'l_video_id'    => ['required', 'string', 'max:120'],
-            'l_description' => ['nullable', 'string', 'max:2000'],
+            'l_description' => ['nullable', 'string', 'max:20000'],
             'l_sort'        => ['integer', 'min:0'],
         ]);
+
+        // Normalize empty rich-text to null; otherwise store sanitized HTML.
+        $ldesc = trim((string) $this->l_description);
+        $ldesc = trim(strip_tags($ldesc)) === '' ? null : \App\Support\RichText::clean($ldesc);
 
         Lesson::updateOrCreate(['id' => $this->editingLessonId], [
             'course_id'          => $this->managingCourseId,
             'title'              => $this->l_title,
             'vdocipher_video_id' => trim($this->l_video_id),
-            'description'        => $this->l_description ?: null,
+            'description'        => $ldesc,
             'is_free_preview'    => $this->l_free,
             'sort_order'         => $this->l_sort,
         ]);

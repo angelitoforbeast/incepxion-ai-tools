@@ -200,7 +200,36 @@
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-xs font-medium text-slate-600 mb-1">Description <span class="text-slate-400">(optional)</span></label>
-                            <textarea wire:model="l_description" rows="2" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            {{-- Quill rich-text editor. wire:ignore keeps Livewire from wiping Quill's DOM on re-render. --}}
+                            <div wire:ignore
+                                 x-data="{
+                                    quill: null,
+                                    init() {
+                                        this.quill = new window.Quill(this.$refs.editor, {
+                                            theme: 'snow',
+                                            placeholder: 'Describe the lesson…',
+                                            modules: { toolbar: [
+                                                [{ header: [2, 3, false] }],
+                                                ['bold', 'italic', 'underline', 'strike'],
+                                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                                ['blockquote', 'link'],
+                                                ['clean'],
+                                            ]},
+                                        });
+                                        this.quill.root.innerHTML = @js($l_description);
+                                        this.quill.on('text-change', () => {
+                                            $wire.set('l_description', this.quill.root.innerHTML, false);
+                                        });
+                                        $wire.$watch('l_description', (value) => {
+                                            if ((value ?? '') !== this.quill.root.innerHTML) {
+                                                this.quill.root.innerHTML = value ?? '';
+                                            }
+                                        });
+                                    }
+                                 }">
+                                <div x-ref="editor" style="min-height:140px" class="bg-white"></div>
+                            </div>
+                            @error('l_description') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Sort order</label>

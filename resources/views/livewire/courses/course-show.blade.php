@@ -10,9 +10,6 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <a href="{{ route('tools.courses') }}" wire:navigate class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">← All courses</a>
             <h1 class="text-2xl font-bold text-gray-900 mt-1">🎓 {{ $course->title }}</h1>
-            @if ($course->description)
-                <p class="text-sm text-gray-500">{{ $course->description }}</p>
-            @endif
         </div>
     </div>
 
@@ -77,5 +74,31 @@
                 <p class="mt-2 text-[11px] text-gray-400">🔒 Protected video · watermarked to your account.</p>
             </div>
         </div>
+
+        @if ($course->description)
+            <div class="mt-8 border-t border-gray-100 pt-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">About this course</h2>
+                <div class="course-desc max-w-3xl text-sm leading-relaxed text-gray-700">
+                    {!! \App\Support\RichText::render($course->description) !!}
+                </div>
+            </div>
+        @endif
     </div>
+
+    <style>
+        .course-desc p { margin: 0.5rem 0; }
+        .course-desc h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #111827; }
+        .course-desc h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #111827; }
+        .course-desc h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.5rem; color: #111827; }
+        .course-desc ul { list-style: disc; margin: 0.5rem 0 0.5rem 1.5rem; }
+        .course-desc ol { list-style: decimal; margin: 0.5rem 0 0.5rem 1.5rem; }
+        .course-desc li { margin: 0.25rem 0; }
+        .course-desc strong, .course-desc b { font-weight: 700; }
+        .course-desc em, .course-desc i { font-style: italic; }
+        .course-desc u { text-decoration: underline; }
+        .course-desc s, .course-desc strike, .course-desc del { text-decoration: line-through; }
+        .course-desc a { color: #4f46e5; text-decoration: underline; word-break: break-word; }
+        .course-desc blockquote { border-left: 3px solid #e2e8f0; padding-left: 0.75rem; margin: 0.5rem 0; color: #64748b; }
+        .course-desc pre { background: #f1f5f9; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.8rem; }
+    </style>
 </div>

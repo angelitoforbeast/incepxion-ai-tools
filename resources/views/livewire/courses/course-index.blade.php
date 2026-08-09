@@ -26,7 +26,7 @@
                         <div class="p-5 flex-1 flex flex-col">
                             <h3 class="font-semibold text-slate-900 group-hover:text-indigo-600">{{ $course->title }}</h3>
                             @if ($course->description)
-                                <p class="mt-1 text-sm text-slate-500 line-clamp-2">{{ $course->description }}</p>
+                                <p class="mt-1 text-sm text-slate-500 line-clamp-2">{{ \App\Support\RichText::excerpt($course->description) }}</p>
                             @endif
                             <span class="mt-3 text-xs font-medium text-slate-400">{{ $course->lessons_count }} {{ Str::plural('lesson', $course->lessons_count) }}</span>
                         </div>

@@ -95,7 +95,37 @@
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                    <textarea wire:model="c_description" rows="3" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                    {{-- Quill rich-text editor. wire:ignore keeps Livewire from wiping Quill's DOM on re-render. --}}
+                    <div wire:ignore
+                         x-data="{
+                            quill: null,
+                            init() {
+                                this.quill = new window.Quill(this.$refs.editor, {
+                                    theme: 'snow',
+                                    placeholder: 'Describe the course…',
+                                    modules: { toolbar: [
+                                        [{ header: [1, 2, 3, false] }],
+                                        ['bold', 'italic', 'underline', 'strike'],
+                                        [{ list: 'ordered' }, { list: 'bullet' }],
+                                        ['blockquote', 'link'],
+                                        ['clean'],
+                                    ]},
+                                });
+                                this.quill.root.innerHTML = @js($c_description);
+                                this.quill.on('text-change', () => {
+                                    $wire.set('c_description', this.quill.root.innerHTML, false);
+                                });
+                                // Reflect external changes (edit another course / reset) back into Quill.
+                                $wire.$watch('c_description', (value) => {
+                                    if ((value ?? '') !== this.quill.root.innerHTML) {
+                                        this.quill.root.innerHTML = value ?? '';
+                                    }
+                                });
+                            }
+                         }">
+                        <div x-ref="editor" style="min-height:180px" class="bg-white"></div>
+                    </div>
+                    @error('c_description') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Thumbnail URL <span class="text-xs text-slate-400">(optional)</span></label>

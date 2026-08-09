@@ -88,7 +88,10 @@ class CourseManager extends Component
         $c = Course::findOrFail($id);
         $this->editingCourseId = $c->id;
         $this->c_title = $c->title;
-        $this->c_description = (string) $c->description;
+        // Legacy plain-text descriptions get line breaks turned into HTML so the
+        // rich-text editor shows them correctly (and saves as HTML going forward).
+        $desc = (string) $c->description;
+        $this->c_description = ($desc === '' || \App\Support\RichText::isHtml($desc)) ? $desc : nl2br(e($desc));
         $this->c_thumbnail_url = (string) $c->thumbnail_url;
         $this->c_published = $c->is_published;
         $this->c_sort = $c->sort_order;
@@ -99,14 +102,18 @@ class CourseManager extends Component
     {
         $this->validate([
             'c_title'         => ['required', 'string', 'max:200'],
-            'c_description'   => ['nullable', 'string', 'max:4000'],
+            'c_description'   => ['nullable', 'string', 'max:20000'],
             'c_thumbnail_url' => ['nullable', 'url', 'max:500'],
             'c_sort'          => ['integer', 'min:0'],
         ]);
 
+        // Treat an "empty" rich-text value (e.g. "<p><br></p>") as no description.
+        $desc = trim((string) $this->c_description);
+        $desc = trim(strip_tags($desc)) === '' ? null : \App\Support\RichText::clean($desc);
+
         Course::updateOrCreate(['id' => $this->editingCourseId], [
             'title'         => $this->c_title,
-            'description'   => $this->c_description ?: null,
+            'description'   => $desc,
             'thumbnail_url' => $this->c_thumbnail_url ?: null,
             'is_published'  => $this->c_published,
             'sort_order'    => $this->c_sort,

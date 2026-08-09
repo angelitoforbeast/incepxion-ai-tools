@@ -1,7 +1,8 @@
 @php
     $nav = [
-        ['route' => 'tools.courses', 'active' => 'tools.courses*', 'label' => 'Courses', 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
-        ['route' => 'dashboard', 'active' => 'dashboard', 'label' => 'Tools', 'icon' => 'M4 5h6v6H4V5zm10 0h6v6h-6V5zM4 15h6v4H4v-4zm10 0h6v4h-6v-4z'],
+        ['route' => 'tools.courses', 'active' => ['tools.courses*'], 'label' => 'Courses', 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
+        // Tools is active on the dashboard AND on any tool page, except Courses (its own item above).
+        ['route' => 'dashboard', 'active' => ['dashboard', 'tools.*'], 'exclude' => ['tools.courses*'], 'label' => 'Tools', 'icon' => 'M4 5h6v6H4V5zm10 0h6v6h-6V5zM4 15h6v4H4v-4zm10 0h6v4h-6v-4z'],
     ];
     $user = auth()->user();
     $approved = $user->isApproved();
@@ -28,7 +29,13 @@
         @if ($approved)
             <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Menu</p>
             @foreach ($nav as $item)
-                @php $active = request()->routeIs($item['active'] ?? $item['route']); @endphp
+                @php
+                    $patterns = (array) ($item['active'] ?? $item['route']);
+                    $active = request()->routeIs(...$patterns);
+                    if ($active && ! empty($item['exclude']) && request()->routeIs(...$item['exclude'])) {
+                        $active = false;
+                    }
+                @endphp
                 <a href="{{ route($item['route']) }}" wire:navigate
                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
                           {{ $active ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">

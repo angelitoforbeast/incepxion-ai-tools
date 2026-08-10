@@ -113,6 +113,9 @@ PLACEHOLDERS — insert these LITERALLY, do NOT replace, translate, or invent va
 These are the ONLY two allowed placeholders — do NOT output any other {{...}} token:
 - {{first_name}}  = the customer's first name (sprinkle naturally, not in every single message)
 - {{PRICING}}     = the promo price / offer
+NEVER write an actual price, number, amount, discount, savings, or a specific deal name
+(e.g. "P299", "299", "Buy 1 Take 1", "B1T1", "50% off"). ANY reference to price, cost,
+discount, or the offer MUST be the literal token {{PRICING}}.
 
 Return ONLY the messages as an array of strings (one full message per array item).
 Do NOT number them and do NOT add any commentary.
@@ -137,11 +140,15 @@ SEQ;
         $template = trim($input['sequence_prompt'] ?? '') ?: self::DEFAULT_SEQUENCE_PROMPT;
         $system = str_replace(['{count}', '{language}'], [(string) $count, $language], $template);
 
+        // NOTE: we deliberately do NOT pass the real price or promo here. If the model
+        // never sees the actual amount, it cannot leak it — it must use {{PRICING}}.
         $userMsg = "Product name: {$input['product_name']}\n"
             ."Product description: {$input['product_description']}\n"
-            ."Key features:\n".trim($input['features'] ?? '')."\n"
-            ."Promo price: ".trim($input['price'] ?? '')."\n"
-            ."Current promo/offer: ".trim($input['promo'] ?? '')."\n\n"
+            ."Key features:\n".trim($input['features'] ?? '')."\n\n"
+            ."PRICING RULE: Do NOT write any real price, number, amount, discount, or specific "
+            ."deal name (never \"P299\", \"299\", \"Buy 1 Take 1\", \"50% off\", etc.). Whenever a "
+            ."message refers to price, cost, discount, savings, or the offer, use the literal "
+            ."token {{PRICING}} instead — BotCake fills the real value.\n\n"
             ."Write exactly {$count} follow-up messages.";
 
         $schema = [

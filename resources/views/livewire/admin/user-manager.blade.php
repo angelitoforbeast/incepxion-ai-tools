@@ -29,11 +29,6 @@
         @endforeach
     </div>
 
-    @if (session('msg'))
-        <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700">
-            ✓ {{ session('msg') }}
-        </div>
-    @endif
 
     <!-- Controls -->
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">

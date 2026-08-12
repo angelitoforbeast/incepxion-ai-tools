@@ -16,6 +16,10 @@ class EnsureApproved
         $user = $request->user();
 
         if ($user && ! $user->isApproved()) {
+            if (in_array($user->status, ['rejected', 'suspended'], true)) {
+                return redirect()->route('account.rejected');
+            }
+
             return redirect()->route('approval.pending');
         }
 

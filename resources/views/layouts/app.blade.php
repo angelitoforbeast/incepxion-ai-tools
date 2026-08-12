@@ -42,6 +42,25 @@
                 </main>
             </div>
         </div>
+
+        <!-- Global toast notifications (fired via $this->dispatch('notify', message: ..., type: ...)) -->
+        <div x-data="{ toasts: [] }"
+             x-on:notify.window="
+                const id = Date.now() + Math.random();
+                toasts.push({ id, message: $event.detail.message, type: ($event.detail.type || 'success') });
+                setTimeout(() => { toasts = toasts.filter(t => t.id !== id) }, 4000);
+             "
+             class="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)]">
+            <template x-for="t in toasts" :key="t.id">
+                <div x-transition.opacity.duration.300ms
+                     class="flex items-start gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg border"
+                     :class="t.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'">
+                    <span x-text="t.type === 'error' ? '⚠️' : '✓'"></span>
+                    <span class="flex-1" x-text="t.message"></span>
+                </div>
+            </template>
+        </div>
+
         @livewireScripts
     </body>
 </html>

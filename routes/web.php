@@ -30,10 +30,16 @@ Route::post('logout', function (Logout $logout) {
 Route::get('auth/google', [GoogleController::class, 'redirect'])->name('google.redirect');
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
 
-// Pending-approval landing (logged in, but not yet approved)
-Route::view('approval/pending', 'approval-pending')
+// Pending-approval landing (logged in, but not yet approved). Polls and auto-advances
+// to the dashboard the moment an admin approves the account.
+Route::get('approval/pending', \App\Livewire\ApprovalPending::class)
     ->middleware('auth')
     ->name('approval.pending');
+
+// Rejected / suspended landing — dedicated view (shows the rejection reason).
+Route::get('account/rejected', \App\Livewire\AccountRejected::class)
+    ->middleware('auth')
+    ->name('account.rejected');
 
 // Dashboard + tools require an approved AND non-expired account
 Route::middleware(['auth', 'verified', 'approved', 'not-expired'])->group(function () {

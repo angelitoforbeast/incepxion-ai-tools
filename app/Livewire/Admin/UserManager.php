@@ -63,7 +63,7 @@ class UserManager extends Component
             'approved_by'       => auth()->id(),
         ]);
 
-        session()->flash('msg', "Pre-approved {$this->inviteEmail}. They get access the moment they sign in with Google.");
+        $this->dispatch('notify', message: "Pre-approved {$this->inviteEmail}. They get access the moment they sign in.", type: 'success');
         $this->reset('inviteEmail', 'inviteAdmin', 'showInvite');
     }
 
@@ -80,7 +80,7 @@ class UserManager extends Component
             'access_expires_at' => $new,
         ]);
         \App\Models\SubscriptionLog::record($user, 'approve', $old, $new, null, null);
-        session()->flash('msg', "{$user->name} has been approved (valid until ".$user->fresh()->access_expires_at->format('M d, Y').").");
+        $this->dispatch('notify', message: "✅ {$user->name} approved — access until ".$user->fresh()->access_expires_at->format('M d, Y').".", type: 'success');
     }
 
     public function startReject(int $id): void
@@ -104,11 +104,12 @@ class UserManager extends Component
         );
 
         if ($this->rejectingId) {
-            User::whereKey($this->rejectingId)->update([
+            $user = User::findOrFail($this->rejectingId);
+            $user->update([
                 'status'  => 'rejected',
                 'remarks' => trim($this->rejectRemarks),
             ]);
-            session()->flash('msg', 'User rejected with remarks.');
+            $this->dispatch('notify', message: "🚫 {$user->name} rejected.", type: 'success');
         }
 
         $this->cancelReject();
@@ -117,7 +118,7 @@ class UserManager extends Component
     public function suspend(int $id): void
     {
         User::whereKey($id)->update(['status' => 'suspended']);
-        session()->flash('msg', 'User suspended.');
+        $this->dispatch('notify', message: 'User suspended.', type: 'success');
     }
 
     public function reinstate(int $id): void
@@ -127,25 +128,25 @@ class UserManager extends Component
         $expiry = ($old && $old->isFuture()) ? $old : now()->addMonths(User::DEFAULT_VALIDITY_MONTHS);
         $u->update(['status' => 'approved', 'approved_at' => now(), 'approved_by' => auth()->id(), 'remarks' => null, 'access_expires_at' => $expiry]);
         \App\Models\SubscriptionLog::record($u, 'reinstate', $old, $expiry, null, null);
-        session()->flash('msg', 'User reinstated.');
+        $this->dispatch('notify', message: "{$u->name} reinstated.", type: 'success');
     }
 
     public function makeAdmin(int $id): void
     {
         User::whereKey($id)->update(['role' => 'admin', 'status' => 'approved']);
-        session()->flash('msg', 'User is now an admin.');
+        $this->dispatch('notify', message: 'User is now an admin.', type: 'success');
     }
 
     public function removeAdmin(int $id): void
     {
         if ($id === auth()->id()) {
-            session()->flash('msg', "You can't remove your own admin role.");
+            $this->dispatch('notify', message: "You can't remove your own admin role.", type: 'error');
 
             return;
         }
 
         User::whereKey($id)->update(['role' => 'user']);
-        session()->flash('msg', 'Admin role removed.');
+        $this->dispatch('notify', message: 'Admin role removed.', type: 'success');
     }
 
 

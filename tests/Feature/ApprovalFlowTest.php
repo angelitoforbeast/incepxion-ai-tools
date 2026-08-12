@@ -89,6 +89,29 @@ class ApprovalFlowTest extends TestCase
             ->assertDispatched('notify');
     }
 
+    public function test_admin_can_move_a_user_back_to_pending(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['status' => 'approved', 'approved_at' => now(), 'approved_by' => $admin->id, 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)
+            ->call('resetToPending', $user->id)
+            ->assertDispatched('notify');
+
+        $fresh = $user->fresh();
+        $this->assertSame('pending', $fresh->status);
+        $this->assertNull($fresh->approved_at);
+    }
+
+    public function test_admin_cannot_move_their_own_account_to_pending(): void
+    {
+        $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($admin)->test(UserManager::class)->call('resetToPending', $admin->id);
+
+        $this->assertSame('approved', $admin->fresh()->status);
+    }
+
     public function test_reject_fires_a_toast_notification(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);

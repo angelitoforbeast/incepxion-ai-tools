@@ -147,6 +147,7 @@
                                     <button wire:click="startReject({{ $u->id }})" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">Reject</button>
                                 @elseif ($u->status === 'rejected')
                                     <button wire:click="approve({{ $u->id }})" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
+                                    <button wire:click="resetToPending({{ $u->id }})" wire:confirm="Move this user back to the pending queue?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-50">Set Pending</button>
                                 @elseif ($u->status === 'approved')
                                     @if ($u->isAdmin())
                                         @if ($u->id !== auth()->id())
@@ -156,8 +157,12 @@
                                         <button wire:click="makeAdmin({{ $u->id }})" wire:confirm="Make this user an admin?" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">Make Admin</button>
                                     @endif
                                     <button wire:click="suspend({{ $u->id }})" wire:confirm="Suspend this user?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Suspend</button>
+                                    @unless ($u->isAdmin())
+                                        <button wire:click="resetToPending({{ $u->id }})" wire:confirm="Move this user back to pending? This revokes their access until re-approved." class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-50">Set Pending</button>
+                                    @endunless
                                 @else
                                     <button wire:click="reinstate({{ $u->id }})" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Reinstate</button>
+                                    <button wire:click="resetToPending({{ $u->id }})" wire:confirm="Move this user back to the pending queue?" class="rounded-md bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-50">Set Pending</button>
                                 @endif
 
                             </div>

@@ -131,6 +131,25 @@ class UserManager extends Component
         $this->dispatch('notify', message: "{$u->name} reinstated.", type: 'success');
     }
 
+    /** Move a user back to the pending queue for re-review (revokes access). */
+    public function resetToPending(int $id): void
+    {
+        if ($id === auth()->id()) {
+            $this->dispatch('notify', message: "You can't move your own account to pending.", type: 'error');
+
+            return;
+        }
+
+        $user = User::findOrFail($id);
+        $user->update([
+            'status'      => 'pending',
+            'approved_at' => null,
+            'approved_by' => null,
+            'remarks'     => null,
+        ]);
+        $this->dispatch('notify', message: "{$user->name} moved back to pending.", type: 'success');
+    }
+
     public function makeAdmin(int $id): void
     {
         User::whereKey($id)->update(['role' => 'admin', 'status' => 'approved']);

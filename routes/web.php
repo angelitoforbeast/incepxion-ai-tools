@@ -69,6 +69,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('subscriptions', \App\Livewire\Admin\SubscriptionManager::class)->name('admin.subscriptions');
     Route::get('subscriptions/log', \App\Livewire\Admin\SubscriptionLogs::class)->name('admin.subscriptions.log');
     Route::get('billing', \App\Livewire\Admin\BillingSettings::class)->name('admin.billing');
+    Route::get('rts-data', \App\Livewire\Admin\RtsData::class)->name('admin.rts');
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
 

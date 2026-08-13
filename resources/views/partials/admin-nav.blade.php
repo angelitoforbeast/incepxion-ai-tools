@@ -7,6 +7,7 @@
         ['route' => 'admin.access', 'label' => 'Access Log'],
         ['route' => 'admin.subscriptions', 'label' => 'Subscriptions'],
         ['route' => 'admin.billing', 'label' => 'Billing'],
+        ['route' => 'admin.rts', 'label' => 'RTS Data'],
         ['route' => 'admin.logs', 'label' => 'Data Logs'],
     ];
     // $activeTab is passed by each admin component so the highlight survives Livewire

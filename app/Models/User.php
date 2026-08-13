@@ -90,6 +90,16 @@ class User extends Authenticatable
         return $this->hasMany(Subscription::class);
     }
 
+    public function fromJnts(): HasMany
+    {
+        return $this->hasMany(FromJnt::class);
+    }
+
+    public function rtsUploads(): HasMany
+    {
+        return $this->hasMany(RtsUpload::class);
+    }
+
     public function generations(): HasMany
     {
         return $this->hasMany(Generation::class);

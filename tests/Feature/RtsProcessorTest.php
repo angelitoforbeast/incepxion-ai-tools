@@ -273,4 +273,18 @@ class RtsProcessorTest extends TestCase
         $this->assertSame('In Transit', FromJnt::where('user_id', $userA->id)->where('waybill_number', 'WBX')->value('status'));
         $this->assertSame('Delivered', FromJnt::where('user_id', $userB->id)->where('waybill_number', 'WBX')->value('status'));
     }
+
+    public function test_sender_filter_label_tracks_the_real_selection(): void
+    {
+        // Regression: the "N selected" label used a stale Alpine counter that drifted
+        // when a value was removed via a chip. It is now derived from the server state.
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('selectedSenders', ['SHOP 1', 'SHOP 2'])
+            ->assertSee('2 selected')
+            ->call('removeFilter', 'sender', 1)
+            ->assertSee('1 selected')
+            ->assertDontSee('2 selected');
+    }
 }

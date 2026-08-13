@@ -78,7 +78,6 @@ class RtsMonitor extends Component
     {
         $this->reset('selectedItems', 'selectedSenders', 'selectedCods');
         $this->refreshProjectionDefault();
-        $this->dispatch('rts-filters-updated');
     }
 
     /** Remove a single selected value (from a chip's ✕). */
@@ -96,7 +95,6 @@ class RtsMonitor extends Component
         }
 
         $this->refreshProjectionDefault();
-        $this->dispatch('rts-filters-updated');
     }
 
     private function totalDays(): int

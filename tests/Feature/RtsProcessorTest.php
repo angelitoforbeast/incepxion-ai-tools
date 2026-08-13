@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\ProcessRtsUpload;
 use App\Livewire\RtsMonitor;
+use App\Livewire\RtsProcessor;
 use App\Models\FromJnt;
 use App\Models\RtsUpload;
 use App\Models\User;
@@ -272,6 +273,37 @@ class RtsProcessorTest extends TestCase
         $this->assertSame(1, $upload->inserted);
         $this->assertSame('In Transit', FromJnt::where('user_id', $userA->id)->where('waybill_number', 'WBX')->value('status'));
         $this->assertSame('Delivered', FromJnt::where('user_id', $userB->id)->where('waybill_number', 'WBX')->value('status'));
+    }
+
+    public function test_canceling_before_processing_imports_nothing(): void
+    {
+        $user = User::factory()->create();
+        $csv = "Waybill Number,Status,Submission Time\nWB1,In Transit,2026-07-05 09:00:00\n";
+        $upload = $this->makeUpload($user, $csv);
+
+        // User hit Cancel while it was still queued.
+        $upload->update(['canceled_at' => now()]);
+
+        ProcessRtsUpload::dispatchSync($upload->id);
+        $upload->refresh();
+
+        $this->assertSame('canceled', $upload->status);
+        $this->assertSame(0, FromJnt::where('user_id', $user->id)->count());
+    }
+
+    public function test_cancel_button_finalizes_a_queued_upload(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $csv = "Waybill Number,Status,Submission Time\nWB1,In Transit,2026-07-05 09:00:00\n";
+        $upload = $this->makeUpload($user, $csv);
+
+        Livewire::actingAs($user)->test(RtsProcessor::class)
+            ->set('currentUploadId', $upload->id)
+            ->call('cancelUpload');
+
+        $fresh = $upload->fresh();
+        $this->assertSame('canceled', $fresh->status);
+        $this->assertNotNull($fresh->canceled_at);
     }
 
     public function test_sender_filter_label_tracks_the_real_selection(): void

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\RtsUploadCanceled;
 use App\Models\FromJnt;
 use App\Models\RtsUpload;
 use App\Services\RtsFileParser;
@@ -38,6 +39,13 @@ class ProcessRtsUpload implements ShouldQueue
             return;
         }
 
+        // Canceled before we even started — clean up and stop.
+        if ($this->isCanceled()) {
+            $this->finalizeCanceled($upload);
+
+            return;
+        }
+
         $upload->forceFill([
             'status'     => 'scanning',
             'started_at' => $upload->started_at ?? Carbon::now('Asia/Manila'),
@@ -48,7 +56,8 @@ class ProcessRtsUpload implements ShouldQueue
         $ext     = strtolower(pathinfo($upload->path, PATHINFO_EXTENSION));
 
         try {
-            $parsed = $parser->parse($absPath, $ext);
+            // The parser polls this every ~2000 rows so a long scan can be stopped.
+            $parsed = $parser->parse($absPath, $ext, fn () => $this->isCanceled());
             $rows   = $parsed['rows'];              // [waybill => normalized row]
             $upload->total_rows = count($rows);
 
@@ -86,6 +95,11 @@ class ProcessRtsUpload implements ShouldQueue
                 return; // Wait for the user to Continue or Cancel.
             }
 
+            // Last chance to bail before writing anything to from_jnts.
+            if ($this->isCanceled()) {
+                throw new RtsUploadCanceled('Upload canceled by user.');
+            }
+
             $upload->forceFill(['status' => 'processing', 'conflict_count' => count($conflicts)])->save();
 
             $this->apply($upload, $rows, $existing);
@@ -96,6 +110,9 @@ class ProcessRtsUpload implements ShouldQueue
                 'status'      => 'done',
                 'finished_at' => Carbon::now('Asia/Manila'),
             ])->save();
+        } catch (RtsUploadCanceled $e) {
+            // User stopped it — clean finish, no failed_jobs entry.
+            $this->finalizeCanceled($upload);
         } catch (\Throwable $e) {
             $this->deleteSource($upload); // auto-clean even on failure (no retries)
 
@@ -107,6 +124,24 @@ class ProcessRtsUpload implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    /** True if the user requested cancellation while the job is running. */
+    private function isCanceled(): bool
+    {
+        return RtsUpload::whereKey($this->uploadId)->whereNotNull('canceled_at')->exists();
+    }
+
+    /** Discard the source file and mark the upload canceled. */
+    private function finalizeCanceled(RtsUpload $upload): void
+    {
+        $this->deleteSource($upload);
+
+        $upload->forceFill([
+            'status'      => 'canceled',
+            'canceled_at' => $upload->canceled_at ?? Carbon::now('Asia/Manila'),
+            'finished_at' => Carbon::now('Asia/Manila'),
+        ])->save();
     }
 
     /** Remove the raw uploaded file from storage (best-effort). */

@@ -27,12 +27,14 @@ class RtsUpload extends Model
         'error_message',
         'started_at',
         'finished_at',
+        'canceled_at',
     ];
 
     protected $casts = [
         'batch_at'    => 'datetime',
         'started_at'  => 'datetime',
         'finished_at' => 'datetime',
+        'canceled_at' => 'datetime',
         'conflicts'   => 'array',
     ];
 

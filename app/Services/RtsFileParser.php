@@ -17,12 +17,17 @@ use ZipArchive;
 class RtsFileParser
 {
     /** Parse a stored upload. Returns ['rows' => [waybill => row], 'total' => int]. */
-    public function parse(string $absPath, string $ext): array
+    /**
+     * @param  callable|null  $cancelCheck  Optional; called periodically during the row
+     *                                       loop. If it returns true, parsing aborts by
+     *                                       throwing App\Exceptions\RtsUploadCanceled.
+     */
+    public function parse(string $absPath, string $ext, ?callable $cancelCheck = null): array
     {
         $ext = strtolower($ext);
 
         if ($ext === 'zip') {
-            return $this->parseZip($absPath);
+            return $this->parseZip($absPath, $cancelCheck);
         }
 
         if (! in_array($ext, ['csv', 'xlsx'], true)) {
@@ -31,12 +36,12 @@ class RtsFileParser
 
         $rows  = [];
         $total = 0;
-        $this->readFile($absPath, $ext, $rows, $total);
+        $this->readFile($absPath, $ext, $rows, $total, $cancelCheck);
 
         return ['rows' => $rows, 'total' => $total];
     }
 
-    private function parseZip(string $zipPath): array
+    private function parseZip(string $zipPath, ?callable $cancelCheck = null): array
     {
         $zip = new ZipArchive();
         if ($zip->open($zipPath) !== true) {
@@ -69,7 +74,7 @@ class RtsFileParser
                 fclose($out);
 
                 $found = true;
-                $this->readFile($target, $ext, $rows, $total);
+                $this->readFile($target, $ext, $rows, $total, $cancelCheck);
                 @unlink($target);
             }
         } finally {
@@ -85,7 +90,7 @@ class RtsFileParser
     }
 
     /** Stream one CSV/XLSX file, appending normalized rows into $rows (deduped by waybill). */
-    private function readFile(string $absPath, string $ext, array &$rows, int &$total): void
+    private function readFile(string $absPath, string $ext, array &$rows, int &$total, ?callable $cancelCheck = null): void
     {
         if ($ext === 'xlsx') {
             $reader = new XlsxReader();
@@ -99,8 +104,16 @@ class RtsFileParser
         $reader->open($absPath);
 
         $headerMap = null;
+        $seen = 0;
         foreach ($reader->getSheetIterator() as $sheet) {
             foreach ($sheet->getRowIterator() as $row) {
+                // Cooperative cancellation: check every ~2000 rows so a user can stop
+                // a long parse without waiting for it to finish.
+                if ($cancelCheck !== null && (++$seen % 2000 === 0) && $cancelCheck()) {
+                    $reader->close();
+                    throw new \App\Exceptions\RtsUploadCanceled('Upload canceled by user.');
+                }
+
                 $cells = $row->toArray();
 
                 if ($headerMap === null) {

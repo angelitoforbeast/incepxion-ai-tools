@@ -306,6 +306,34 @@ class RtsProcessorTest extends TestCase
         $this->assertNotNull($fresh->canceled_at);
     }
 
+    public function test_cancel_finalizes_a_scanning_upload_even_if_the_job_is_gone(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $csv = "Waybill Number,Status,Submission Time\nWB1,In Transit,2026-07-05 09:00:00\n";
+        $upload = $this->makeUpload($user, $csv);
+        $upload->update(['status' => 'scanning']);
+
+        Livewire::actingAs($user)->test(RtsProcessor::class)
+            ->set('currentUploadId', $upload->id)
+            ->call('cancelUpload');
+
+        $this->assertSame('canceled', $upload->fresh()->status);
+    }
+
+    public function test_failed_job_marks_the_upload_failed(): void
+    {
+        // Simulates the worker being killed mid-run (MaxAttemptsExceeded) — the upload
+        // must not be left stuck showing "scanning".
+        $user = User::factory()->create();
+        $csv = "Waybill Number,Status,Submission Time\nWB1,In Transit,2026-07-05 09:00:00\n";
+        $upload = $this->makeUpload($user, $csv);
+        $upload->update(['status' => 'scanning']);
+
+        (new ProcessRtsUpload($upload->id))->failed(new \RuntimeException('worker restarted'));
+
+        $this->assertSame('failed', $upload->fresh()->status);
+    }
+
     public function test_sender_filter_label_tracks_the_real_selection(): void
     {
         // Regression: the "N selected" label used a stale Alpine counter that drifted

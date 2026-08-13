@@ -72,24 +72,22 @@ class RtsProcessor extends Component
             return;
         }
 
-        // Always record the cancel request — the running job polls this flag and
-        // stops at its next checkpoint.
-        $upload->update(['canceled_at' => now()]);
-
-        // If the job isn't actively looping (queued, or waiting on confirmation),
-        // finalize immediately so the UI updates without waiting for the worker.
-        if (in_array($upload->status, ['queued', 'needs_confirmation'], true)) {
-            try {
-                if ($upload->path && Storage::disk($upload->disk ?: 'local')->exists($upload->path)) {
-                    Storage::disk($upload->disk ?: 'local')->delete($upload->path);
-                }
-            } catch (\Throwable $e) {
-                // ignore
+        // Discard the file and finalize immediately so the UI updates right away —
+        // robust even if the worker already died. The `canceled_at` flag also makes
+        // a still-running job abort at its next checkpoint before writing any data.
+        try {
+            if ($upload->path && Storage::disk($upload->disk ?: 'local')->exists($upload->path)) {
+                Storage::disk($upload->disk ?: 'local')->delete($upload->path);
             }
-            $upload->update(['status' => 'canceled', 'finished_at' => now()]);
+        } catch (\Throwable $e) {
+            // ignore
         }
-        // For scanning/processing, the job sees canceled_at and finalizes to
-        // 'canceled' at its next checkpoint (UI shows "Canceling…" meanwhile).
+
+        $upload->update([
+            'canceled_at' => now(),
+            'status'      => 'canceled',
+            'finished_at' => now(),
+        ]);
     }
 
     public function dismissCurrent(): void

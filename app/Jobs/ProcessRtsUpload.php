@@ -126,6 +126,26 @@ class ProcessRtsUpload implements ShouldQueue
         }
     }
 
+    /**
+     * Called by the queue when the job permanently fails — including when the worker
+     * is killed mid-run (e.g. a deploy restart → MaxAttemptsExceeded). Without this,
+     * the upload would be stuck showing "scanning" forever.
+     */
+    public function failed(\Throwable $e): void
+    {
+        $upload = RtsUpload::find($this->uploadId);
+        if (! $upload || in_array($upload->status, ['done', 'canceled', 'failed'], true)) {
+            return;
+        }
+
+        $this->deleteSource($upload);
+        $upload->forceFill([
+            'status'        => $upload->canceled_at ? 'canceled' : 'failed',
+            'error_message' => $upload->error_message ?: ('Processing stopped: '.mb_substr($e->getMessage(), 0, 300)),
+            'finished_at'   => Carbon::now('Asia/Manila'),
+        ])->save();
+    }
+
     /** True if the user requested cancellation while the job is running. */
     private function isCanceled(): bool
     {

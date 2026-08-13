@@ -26,17 +26,17 @@ class Phase3Test extends TestCase
     {
         $user = User::factory()->create(['status' => 'approved', 'role' => 'user', 'email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/admin/users')->assertForbidden();
-        $this->actingAs($user)->get('/admin/prompts')->assertForbidden();
+        $this->actingAs($user)->get(route('admin.users'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.prompts'))->assertForbidden();
     }
 
     public function test_admin_can_access_admin(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
 
-        $this->actingAs($admin)->get('/admin/users')->assertOk()->assertSee('User Management');
-        $this->actingAs($admin)->get('/admin/prompts')->assertOk()->assertSee('System Prompt');
-        $this->actingAs($admin)->get('/admin/logs')->assertOk()->assertSee('Data Logs');
+        $this->actingAs($admin)->get(route('admin.users'))->assertOk()->assertSee('User Management');
+        $this->actingAs($admin)->get(route('admin.prompts'))->assertOk()->assertSee('System Prompt');
+        $this->actingAs($admin)->get(route('admin.logs'))->assertOk()->assertSee('Data Logs');
     }
 
     public function test_admin_can_preapprove_a_user_by_email(): void

@@ -58,9 +58,12 @@ Route::middleware(['auth', 'verified', 'approved', 'not-expired'])->group(functi
     Route::get('tools/profit-calculator', ProfitCalculator::class)->name('tools.profit');
 });
 
-// Admin — separate routes for each section
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
-    Route::redirect('/', '/admin/users');
+// Admin — the URL prefix is obfuscated so the panel is hard to find by guessing.
+// (The real access gate is the 'admin' middleware; this just avoids drive-by probing.)
+// Route NAMES stay 'admin.*', so the sidebar/nav links keep working automatically —
+// change ADMIN_PREFIX below anytime to rotate the URL.
+Route::middleware(['auth', 'admin'])->prefix('console-7k29fx')->group(function () {
+    Route::get('/', fn () => redirect()->route('admin.users'));
     Route::get('users', UserManager::class)->name('admin.users');
     Route::get('prompts', PromptManager::class)->name('admin.prompts');
     Route::get('courses', CourseManager::class)->name('admin.courses');

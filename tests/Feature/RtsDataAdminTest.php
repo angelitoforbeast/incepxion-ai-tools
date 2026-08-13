@@ -43,7 +43,7 @@ class RtsDataAdminTest extends TestCase
     {
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/admin/rts-data')->assertForbidden();
+        $this->actingAs($user)->get(route('admin.rts'))->assertForbidden();
     }
 
     public function test_admin_sees_users_with_rts_data(): void
@@ -52,7 +52,7 @@ class RtsDataAdminTest extends TestCase
         $seller = User::factory()->create(['status' => 'approved', 'name' => 'Seller One', 'email_verified_at' => now()]);
         $this->seedRts($seller, 3);
 
-        $this->actingAs($admin)->get('/admin/rts-data')->assertOk()->assertSee('Seller One');
+        $this->actingAs($admin)->get(route('admin.rts'))->assertOk()->assertSee('Seller One');
     }
 
     public function test_delete_requires_typed_confirmation(): void

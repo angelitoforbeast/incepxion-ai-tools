@@ -16,6 +16,9 @@ use ZipArchive;
  */
 class RtsFileParser
 {
+    /** Last date format that parsed successfully — tried first on the next row (big speedup). */
+    private ?string $dateFormatHint = null;
+
     /** Parse a stored upload. Returns ['rows' => [waybill => row], 'total' => int]. */
     /**
      * @param  callable|null  $cancelCheck  Optional; called periodically during the row
@@ -267,9 +270,24 @@ class RtsFileParser
             'Y-m-d H:i:s', 'Y-m-d H:i', 'm/d/Y H:i', 'd/m/Y H:i', 'm/d/Y', 'd/m/Y',
             'Y-m-d', 'd-m-Y H:i', 'd-m-Y H:i:s', 'd-m-Y', 'H:i d-m-Y', 'H:i d/m/Y',
         ];
+
+        // Fast path: rows in one file share a date format, so the format that matched
+        // the previous row almost always matches again — try it first to avoid throwing
+        // (and catching) an exception for every non-matching format on every row.
+        if ($this->dateFormatHint !== null) {
+            try {
+                return Carbon::createFromFormat($this->dateFormatHint, $v, 'Asia/Manila')->format('Y-m-d H:i:s');
+            } catch (\Throwable $e) {
+                // format changed — fall back to the full scan
+            }
+        }
+
         foreach ($formats as $fmt) {
             try {
-                return Carbon::createFromFormat($fmt, $v, 'Asia/Manila')->format('Y-m-d H:i:s');
+                $out = Carbon::createFromFormat($fmt, $v, 'Asia/Manila')->format('Y-m-d H:i:s');
+                $this->dateFormatHint = $fmt;
+
+                return $out;
             } catch (\Throwable $e) {
                 // try next
             }

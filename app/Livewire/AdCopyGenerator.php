@@ -135,11 +135,8 @@ class AdCopyGenerator extends Component
             return;
         }
 
-        if (! $user->hasQuotaLeft()) {
-            $this->error = "You've reached your daily limit ({$user->dailyQuota()} generations). Come back tomorrow or upgrade your plan.";
-
-            return;
-        }
+        // Daily quota enforcement is disabled — generation is unlimited (users bring their
+        // own OpenAI key, so there's no cost to us). Usage is still recorded silently.
 
         $tool = Tool::where('slug', 'ad-copy-generator')->first();
         $start = microtime(true);

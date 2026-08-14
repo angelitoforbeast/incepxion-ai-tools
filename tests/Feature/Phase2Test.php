@@ -147,22 +147,6 @@ class Phase2Test extends TestCase
         $this->assertSame('Buy now', $copies[0]['text']);
     }
 
-    public function test_generate_over_quota_shows_error_without_calling_api(): void
-    {
-        $zeroPlan = Plan::create(['name' => 'Zero', 'slug' => 'zero', 'daily_quota' => 0, 'monthly_quota' => 0]);
-        $user = $this->approvedUser(['plan_id' => $zeroPlan->id]);
-
-        $key = new UserApiKey(['user_id' => $user->id, 'provider' => 'openai']);
-        $key->setKey('sk-dummy-key-for-guard-test');
-        $key->save();
-
-        Livewire::actingAs($user)->test(AdCopyGenerator::class)
-            ->set('product_name', 'Test Serum')
-            ->set('product_description', 'Vitamin C serum, 299 pesos')
-            ->set('sp.STORE_NAME', 'MyShop')
-            ->set('sp.PRODUCT_PRICE', 'P299')
-            ->set('sp.PROMO', 'Buy 1 Take 1')
-            ->call('generate')
-            ->assertSet('error', fn ($e) => str_contains($e, 'daily limit'));
-    }
+    // Note: daily-quota enforcement was intentionally removed (unlimited generation,
+    // users bring their own OpenAI key), so the old over-quota guard test no longer applies.
 }

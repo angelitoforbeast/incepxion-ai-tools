@@ -6,9 +6,6 @@
                 <h1 class="text-2xl font-bold text-gray-900">📣 AI Ad Copy Generator</h1>
                 <p class="text-sm text-gray-500">High-converting Facebook ad copy for the Filipino market.</p>
             </div>
-            <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
-                {{ $remaining }}/{{ $quota }} left today
-            </span>
         </div>
     </div>
 

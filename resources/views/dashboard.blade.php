@@ -7,7 +7,6 @@
             </div>
             <div class="text-sm text-slate-500">
                 Plan: <strong class="text-slate-700">{{ auth()->user()->plan?->name ?? '—' }}</strong>
-                · <span class="text-indigo-600 font-medium">{{ auth()->user()->remainingQuota() }}/{{ auth()->user()->dailyQuota() }}</span> left today
             </div>
         </div>
     </x-slot>

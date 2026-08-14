@@ -39,10 +39,6 @@
                     <dd class="font-medium text-emerald-600">{{ ucfirst($user->status) }}</dd>
                 </div>
                 <div>
-                    <dt class="text-slate-400">Daily usage</dt>
-                    <dd class="font-medium text-slate-800">{{ $user->usageToday() }} / {{ $user->dailyQuota() }} today</dd>
-                </div>
-                <div>
                     <dt class="text-slate-400">Member since</dt>
                     <dd class="font-medium text-slate-800">{{ $user->created_at->format('M d, Y') }}</dd>
                 </div>

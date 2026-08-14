@@ -179,42 +179,55 @@ class AdCopyGenerator extends Component
             $aftersalesTemplate = $tool->config['aftersales_template'] ?? \App\Services\SalesPromptService::DEFAULT_AFTERSALES_TEMPLATE;
             $this->generatedAfterSalesPrompt = $svc->fill($aftersalesTemplate, $values);
 
-            $generation = Generation::create([
-                'user_id'       => $user->id,
-                'tool_id'       => $tool?->id,
-                'provider'      => 'openai',
-                'model'         => $out['model'],
-                'input'         => [
-                    'product_name'        => $this->product_name,
-                    'product_description' => $this->product_description,
-                    'audience'            => $this->audience,
-                    'language'            => $this->language,
-                    'tone'                => $this->tone,
-                    'variants'            => $this->variants,
-                    'sales_prompt_fields' => $values,
-                ],
-                'output'        => ['main_flow' => $this->mainFlow, 'variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt, 'aftersales_prompt' => $this->generatedAfterSalesPrompt],
-                'input_tokens'  => $out['input_tokens'],
-                'output_tokens' => $out['output_tokens'],
-                'status'        => 'success',
-                'duration_ms'   => (int) ((microtime(true) - $start) * 1000),
-            ]);
+            // Best-effort logging + usage tracking. The ad copy is already produced and
+            // shown above, so a DB failure here (e.g. disk full) must NEVER hide the result
+            // or surface an error to the user.
+            try {
+                $generation = Generation::create([
+                    'user_id'       => $user->id,
+                    'tool_id'       => $tool?->id,
+                    'provider'      => 'openai',
+                    'model'         => $out['model'],
+                    'input'         => [
+                        'product_name'        => $this->product_name,
+                        'product_description' => $this->product_description,
+                        'audience'            => $this->audience,
+                        'language'            => $this->language,
+                        'tone'                => $this->tone,
+                        'variants'            => $this->variants,
+                        'sales_prompt_fields' => $values,
+                    ],
+                    'output'        => ['main_flow' => $this->mainFlow, 'variants' => $out['variants'], 'sales_prompt' => $this->generatedPrompt, 'aftersales_prompt' => $this->generatedAfterSalesPrompt],
+                    'input_tokens'  => $out['input_tokens'],
+                    'output_tokens' => $out['output_tokens'],
+                    'status'        => 'success',
+                    'duration_ms'   => (int) ((microtime(true) - $start) * 1000),
+                ]);
 
-            $this->lastGenerationId = $generation->id;
-            $user->recordUsage();
+                $this->lastGenerationId = $generation->id;
+                $user->recordUsage();
+            } catch (\Throwable $logError) {
+                Log::warning('Ad copy produced but logging/usage failed', ['user' => $user->id, 'msg' => $logError->getMessage()]);
+            }
         } catch (\Throwable $e) {
+            // Only reached when the generation itself failed (OpenAI/API error) — here an
+            // error IS appropriate because there is no result to show.
             $this->error = $e->getMessage();
             Log::error('Ad copy generation failed', ['user' => $user->id, 'msg' => $e->getMessage()]);
 
-            Generation::create([
-                'user_id'     => $user->id,
-                'tool_id'     => $tool?->id,
-                'provider'    => 'openai',
-                'input'       => ['product_name' => $this->product_name],
-                'status'      => 'error',
-                'error'       => mb_substr($e->getMessage(), 0, 1000),
-                'duration_ms' => (int) ((microtime(true) - $start) * 1000),
-            ]);
+            try {
+                Generation::create([
+                    'user_id'     => $user->id,
+                    'tool_id'     => $tool?->id,
+                    'provider'    => 'openai',
+                    'input'       => ['product_name' => $this->product_name],
+                    'status'      => 'error',
+                    'error'       => mb_substr($e->getMessage(), 0, 1000),
+                    'duration_ms' => (int) ((microtime(true) - $start) * 1000),
+                ]);
+            } catch (\Throwable $ignored) {
+                // Logging the failure itself failed (e.g. disk full) — nothing else to do.
+            }
         }
     }
 

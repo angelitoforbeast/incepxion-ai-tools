@@ -39,7 +39,15 @@ class RtsProcessor extends Component
         $folder   = 'uploads/rts/'.now()->format('Y-m-d');
         $basename = Str::slug(pathinfo($this->file->getClientOriginalName(), PATHINFO_FILENAME));
         $filename = $basename.'__'.now()->format('His').'.'.$this->file->getClientOriginalExtension();
+
+        $tempPath = $this->file->getRealPath();
         $path     = $this->file->storeAs($folder, $filename, 'local');
+
+        // Livewire stages the raw upload under storage/app/.../livewire-tmp. Delete that
+        // copy now that we've stored our own, so temp files don't pile up on disk.
+        if ($tempPath && is_file($tempPath)) {
+            @unlink($tempPath);
+        }
 
         $upload = RtsUpload::create([
             'user_id'       => auth()->id(),

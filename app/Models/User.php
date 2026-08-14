@@ -13,7 +13,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
     'name', 'email', 'password', 'avatar', 'status', 'role',
-    'plan_id', 'approved_at', 'approved_by', 'access_expires_at', 'last_login_at', 'last_active_at', 'email_verified_at', 'remarks', 'sp_defaults', 'profit_inputs', 'current_session_id',
+    'plan_id', 'approved_at', 'approved_by', 'access_expires_at', 'last_login_at', 'last_active_at', 'email_verified_at', 'remarks', 'sp_defaults', 'profit_inputs', 'remit_fees', 'current_session_id',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -38,7 +38,17 @@ class User extends Authenticatable
             'access_expires_at' => 'datetime',
             'sp_defaults'       => 'array',
             'profit_inputs'     => 'array',
+            'remit_fees'        => 'array',
         ];
+    }
+
+    /** Per-user J&T remittance rates, with safe defaults. */
+    public function remitFees(): array
+    {
+        return array_merge(
+            ['cod_fee_rate' => null, 'cod_fee_vat_rate' => null, 'shipping_fee_per_order' => null],
+            (array) ($this->remit_fees ?? []),
+        );
     }
 
     /** Default account validity applied on approval. */

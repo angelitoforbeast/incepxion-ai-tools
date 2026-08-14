@@ -74,6 +74,7 @@ Route::middleware(['auth', 'verified', 'approved', 'not-expired'])->group(functi
         return redirect()->route('tools.rts');
     })->name('tools.rts.cancel');
     Route::get('tools/rts-processor/monitoring', RtsMonitor::class)->name('tools.rts.monitor');
+    Route::get('tools/rts-processor/remittance', \App\Livewire\RtsRemittance::class)->name('tools.rts.remittance');
     Route::get('tools/courses', CourseIndex::class)->name('tools.courses');
     Route::get('tools/courses/{course:slug}', CourseShow::class)->name('tools.courses.show');
     Route::get('tools/profit-calculator', ProfitCalculator::class)->name('tools.profit');

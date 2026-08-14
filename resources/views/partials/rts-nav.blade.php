@@ -19,6 +19,11 @@
                class="{{ $tabBase }} {{ request()->routeIs('tools.rts.monitor') ? $active : $idle }}">
                 📊 RTS Monitoring
             </a>
+            <a href="{{ route('tools.rts.remittance') }}" wire:navigate
+               @if (request()->routeIs('tools.rts.remittance')) aria-current="page" @endif
+               class="{{ $tabBase }} {{ request()->routeIs('tools.rts.remittance') ? $active : $idle }}">
+                💰 Remittance
+            </a>
         </div>
     </div>
 </div>

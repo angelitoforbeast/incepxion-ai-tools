@@ -19,6 +19,47 @@ class RtsFileParser
     /** Last date format that parsed successfully — tried first on the next row (big speedup). */
     private ?string $dateFormatHint = null;
 
+    /**
+     * EXACT J&T export header (normalized: lowercased, whitespace-collapsed) → from_jnts column.
+     * Exact matching avoids the mis-map traps of fuzzy matching (e.g. "Sender Address" /
+     * "Sender City" grabbing `sender`, or "Receipt Waybill No" grabbing `waybill_number`).
+     */
+    private const HEADER_MAP = [
+        'waybill number'      => 'waybill_number',
+        'order status'        => 'status',
+        'item name'           => 'item_name',
+        'sender name'         => 'sender',
+        'receiver'            => 'receiver',
+        'receiver cellphone'  => 'receiver_cellphone',
+        'cod'                 => 'cod',
+        'submission time'     => 'submission_time',
+        'signingtime'         => 'signingtime',
+        'total shipping cost' => 'total_shipping_cost',
+        'province'            => 'province',
+        'city'                => 'city',
+        'barangay'            => 'barangay',
+        'rts reason'          => 'rts_reason',
+        'remarks'             => 'remarks',
+    ];
+
+    /** Columns that MUST be present for RTS + remittance to compute correctly. */
+    private const REQUIRED = [
+        'waybill_number', 'status', 'item_name', 'sender',
+        'cod', 'submission_time', 'signingtime', 'total_shipping_cost',
+    ];
+
+    /** Friendly J&T header names, for the "missing columns" error message. */
+    private const REQUIRED_LABELS = [
+        'waybill_number'      => 'Waybill Number',
+        'status'              => 'Order Status',
+        'item_name'           => 'Item Name',
+        'sender'              => 'Sender Name',
+        'cod'                 => 'Cod',
+        'submission_time'     => 'Submission Time',
+        'signingtime'         => 'SigningTime',
+        'total_shipping_cost' => 'Total Shipping Cost',
+    ];
+
     /** Parse a stored upload. Returns ['rows' => [waybill => row], 'total' => int]. */
     /**
      * @param  callable|null  $cancelCheck  Optional; called periodically during the row
@@ -121,9 +162,11 @@ class RtsFileParser
 
                 if ($headerMap === null) {
                     $headerMap = $this->buildHeaderMap($cells);
-                    if (! $this->hasRequiredHeaders($headerMap)) {
+                    $missing = $this->missingRequired($headerMap);
+                    if (! empty($missing)) {
                         $reader->close();
-                        throw new RuntimeException('Wrong File Uploaded — the J&T columns (waybill number, status) were not found.');
+                        $labels = array_map(fn ($c) => self::REQUIRED_LABELS[$c] ?? $c, $missing);
+                        throw new RuntimeException('Wrong file — these required J&T columns are missing: '.implode(', ', $labels).'. Please upload the complete J&T export.');
                     }
                     continue;
                 }
@@ -142,77 +185,34 @@ class RtsFileParser
         $reader->close();
     }
 
+    /** Map each column index to a from_jnts field by EXACT header name (first match wins). */
     private function buildHeaderMap(array $headers): array
     {
-        $norm = fn ($s) => trim(mb_strtolower((string) $s));
-
-        $aliases = [
-            'waybill_number'     => ['waybill', 'waybill number', 'awb', 'tracking no', 'tracking number'],
-            'status'             => ['status', 'order status', 'order_status', 'orderstatus'],
-            'item_name'          => ['item name', 'item', 'product', 'product name'],
-            'sender'             => ['sender', 'shipper', 'from'],
-            'receiver'           => ['receiver', 'consignee', 'to'],
-            'receiver_cellphone' => ['receiver cellphone', 'receiver phone', 'consignee phone', 'phone', 'mobile'],
-            'cod'                => ['cod', 'c.o.d', 'cod amt', 'cod amount', 'collect on delivery'],
-            'submission_time'    => ['submission time', 'pu time', 'pickup time', 'created time'],
-            'signingtime'        => ['signingtime', 'signing time', 'delivered time'],
-            'remarks'            => ['remarks', 'remark', 'note', 'notes'],
-            'province'           => ['province', 'prov'],
-            'city'               => ['city', 'municipality', 'city/municipality'],
-            'barangay'           => ['barangay', 'brgy', 'barangay name'],
-            'total_shipping_cost'=> ['total shipping cost', 'shipping cost', 'total freight'],
-            'rts_reason'         => ['rts reason', 'rts_reason', 'return reason', 'reason for rts'],
-        ];
-
         $map = [];
         foreach ($headers as $idx => $label) {
-            $h = $norm($label);
-            $tokens = preg_split('/[^a-z0-9]+/u', $h, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-            foreach ($aliases as $canon => $cands) {
-                if (isset($map[$canon])) {
-                    continue;
-                }
-                foreach ($cands as $cand) {
-                    $c = $norm($cand);
-                    $matched = false;
-
-                    if ($h === $c) {
-                        $matched = true;
-                    } elseif (mb_strpos($c, ' ') !== false) {
-                        if (preg_match('/\b'.preg_quote($c, '/').'\b/u', $h)) {
-                            $matched = true;
-                        }
-                    } elseif (in_array($c, $tokens, true)) {
-                        $matched = true;
-                    }
-
-                    if ($matched) {
-                        if ($canon === 'receiver' && $c === 'to' && $h !== 'to') {
-                            $matched = false;
-                        }
-                        if ($canon === 'cod' && in_array('code', $tokens, true)) {
-                            $matched = false;
-                        }
-                        if ($canon === 'receiver_cellphone' && in_array('sender', $tokens, true)) {
-                            $matched = false;
-                        }
-                    }
-
-                    if ($matched) {
-                        $map[$canon] = $idx;
-                        break;
-                    }
-                }
+            $h = $this->normHeader((string) $label);
+            if ($h === '' || ! isset(self::HEADER_MAP[$h])) {
+                continue;
+            }
+            $canon = self::HEADER_MAP[$h];
+            if (! isset($map[$canon])) {
+                $map[$canon] = $idx;
             }
         }
 
         return $map;
     }
 
-    private function hasRequiredHeaders(array $map): bool
+    /** Normalize a header for exact comparison: lowercase + collapse whitespace + trim. */
+    private function normHeader(string $s): string
     {
-        return isset($map['waybill_number'], $map['status']);
+        return trim(preg_replace('/\s+/u', ' ', mb_strtolower($s)));
+    }
+
+    /** Required columns not found in the header map (canonical names). */
+    private function missingRequired(array $map): array
+    {
+        return array_values(array_diff(self::REQUIRED, array_keys($map)));
     }
 
     private function normalizeRow(array $cells, array $map): array

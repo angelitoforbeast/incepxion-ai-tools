@@ -32,6 +32,26 @@ class RtsProcessorTest extends TestCase
         ]);
     }
 
+    /** Build a J&T CSV with the exact, complete required headers. Each row: [waybill, status, opts…]. */
+    private function jntCsv(array $rows): string
+    {
+        $lines = ['Waybill Number,Order Status,Item Name,Sender Name,Cod,Submission Time,SigningTime,Total Shipping Cost'];
+        foreach ($rows as $r) {
+            $lines[] = implode(',', [
+                $r['waybill']    ?? '',
+                $r['status']     ?? '',
+                $r['item']       ?? '1 x LIP',
+                $r['sender']     ?? 'ShopA',
+                $r['cod']        ?? '0',
+                $r['submission'] ?? '2026-07-05 09:00:00',
+                $r['signing']    ?? '',
+                $r['ship']       ?? '0',
+            ]);
+        }
+
+        return implode("\n", $lines)."\n";
+    }
+
     public function test_regression_pauses_for_confirmation_then_skips_on_continue(): void
     {
         $user = User::factory()->create();
@@ -43,10 +63,11 @@ class RtsProcessorTest extends TestCase
         ]);
 
         // File tries to move WB1 backward (delivered → in transit) = regression.
-        $csv = "Waybill Number,Status,Item Name,Sender,Submission Time\n"
-            ."WB1,In Transit,1 x LIP,ShopA,2026-07-01 08:00:00\n"
-            ."WB2,In Transit,1 x LIP,ShopA,2026-07-05 09:00:00\n"
-            ."WB3,Delivered,1 x LIP,ShopA,2026-07-02 08:00:00\n";
+        $csv = $this->jntCsv([
+            ['waybill' => 'WB1', 'status' => 'In Transit', 'submission' => '2026-07-01 08:00:00'],
+            ['waybill' => 'WB2', 'status' => 'In Transit', 'submission' => '2026-07-05 09:00:00'],
+            ['waybill' => 'WB3', 'status' => 'Delivered',  'submission' => '2026-07-02 08:00:00'],
+        ]);
 
         $upload = $this->makeUpload($user, $csv);
 
@@ -77,9 +98,10 @@ class RtsProcessorTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $csv = "Waybill Number,Status,Item Name,Sender,Submission Time\n"
-            ."WBA,In Transit,1 x LIP,ShopA,2026-07-05 09:00:00\n"
-            ."WBB,Delivered,1 x LIP,ShopA,2026-07-05 09:00:00\n";
+        $csv = $this->jntCsv([
+            ['waybill' => 'WBA', 'status' => 'In Transit'],
+            ['waybill' => 'WBB', 'status' => 'Delivered'],
+        ]);
 
         $upload = $this->makeUpload($user, $csv);
         ProcessRtsUpload::dispatchSync($upload->id);
@@ -93,7 +115,8 @@ class RtsProcessorTest extends TestCase
     public function test_wrong_file_fails_clearly(): void
     {
         $user = User::factory()->create();
-        $csv = "Name,Age\nJuan,30\n"; // no J&T columns
+        // Missing the required J&T columns → must be rejected before processing.
+        $csv = "Waybill Number,Order Status\nWB1,Delivered\n";
 
         $upload = $this->makeUpload($user, $csv);
 
@@ -105,7 +128,7 @@ class RtsProcessorTest extends TestCase
 
         $upload->refresh();
         $this->assertSame('failed', $upload->status);
-        $this->assertStringContainsString('Wrong File', (string) $upload->error_message);
+        $this->assertStringContainsString('missing', (string) $upload->error_message);
         // Source file is auto-deleted even on failure.
         Storage::disk('local')->assertMissing($upload->path);
     }
@@ -113,7 +136,7 @@ class RtsProcessorTest extends TestCase
     public function test_source_file_deleted_after_success(): void
     {
         $user = User::factory()->create();
-        $csv = "Waybill Number,Status,Submission Time\nWBZ,In Transit,2026-07-05 09:00:00\n";
+        $csv = $this->jntCsv([['waybill' => 'WBZ', 'status' => 'In Transit']]);
         $upload = $this->makeUpload($user, $csv);
 
         ProcessRtsUpload::dispatchSync($upload->id);
@@ -121,6 +144,42 @@ class RtsProcessorTest extends TestCase
 
         $this->assertSame('done', $upload->status);
         Storage::disk('local')->assertMissing($upload->path);
+    }
+
+    public function test_exact_matching_ignores_lookalike_columns(): void
+    {
+        $user = User::factory()->create();
+        // Trap columns present: "Sender City/Address" and "Receipt Waybill No" must NOT be
+        // grabbed for `sender` / `waybill_number` — only the exact headers count.
+        $csv = "Waybill Number,Order Status,Item Name,Sender Name,Cod,Submission Time,SigningTime,Total Shipping Cost,Sender City,Sender Address,Receipt Waybill No\n"
+            ."WB1,Delivered,ITEM,ShopReal,100,2026-07-01 08:00:00,2026-07-02 08:00:00,50,Manila,123 Real St,RCPT-999\n";
+
+        $upload = $this->makeUpload($user, $csv);
+        ProcessRtsUpload::dispatchSync($upload->id);
+
+        $row = FromJnt::where('user_id', $user->id)->first();
+        $this->assertNotNull($row);
+        $this->assertSame('WB1', $row->waybill_number);   // not RCPT-999
+        $this->assertSame('ShopReal', $row->sender);      // not Manila / 123 Real St
+    }
+
+    public function test_missing_required_column_is_rejected_with_name(): void
+    {
+        $user = User::factory()->create();
+        // Missing "Total Shipping Cost".
+        $csv = "Waybill Number,Order Status,Item Name,Sender Name,Cod,Submission Time,SigningTime\n"
+            ."WB1,Delivered,ITEM,ShopA,100,2026-07-01 08:00:00,2026-07-02 08:00:00\n";
+
+        $upload = $this->makeUpload($user, $csv);
+        try {
+            ProcessRtsUpload::dispatchSync($upload->id);
+        } catch (\Throwable $e) {
+            // rethrown after marking failed
+        }
+
+        $upload->refresh();
+        $this->assertSame('failed', $upload->status);
+        $this->assertStringContainsString('Total Shipping Cost', (string) $upload->error_message);
     }
 
     public function test_monitor_classifies_strictly_by_status(): void
@@ -263,7 +322,7 @@ class RtsProcessorTest extends TestCase
         // Same waybill exists for user B as delivered — must NOT affect user A's import.
         FromJnt::insert([['user_id' => $userB->id, 'waybill_number' => 'WBX', 'status' => 'Delivered', 'submission_time' => '2026-07-01 08:00:00', 'created_at' => now(), 'updated_at' => now()]]);
 
-        $csv = "Waybill Number,Status,Submission Time\nWBX,In Transit,2026-07-05 09:00:00\n";
+        $csv = $this->jntCsv([['waybill' => 'WBX', 'status' => 'In Transit']]);
         $upload = $this->makeUpload($userA, $csv);
         ProcessRtsUpload::dispatchSync($upload->id);
         $upload->refresh();

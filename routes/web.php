@@ -52,6 +52,27 @@ Route::middleware(['auth', 'verified', 'approved', 'not-expired'])->group(functi
 
     Route::get('tools/ad-copy-generator', AdCopyGenerator::class)->name('tools.ad-copy');
     Route::get('tools/rts-processor', RtsProcessor::class)->name('tools.rts');
+
+    // Plain (non-Livewire) cancel — works even if the page's Livewire runtime is stale.
+    Route::post('tools/rts-processor/cancel', function (\Illuminate\Http\Request $request) {
+        $upload = \App\Models\RtsUpload::where('user_id', auth()->id())
+            ->whereKey($request->integer('upload'))
+            ->whereIn('status', ['needs_confirmation', 'queued', 'scanning', 'processing'])
+            ->first();
+
+        if ($upload) {
+            try {
+                if ($upload->path && \Illuminate\Support\Facades\Storage::disk($upload->disk ?: 'local')->exists($upload->path)) {
+                    \Illuminate\Support\Facades\Storage::disk($upload->disk ?: 'local')->delete($upload->path);
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
+            $upload->update(['canceled_at' => now(), 'status' => 'canceled', 'finished_at' => now()]);
+        }
+
+        return redirect()->route('tools.rts');
+    })->name('tools.rts.cancel');
     Route::get('tools/rts-processor/monitoring', RtsMonitor::class)->name('tools.rts.monitor');
     Route::get('tools/courses', CourseIndex::class)->name('tools.courses');
     Route::get('tools/courses/{course:slug}', CourseShow::class)->name('tools.courses.show');

@@ -320,6 +320,33 @@ class RtsProcessorTest extends TestCase
         $this->assertSame('canceled', $upload->fresh()->status);
     }
 
+    public function test_plain_post_cancel_stops_a_scanning_upload(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $csv = "Waybill Number,Status,Submission Time\nWB1,In Transit,2026-07-05 09:00:00\n";
+        $upload = $this->makeUpload($user, $csv);
+        $upload->update(['status' => 'scanning']);
+
+        $this->actingAs($user)
+            ->post(route('tools.rts.cancel'), ['upload' => $upload->id])
+            ->assertRedirect(route('tools.rts'));
+
+        $this->assertSame('canceled', $upload->fresh()->status);
+    }
+
+    public function test_plain_post_cancel_ignores_another_users_upload(): void
+    {
+        $a = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $b = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $csv = "Waybill Number,Status,Submission Time\nWB1,In Transit,2026-07-05 09:00:00\n";
+        $upload = $this->makeUpload($b, $csv);
+        $upload->update(['status' => 'scanning']);
+
+        $this->actingAs($a)->post(route('tools.rts.cancel'), ['upload' => $upload->id]);
+
+        $this->assertSame('scanning', $upload->fresh()->status);
+    }
+
     public function test_failed_job_marks_the_upload_failed(): void
     {
         // Simulates the worker being killed mid-run (MaxAttemptsExceeded) — the upload

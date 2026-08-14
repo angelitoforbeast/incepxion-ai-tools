@@ -97,10 +97,16 @@
                                 <svg class="animate-spin w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
                                 {{ $current->status === 'processing' ? 'Updating statuses…' : 'Scanning file…' }} You can keep using the app.
                             </div>
-                            <button wire:click="cancelUpload" wire:confirm="Stop this upload? Any progress will be discarded and no data imported."
-                                    class="flex-shrink-0 rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">
-                                Cancel
-                            </button>
+                            {{-- Plain form submit (not Livewire) so Cancel works even if the tab's Livewire runtime is stale. --}}
+                            <form method="POST" action="{{ route('tools.rts.cancel') }}" class="flex-shrink-0"
+                                  onsubmit="return confirm('Stop this upload? Any progress will be discarded and no data imported.');">
+                                @csrf
+                                <input type="hidden" name="upload" value="{{ $current->id }}">
+                                <button type="submit"
+                                        class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+                                    Cancel
+                                </button>
+                            </form>
                         </div>
                     @elseif ($current->status === 'canceled')
                         <p class="text-sm text-gray-500">🛑 Upload canceled — no data was imported from this file.</p>

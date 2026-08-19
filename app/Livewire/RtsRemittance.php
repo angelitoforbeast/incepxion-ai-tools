@@ -144,6 +144,14 @@ class RtsRemittance extends Component
         // Summary shows the most recent (current) rate.
         $current = $rates->last();
 
+        // Bounds for the date pickers = the range of dates that actually have data.
+        $bounds = DB::table('from_jnts')
+            ->where('user_id', auth()->id())
+            ->selectRaw('MIN(DATE(submission_time)) AS min_s, MIN(DATE(signingtime)) AS min_g, MAX(DATE(submission_time)) AS max_s, MAX(DATE(signingtime)) AS max_g')
+            ->first();
+        $minData = collect([$bounds->min_s ?? null, $bounds->min_g ?? null])->filter()->min();
+        $maxData = collect([$bounds->max_s ?? null, $bounds->max_g ?? null])->filter()->max();
+
         return view('livewire.rts-remittance', [
             'rows'        => $data['rows'],
             'totals'      => $data['totals'],
@@ -152,6 +160,8 @@ class RtsRemittance extends Component
             'codPercent'  => $current ? (float) $current->cod_fee_rate * 100 : null,
             'vatPercent'  => $current ? (float) $current->cod_fee_vat_rate * 100 : null,
             'earliestRate' => $rates->first()?->effective_date,
+            'minData'     => $minData,
+            'maxData'     => $maxData,
         ]);
     }
 }

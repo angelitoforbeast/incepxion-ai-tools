@@ -8,12 +8,17 @@
             <div class="flex flex-wrap items-end gap-4">
                 <div>
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">From</label>
-                    <input type="date" wire:model.live="from" class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input type="date" wire:model.live="from" @if ($minData) min="{{ $minData }}" @endif @if ($maxData) max="{{ $maxData }}" @endif
+                           class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">To</label>
-                    <input type="date" wire:model.live="to" class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input type="date" wire:model.live="to" @if ($minData) min="{{ $minData }}" @endif @if ($maxData) max="{{ $maxData }}" @endif
+                           class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
+                @if ($minData && $maxData)
+                    <div class="text-[11px] text-gray-400 self-center">Data: {{ \Illuminate\Support\Carbon::parse($minData)->format('M d, Y') }} – {{ \Illuminate\Support\Carbon::parse($maxData)->format('M d, Y') }}</div>
+                @endif
                 <div class="flex-1"></div>
                 <div class="text-right text-xs text-gray-500">
                     <div>Current COD Fee: <strong>{{ is_numeric($codPercent) ? rtrim(rtrim(number_format($codPercent, 4), '0'), '.').'%' : '—' }}</strong>

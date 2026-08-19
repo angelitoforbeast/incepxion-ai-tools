@@ -64,16 +64,21 @@
         </div>
 
         <!-- J&T Remittance rates -->
-        @php $fees = $user->remitFees(); $hasRates = $fees['cod_fee_rate'] !== null && $fees['cod_fee_vat_rate'] !== null; @endphp
+        @php
+            $rateCount = $user->feeRates()->count();
+            $currentRate = $user->effectiveFeeRate(\Illuminate\Support\Carbon::now('Asia/Manila')->toDateString())
+                ?? $user->feeRates()->orderByDesc('effective_date')->first();
+        @endphp
         <div class="bg-white shadow-sm border border-slate-200 rounded-2xl p-6 sm:p-8">
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h3 class="font-semibold text-slate-900">J&T Remittance Rates</h3>
-                    @if ($hasRates)
+                    @if ($currentRate)
                         <p class="mt-1 text-sm text-slate-500">
-                            COD Fee: <strong class="text-slate-700">{{ rtrim(rtrim(number_format($fees['cod_fee_rate'] * 100, 4), '0'), '.') }}%</strong>
+                            Current — COD Fee: <strong class="text-slate-700">{{ rtrim(rtrim(number_format($currentRate->cod_fee_rate * 100, 4), '0'), '.') }}%</strong>
                             <span class="mx-2 text-slate-300">|</span>
-                            VAT: <strong class="text-slate-700">{{ rtrim(rtrim(number_format($fees['cod_fee_vat_rate'] * 100, 4), '0'), '.') }}%</strong>
+                            VAT: <strong class="text-slate-700">{{ rtrim(rtrim(number_format($currentRate->cod_fee_vat_rate * 100, 4), '0'), '.') }}%</strong>
+                            @if ($rateCount > 1)<span class="ml-2 text-xs text-slate-400">({{ $rateCount }} dated rates)</span>@endif
                         </p>
                     @else
                         <p class="mt-1 text-sm text-amber-600">Not set yet — needed for the Remittance tool.</p>
@@ -81,7 +86,7 @@
                 </div>
                 <a href="{{ route('settings') }}" wire:navigate
                    class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 whitespace-nowrap">
-                    {{ $hasRates ? 'Manage' : 'Set rates' }}
+                    {{ $currentRate ? 'Manage' : 'Set rates' }}
                 </a>
             </div>
         </div>

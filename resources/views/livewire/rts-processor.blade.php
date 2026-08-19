@@ -128,10 +128,6 @@
                                     </button>
                                 </form>
                             </div>
-                            {{-- Indeterminate activity bar (the total is unknown until the parse finishes) --}}
-                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                                <div class="h-1.5 w-1/3 rounded-full bg-indigo-500 animate-pulse"></div>
-                            </div>
                             <p class="text-xs text-gray-400">You can keep using the app — this runs in the background.</p>
                         </div>
                     @elseif ($current->status === 'canceled')

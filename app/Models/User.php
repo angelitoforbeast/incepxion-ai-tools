@@ -42,13 +42,18 @@ class User extends Authenticatable
         ];
     }
 
-    /** Per-user J&T remittance rates, with safe defaults. */
-    public function remitFees(): array
+    public function feeRates(): HasMany
     {
-        return array_merge(
-            ['cod_fee_rate' => null, 'cod_fee_vat_rate' => null, 'shipping_fee_per_order' => null],
-            (array) ($this->remit_fees ?? []),
-        );
+        return $this->hasMany(UserFeeRate::class);
+    }
+
+    /** The J&T fee rate in effect on a given date (latest effective_date on/before it), or null. */
+    public function effectiveFeeRate(string $date): ?UserFeeRate
+    {
+        return $this->feeRates()
+            ->whereDate('effective_date', '<=', $date)
+            ->orderByDesc('effective_date')
+            ->first();
     }
 
     /** Default account validity applied on approval. */

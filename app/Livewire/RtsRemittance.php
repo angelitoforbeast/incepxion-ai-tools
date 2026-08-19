@@ -19,21 +19,6 @@ class RtsRemittance extends Component
         $this->to   = Carbon::now('Asia/Manila')->toDateString();
     }
 
-    /** [cod_fee_rate, cod_fee_vat_rate] decimals, or nulls if unset. */
-    private function rates(): array
-    {
-        $f = auth()->user()->remitFees();
-
-        return [$f['cod_fee_rate'], $f['cod_fee_vat_rate']];
-    }
-
-    private function ratesReady(): bool
-    {
-        [$cod, $vat] = $this->rates();
-
-        return $cod !== null && $vat !== null;
-    }
-
     private function emptyTotals(): array
     {
         return [
@@ -42,22 +27,30 @@ class RtsRemittance extends Component
         ];
     }
 
-    private function compute(): array
+    private function compute($rates): array
     {
-        [$codRate, $vatRate] = $this->rates();
-        $codRate = (float) $codRate;
-        $vatRate = (float) $vatRate;
+        // rates is a date-asc collection of UserFeeRate. Find the one effective on a date.
+        $rateFor = function (string $d) use ($rates) {
+            $found = null;
+            foreach ($rates as $r) {
+                if ($r->effective_date->toDateString() <= $d) {
+                    $found = $r;
+                } else {
+                    break;
+                }
+            }
+
+            return $found;
+        };
 
         $userId = auth()->id();
         $start  = $this->from;
         $end    = $this->to ?: $this->from;
 
-        // Robust COD cast (strip commas; blanks/null → 0). cod is stored as text.
         $codExpr = DB::getDriverName() === 'mysql'
             ? "CAST(REPLACE(COALESCE(NULLIF(cod, ''), '0'), ',', '') AS DECIMAL(18,2))"
             : "CAST(REPLACE(COALESCE(NULLIF(cod, ''), '0'), ',', '') AS REAL)";
 
-        // Delivered + COD by signingtime date.
         $delivered = DB::table('from_jnts')
             ->where('user_id', $userId)
             ->selectRaw("DATE(signingtime) AS d, COUNT(*) AS delivered_count, COALESCE(SUM($codExpr),0) AS cod_sum")
@@ -66,7 +59,6 @@ class RtsRemittance extends Component
             ->whereBetween(DB::raw('DATE(signingtime)'), [$start, $end])
             ->groupBy('d')->orderBy('d')->get();
 
-        // Pickups + ACTUAL shipping by submission_time date.
         $picked = DB::table('from_jnts')
             ->where('user_id', $userId)
             ->selectRaw('DATE(submission_time) AS d, COUNT(*) AS picked_count, COALESCE(SUM(COALESCE(total_shipping_cost,0)),0) AS ship_cost')
@@ -86,9 +78,20 @@ class RtsRemittance extends Component
 
         ksort($byDate);
         $rows = [];
+        $uncovered = [];
         $totals = $this->emptyTotals();
 
         foreach ($byDate as $d => $v) {
+            $rate = $rateFor($d);
+            if (! $rate) {
+                // Option B: no rate in effect for this date — exclude, warn.
+                $uncovered[] = $d;
+
+                continue;
+            }
+
+            $codRate  = (float) $rate->cod_fee_rate;
+            $vatRate  = (float) $rate->cod_fee_vat_rate;
             $codSum   = (float) $v['cod_sum'];
             $shipCost = (float) $v['ship_cost'];
             $codFee   = round($codSum * $codRate, 2);
@@ -110,21 +113,27 @@ class RtsRemittance extends Component
             $totals['remittance']  += $remit;
         }
 
-        return ['rows' => $rows, 'totals' => $totals];
+        return ['rows' => $rows, 'totals' => $totals, 'uncovered' => $uncovered];
     }
 
     public function render()
     {
-        $ready = $this->ratesReady();
-        $data  = $ready ? $this->compute() : ['rows' => [], 'totals' => $this->emptyTotals()];
-        [$cod, $vat] = $this->rates();
+        $rates = auth()->user()->feeRates()->orderBy('effective_date')->get();
+        $ready = $rates->isNotEmpty();
+
+        $data = $ready ? $this->compute($rates) : ['rows' => [], 'totals' => $this->emptyTotals(), 'uncovered' => []];
+
+        // Summary shows the most recent (current) rate.
+        $current = $rates->last();
 
         return view('livewire.rts-remittance', [
             'rows'        => $data['rows'],
             'totals'      => $data['totals'],
+            'uncovered'   => $data['uncovered'],
             'ratesReady'  => $ready,
-            'codPercent'  => $cod !== null ? round($cod * 100, 4) : null,
-            'vatPercent'  => $vat !== null ? round($vat * 100, 4) : null,
+            'codPercent'  => $current ? (float) $current->cod_fee_rate * 100 : null,
+            'vatPercent'  => $current ? (float) $current->cod_fee_vat_rate * 100 : null,
+            'earliestRate' => $rates->first()?->effective_date,
         ]);
     }
 }

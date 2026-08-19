@@ -16,7 +16,7 @@
                 </div>
                 <div class="flex-1"></div>
                 <div class="text-right text-xs text-gray-500">
-                    <div>COD Fee: <strong>{{ is_numeric($codPercent) ? rtrim(rtrim(number_format($codPercent, 4), '0'), '.').'%' : '—' }}</strong>
+                    <div>Current COD Fee: <strong>{{ is_numeric($codPercent) ? rtrim(rtrim(number_format($codPercent, 4), '0'), '.').'%' : '—' }}</strong>
                         · VAT: <strong>{{ is_numeric($vatPercent) ? rtrim(rtrim(number_format($vatPercent, 4), '0'), '.').'%' : '—' }}</strong></div>
                     <a href="{{ route('settings') }}" wire:navigate class="mt-1 inline-block text-indigo-600 hover:text-indigo-800 font-semibold">⚙️ Edit rates in Settings</a>
                 </div>
@@ -30,13 +30,28 @@
                     <div>
                         <div class="font-semibold text-amber-800">Set your fee rates first</div>
                         <div class="text-sm text-amber-700 mt-1">
-                            Enter your <strong>COD Fee rate</strong> and <strong>VAT rate</strong> in
+                            Add your <strong>COD Fee rate</strong> and <strong>VAT rate</strong> (with an effective date) in
                             <a href="{{ route('settings') }}" wire:navigate class="underline font-semibold">Settings</a> to compute remittance.
                         </div>
                     </div>
                 </div>
             </section>
         @else
+            @if (! empty($uncovered))
+                <section class="bg-amber-50 border border-amber-300 rounded-xl shadow-sm p-4">
+                    <div class="flex items-start gap-2">
+                        <span class="text-amber-600 text-lg">⚠️</span>
+                        <div class="text-sm text-amber-800">
+                            <span class="font-semibold">{{ count($uncovered) }} date(s) have no fee rate and were excluded</span>
+                            @if ($earliestRate)
+                                — your earliest rate starts <strong>{{ $earliestRate->format('M d, Y') }}</strong>, so anything before it has no rate.
+                            @endif
+                            Add an earlier effective date in <a href="{{ route('settings') }}" wire:navigate class="underline font-semibold">Settings</a> to include them.
+                            <div class="mt-1 text-xs text-amber-700">Excluded: {{ implode(', ', array_slice($uncovered, 0, 8)) }}{{ count($uncovered) > 8 ? '…' : '' }}</div>
+                        </div>
+                    </div>
+                </section>
+            @endif
             <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <div class="flex items-center justify-between mb-2">
                     <div class="font-semibold text-gray-800">Remittance summary</div>
@@ -91,10 +106,11 @@
 
                 <div class="text-[11px] text-gray-500 mt-3">
                     <span class="font-semibold">Formula:</span>
-                    COD Fee = <code>{{ rtrim(rtrim(number_format($codPercent, 4), '0'), '.') }}% × COD sum</code> ·
-                    VAT = <code>{{ rtrim(rtrim(number_format($vatPercent, 4), '0'), '.') }}% × COD Fee</code> ·
+                    COD Fee = <code>rate × COD sum</code> ·
+                    VAT = <code>rate × COD Fee</code> ·
                     Shipping = <code>actual Total Shipping Cost</code> ·
                     Remittance = <code>COD − Fee − VAT − Shipping</code>.
+                    <span class="text-gray-400">Rates are applied per date based on their effective date.</span>
                 </div>
             </section>
         @endif

@@ -1,63 +1,48 @@
 <?php
 
+use App\Models\UserFeeRate;
 use Livewire\Volt\Component;
 
 new class extends Component {
-    // Entered as PERCENT in the UI, stored as decimals in remit_fees.
-    public $codFeePercent = null;
-    public $codVatPercent = null;
-    public bool $hasRates = false;
-    public bool $editing = false;
+    public string $newDate = '';
+    public $newCod = null;
+    public $newVat = null;
 
-    public function mount(): void
-    {
-        $this->loadFromUser();
-        // First-time users (no rates yet) start in edit mode so they can enter.
-        $this->editing = ! $this->hasRates;
-    }
-
-    private function loadFromUser(): void
-    {
-        $fees = auth()->user()->remitFees();
-        $this->codFeePercent = $fees['cod_fee_rate'] !== null ? rtrim(rtrim(number_format($fees['cod_fee_rate'] * 100, 4, '.', ''), '0'), '.') : null;
-        $this->codVatPercent = $fees['cod_fee_vat_rate'] !== null ? rtrim(rtrim(number_format($fees['cod_fee_vat_rate'] * 100, 4, '.', ''), '0'), '.') : null;
-        $this->hasRates = $fees['cod_fee_rate'] !== null && $fees['cod_fee_vat_rate'] !== null;
-    }
-
-    public function save(): void
+    public function addRate(): void
     {
         $this->validate([
-            'codFeePercent' => ['required', 'numeric', 'min:0', 'max:100'],
-            'codVatPercent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'newDate' => ['required', 'date'],
+            'newCod'  => ['required', 'numeric', 'min:0', 'max:100'],
+            'newVat'  => ['required', 'numeric', 'min:0', 'max:100'],
         ], [], [
-            'codFeePercent' => 'COD fee rate',
-            'codVatPercent' => 'VAT rate',
+            'newDate' => 'effective date',
+            'newCod'  => 'COD fee rate',
+            'newVat'  => 'VAT rate',
         ]);
 
-        $existing = auth()->user()->remitFees();
+        // One row per effective date — re-adding the same date updates it.
+        UserFeeRate::updateOrCreate(
+            ['user_id' => auth()->id(), 'effective_date' => $this->newDate],
+            [
+                'cod_fee_rate'     => round(((float) $this->newCod) / 100, 6),
+                'cod_fee_vat_rate' => round(((float) $this->newVat) / 100, 6),
+            ],
+        );
 
-        auth()->user()->update(['remit_fees' => [
-            'cod_fee_rate'           => round(((float) $this->codFeePercent) / 100, 6),
-            'cod_fee_vat_rate'       => round(((float) $this->codVatPercent) / 100, 6),
-            'shipping_fee_per_order' => $existing['shipping_fee_per_order'] ?? null,
-        ]]);
-
-        $this->loadFromUser();
-        $this->editing = false;
+        $this->reset('newDate', 'newCod', 'newVat');
         session()->flash('fee-status', 'saved');
     }
 
-    public function startEdit(): void
+    public function deleteRate(int $id): void
     {
-        $this->editing = true;
-        $this->resetErrorBag();
+        UserFeeRate::where('user_id', auth()->id())->whereKey($id)->delete();
     }
 
-    public function cancelEdit(): void
+    public function with(): array
     {
-        $this->loadFromUser();
-        $this->editing = false;
-        $this->resetErrorBag();
+        return [
+            'rates' => auth()->user()->feeRates()->orderByDesc('effective_date')->get(),
+        ];
     }
 }; ?>
 
@@ -65,48 +50,64 @@ new class extends Component {
     <header>
         <h2 class="text-lg font-medium text-gray-900">{{ __('J&T Remittance Rates') }}</h2>
         <p class="mt-1 text-sm text-gray-600">
-            {{ __('Used by the RTS Remittance tool. Shipping is taken from your actual data — only these two rates are needed.') }}
+            {{ __('Used by the RTS Remittance tool. Set a rate with the date it took effect — when J&T changes a rate, add a new row and remittance uses the right rate per date.') }}
         </p>
     </header>
 
-    @if ($hasRates && ! $editing)
-        {{-- Read-only summary + Edit --}}
-        <div class="mt-4 flex flex-wrap items-center gap-3 rounded-md bg-slate-50 border border-slate-200 px-4 py-3">
-            <span class="text-sm text-gray-700">
-                COD Fee: <strong>{{ $codFeePercent }}%</strong>
-                <span class="mx-2 text-slate-300">|</span>
-                VAT: <strong>{{ $codVatPercent }}%</strong>
-            </span>
-            <button wire:click="startEdit" class="ml-auto text-sm text-indigo-600 hover:underline">Edit</button>
-        </div>
+    {{-- Existing dated rates --}}
+    <div class="mt-4 overflow-x-auto">
+        <table class="min-w-full text-sm border border-gray-200">
+            <thead class="bg-gray-50 text-gray-600">
+                <tr class="text-left">
+                    <th class="px-3 py-2 font-medium">Effective from</th>
+                    <th class="px-3 py-2 font-medium text-right">COD Fee %</th>
+                    <th class="px-3 py-2 font-medium text-right">VAT %</th>
+                    <th class="px-3 py-2"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse ($rates as $rate)
+                    <tr>
+                        <td class="px-3 py-2 whitespace-nowrap">{{ $rate->effective_date->format('M d, Y') }}</td>
+                        <td class="px-3 py-2 text-right">{{ rtrim(rtrim(number_format($rate->cod_fee_rate * 100, 4), '0'), '.') }}%</td>
+                        <td class="px-3 py-2 text-right">{{ rtrim(rtrim(number_format($rate->cod_fee_vat_rate * 100, 4), '0'), '.') }}%</td>
+                        <td class="px-3 py-2 text-right">
+                            <button wire:click="deleteRate({{ $rate->id }})" wire:confirm="Remove this rate?" class="text-xs text-red-600 hover:underline">Remove</button>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">No rates yet — add one below.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
-        @if (session('fee-status') === 'saved')
-            <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2500)" class="mt-2 text-sm text-green-600">{{ __('Saved!') }}</p>
-        @endif
-    @else
-        {{-- Edit form --}}
-        <form wire:submit="save" class="mt-6 space-y-6">
-            <div class="grid sm:grid-cols-2 gap-4">
-                <div>
-                    <x-input-label for="codFeePercent" :value="__('COD Fee rate (%)')" />
-                    <x-text-input wire:model="codFeePercent" id="codFeePercent" type="number" step="0.0001" min="0" max="100"
-                                  class="mt-1 block w-full" placeholder="e.g. 2" />
-                    <x-input-error class="mt-2" :messages="$errors->get('codFeePercent')" />
-                </div>
-                <div>
-                    <x-input-label for="codVatPercent" :value="__('VAT rate (%) on COD fee')" />
-                    <x-text-input wire:model="codVatPercent" id="codVatPercent" type="number" step="0.0001" min="0" max="100"
-                                  class="mt-1 block w-full" placeholder="e.g. 12" />
-                    <x-input-error class="mt-2" :messages="$errors->get('codVatPercent')" />
-                </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <x-primary-button>{{ __('Save Rates') }}</x-primary-button>
-                @if ($hasRates)
-                    <button type="button" wire:click="cancelEdit" class="text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
-                @endif
-            </div>
-        </form>
+    @if (session('fee-status') === 'saved')
+        <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2500)" class="mt-2 text-sm text-green-600">{{ __('Saved!') }}</p>
     @endif
+
+    {{-- Add a new dated rate --}}
+    <form wire:submit="addRate" class="mt-6 border-t border-gray-100 pt-4">
+        <p class="text-sm font-semibold text-gray-700 mb-2">Add a rate</p>
+        <div class="grid sm:grid-cols-3 gap-3">
+            <div>
+                <x-input-label for="newDate" :value="__('Effective from')" />
+                <x-text-input wire:model="newDate" id="newDate" type="date" class="mt-1 block w-full" />
+                <x-input-error class="mt-2" :messages="$errors->get('newDate')" />
+            </div>
+            <div>
+                <x-input-label for="newCod" :value="__('COD Fee rate (%)')" />
+                <x-text-input wire:model="newCod" id="newCod" type="number" step="0.0001" min="0" max="100" class="mt-1 block w-full" placeholder="e.g. 2" />
+                <x-input-error class="mt-2" :messages="$errors->get('newCod')" />
+            </div>
+            <div>
+                <x-input-label for="newVat" :value="__('VAT rate (%)')" />
+                <x-text-input wire:model="newVat" id="newVat" type="number" step="0.0001" min="0" max="100" class="mt-1 block w-full" placeholder="e.g. 12" />
+                <x-input-error class="mt-2" :messages="$errors->get('newVat')" />
+            </div>
+        </div>
+        <div class="mt-3">
+            <x-primary-button>{{ __('Add rate') }}</x-primary-button>
+        </div>
+    </form>
 </section>

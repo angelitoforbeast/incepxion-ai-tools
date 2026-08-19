@@ -17,7 +17,7 @@
                            class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
                 @if ($minData && $maxData)
-                    <div class="text-[11px] text-gray-400 self-center">Data: {{ \Illuminate\Support\Carbon::parse($minData)->format('M d, Y') }} – {{ \Illuminate\Support\Carbon::parse($maxData)->format('M d, Y') }}</div>
+                    <div class="text-[11px] text-gray-400 self-center">Pickup dates: {{ \Illuminate\Support\Carbon::parse($minData)->format('M d, Y') }} – {{ \Illuminate\Support\Carbon::parse($maxData)->format('M d, Y') }}</div>
                 @endif
                 <div class="flex-1"></div>
                 <div class="text-right text-xs text-gray-500">

@@ -240,7 +240,7 @@ class RtsMonitor extends Component
     public function render()
     {
         if (! $this->from || ! $this->to) {
-            return view('livewire.rts-monitor', ['results' => [], 'totalDays' => 0]);
+            return view('livewire.rts-monitor', ['activeRtsTab' => 'tools.rts.monitor', 'results' => [], 'totalDays' => 0]);
         }
 
         [$fromDt, $toDt] = $this->rangeFull();
@@ -251,6 +251,7 @@ class RtsMonitor extends Component
         $partialTo = Carbon::parse($this->from, 'Asia/Manila')->addDays($days)->endOfDay();
 
         return view('livewire.rts-monitor', [
+            'activeRtsTab'  => 'tools.rts.monitor',
             'results'       => $this->results($fromDt, $toDt),
             'itemOptions'   => $this->optionsFor('item_name', 'selectedItems'),
             'senderOptions' => $this->optionsFor('sender', 'selectedSenders'),

@@ -118,6 +118,7 @@ class RtsProcessor extends Component
     public function render()
     {
         return view('livewire.rts-processor', [
+            'activeRtsTab' => 'tools.rts',
             'current' => $this->ownedUpload($this->currentUploadId),
             'history' => RtsUpload::where('user_id', auth()->id())->latest('id')->limit(30)->get(),
         ]);

@@ -154,6 +154,7 @@ class RtsRemittance extends Component
         $maxData = $bounds->max_p ?? null;
 
         return view('livewire.rts-remittance', [
+            'activeRtsTab' => 'tools.rts.remittance',
             'rows'        => $data['rows'],
             'totals'      => $data['totals'],
             'uncovered'   => $data['uncovered'],

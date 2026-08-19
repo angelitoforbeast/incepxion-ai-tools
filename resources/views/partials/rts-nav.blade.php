@@ -8,20 +8,24 @@
                 $tabBase = 'px-4 py-2 text-sm font-semibold -mb-px border-b-2 rounded-t-lg transition';
                 $active  = 'border-indigo-600 text-indigo-700 bg-indigo-50';
                 $idle    = 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100';
+                // $activeRtsTab is passed by each component so the highlight survives
+                // Livewire updates (during /livewire/update, request()->routeIs() no longer matches).
+                $activeRtsTab = $activeRtsTab ?? null;
+                $isRts = fn ($route) => $activeRtsTab ? ($activeRtsTab === $route) : request()->routeIs($route);
             @endphp
             <a href="{{ route('tools.rts') }}" wire:navigate
-               @if (request()->routeIs('tools.rts')) aria-current="page" @endif
-               class="{{ $tabBase }} {{ request()->routeIs('tools.rts') ? $active : $idle }}">
+               @if ($isRts('tools.rts')) aria-current="page" @endif
+               class="{{ $tabBase }} {{ $isRts('tools.rts') ? $active : $idle }}">
                 ⬆️ Upload &amp; Update
             </a>
             <a href="{{ route('tools.rts.monitor') }}" wire:navigate
-               @if (request()->routeIs('tools.rts.monitor')) aria-current="page" @endif
-               class="{{ $tabBase }} {{ request()->routeIs('tools.rts.monitor') ? $active : $idle }}">
+               @if ($isRts('tools.rts.monitor')) aria-current="page" @endif
+               class="{{ $tabBase }} {{ $isRts('tools.rts.monitor') ? $active : $idle }}">
                 📊 RTS Monitoring
             </a>
             <a href="{{ route('tools.rts.remittance') }}" wire:navigate
-               @if (request()->routeIs('tools.rts.remittance')) aria-current="page" @endif
-               class="{{ $tabBase }} {{ request()->routeIs('tools.rts.remittance') ? $active : $idle }}">
+               @if ($isRts('tools.rts.remittance')) aria-current="page" @endif
+               class="{{ $tabBase }} {{ $isRts('tools.rts.remittance') ? $active : $idle }}">
                 💰 Remittance
             </a>
         </div>

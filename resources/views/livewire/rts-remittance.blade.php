@@ -74,37 +74,16 @@
                             @endforelse
                         </tbody>
 
-                        <tfoot class="bg-gray-50"
-                               wire:key="remit-totals-{{ $from }}-{{ $to }}-{{ $totals['cod_sum'] }}-{{ $totals['ship_cost'] }}"
-                               x-data="{
-                                   codSum: {{ json_encode($totals['cod_sum']) }},
-                                   codFeeDefault: {{ json_encode($totals['cod_fee']) }},
-                                   codFeeVatDefault: {{ json_encode($totals['cod_fee_vat']) }},
-                                   shipCost: {{ json_encode($totals['ship_cost']) }},
-                                   codFeeInput: '',
-                                   codFeeVatInput: '',
-                                   init() { this.codFeeInput = this.codFeeDefault.toFixed(2); this.codFeeVatInput = this.codFeeVatDefault.toFixed(2); },
-                                   num(s) { const v = parseFloat(String(s).replace(/[^0-9.\-]/g, '')); return isNaN(v) ? null : v; },
-                                   get codFeeEff() { const v = this.num(this.codFeeInput); return v === null ? this.codFeeDefault : v; },
-                                   get codFeeVatEff() { const v = this.num(this.codFeeVatInput); return v === null ? this.codFeeVatDefault : v; },
-                                   get remitEff() { return this.codSum - this.codFeeEff - this.codFeeVatEff - this.shipCost; },
-                                   money(v) { return '₱' + Number(v || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
-                               }" x-init="init()">
+                        <tfoot class="bg-gray-50">
                             <tr>
                                 <th class="px-3 py-2 border-t text-right">TOTAL</th>
                                 <th class="px-3 py-2 border-t text-right">{{ number_format($totals['delivered']) }}</th>
                                 <th class="px-3 py-2 border-t text-right">₱{{ number_format($totals['cod_sum'], 2) }}</th>
-                                <th class="px-3 py-2 border-t text-right">
-                                    <input type="text" inputmode="decimal" x-model="codFeeInput" @blur="codFeeInput = (num(codFeeInput) ?? codFeeDefault).toFixed(2)"
-                                           class="w-28 border rounded px-2 py-1 text-right text-xs">
-                                </th>
-                                <th class="px-3 py-2 border-t text-right">
-                                    <input type="text" inputmode="decimal" x-model="codFeeVatInput" @blur="codFeeVatInput = (num(codFeeVatInput) ?? codFeeVatDefault).toFixed(2)"
-                                           class="w-28 border rounded px-2 py-1 text-right text-xs">
-                                </th>
+                                <th class="px-3 py-2 border-t text-right">₱{{ number_format($totals['cod_fee'], 2) }}</th>
+                                <th class="px-3 py-2 border-t text-right">₱{{ number_format($totals['cod_fee_vat'], 2) }}</th>
                                 <th class="px-3 py-2 border-t text-right">{{ number_format($totals['picked']) }}</th>
                                 <th class="px-3 py-2 border-t text-right">₱{{ number_format($totals['ship_cost'], 2) }}</th>
-                                <th class="px-3 py-2 border-t text-right font-semibold" x-text="money(remitEff)"></th>
+                                <th class="px-3 py-2 border-t text-right font-semibold">₱{{ number_format($totals['remittance'], 2) }}</th>
                             </tr>
                         </tfoot>
                     </table>
@@ -116,7 +95,6 @@
                     VAT = <code>{{ rtrim(rtrim(number_format($vatPercent, 4), '0'), '.') }}% × COD Fee</code> ·
                     Shipping = <code>actual Total Shipping Cost</code> ·
                     Remittance = <code>COD − Fee − VAT − Shipping</code>.
-                    <span class="text-gray-400">Tip: you can edit the Total COD Fee / VAT above for a what-if — the Total Remittance updates live.</span>
                 </div>
             </section>
         @endif

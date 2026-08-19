@@ -62,10 +62,5 @@
                 </a>
             </div>
         </div>
-
-        <p class="text-center text-xs text-slate-400">
-            Want to change your password or account? Go to
-            <a href="{{ route('settings') }}" wire:navigate class="text-indigo-600 underline">Settings</a>.
-        </p>
     </div>
 </x-app-layout>

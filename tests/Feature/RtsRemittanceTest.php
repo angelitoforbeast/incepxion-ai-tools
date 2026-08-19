@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Livewire\Volt\Volt;
 use Tests\TestCase;
 
 class RtsRemittanceTest extends TestCase
@@ -44,21 +45,20 @@ class RtsRemittanceTest extends TestCase
             ->assertSee('Set your fee rates first');
     }
 
-    public function test_save_fees_stores_decimals(): void
+    public function test_fee_rates_form_stores_decimals(): void
     {
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now(), 'remit_fees' => null]);
 
-        Livewire::actingAs($user)->test(RtsRemittance::class)
+        $this->actingAs($user);
+        Volt::test('profile.fee-rates-form')
             ->set('codFeePercent', 2)
             ->set('codVatPercent', 12)
-            ->set('shipFee', 50)
-            ->call('saveFees')
+            ->call('save')
             ->assertHasNoErrors();
 
         $fees = $user->fresh()->remitFees();
         $this->assertEqualsWithDelta(0.02, $fees['cod_fee_rate'], 0.0001);
         $this->assertEqualsWithDelta(0.12, $fees['cod_fee_vat_rate'], 0.0001);
-        $this->assertEqualsWithDelta(50.0, $fees['shipping_fee_per_order'], 0.0001);
     }
 
     public function test_computes_remittance_per_date(): void

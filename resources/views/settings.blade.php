@@ -15,6 +15,12 @@
 
         <div class="p-6 sm:p-8 bg-white shadow-sm border border-slate-200 rounded-2xl">
             <div class="max-w-xl">
+                <livewire:profile.fee-rates-form />
+            </div>
+        </div>
+
+        <div class="p-6 sm:p-8 bg-white shadow-sm border border-slate-200 rounded-2xl">
+            <div class="max-w-xl">
                 @if (auth()->user()->password)
                     <livewire:profile.update-password-form />
                 @else

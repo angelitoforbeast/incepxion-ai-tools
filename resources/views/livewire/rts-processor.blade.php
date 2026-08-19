@@ -103,10 +103,19 @@
                                     @else
                                         <span>Scanning file…</span>
                                     @endif
-                                    {{-- Elapsed timer (wire:key keeps it counting across polls) --}}
-                                    <span class="text-gray-400" wire:key="rts-timer-{{ $current->id }}"
-                                          x-data="{ s: 0 }" x-init="setInterval(() => s++, 1000)"
-                                          x-text="'· ' + Math.floor(s/60) + 'm ' + String(s%60).padStart(2,'0') + 's'"></span>
+                                    {{-- Elapsed timer, anchored to the job's real start time so it never
+                                         resets when you switch tabs or navigate away and back. --}}
+                                    @php
+                                        $startedEpoch = $current->started_at
+                                            ? \Illuminate\Support\Carbon::parse($current->started_at->format('Y-m-d H:i:s'), 'Asia/Manila')->timestamp
+                                            : null;
+                                    @endphp
+                                    @if ($startedEpoch)
+                                        <span class="text-gray-400" wire:key="rts-timer-{{ $current->id }}"
+                                              x-data="{ s: 0, start: {{ $startedEpoch }} }"
+                                              x-init="const tick = () => s = Math.max(0, Math.floor(Date.now()/1000 - start)); tick(); setInterval(tick, 1000);"
+                                              x-text="'· ' + Math.floor(s/60) + 'm ' + String(s%60).padStart(2,'0') + 's'"></span>
+                                    @endif
                                 </div>
                                 {{-- Plain form submit (not Livewire) so Cancel works even if the tab's Livewire runtime is stale. --}}
                                 <form method="POST" action="{{ route('tools.rts.cancel') }}" class="flex-shrink-0"
@@ -148,17 +157,21 @@
             <div>
                 <h2 class="text-sm font-semibold text-gray-800 mb-2">Recent uploads</h2>
                 <div class="border border-gray-200 rounded-lg overflow-hidden">
-                    <div class="overflow-x-auto" style="max-height:340px;overflow-y:auto;">
-                        <table class="min-w-full text-xs">
+                    <div style="max-height:340px;overflow-y:auto;">
+                        <table class="w-full text-xs table-fixed">
+                            <colgroup>
+                                <col style="width:20%"><col style="width:26%"><col style="width:14%">
+                                <col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%">
+                            </colgroup>
                             <thead class="bg-gray-50 text-gray-600 sticky top-0">
                                 <tr>
-                                    <th class="text-left px-3 py-2 font-medium">Uploaded</th>
-                                    <th class="text-left px-3 py-2 font-medium">File</th>
-                                    <th class="text-left px-3 py-2 font-medium">Status</th>
-                                    <th class="text-right px-3 py-2 font-medium">Inserted</th>
-                                    <th class="text-right px-3 py-2 font-medium">Updated</th>
-                                    <th class="text-right px-3 py-2 font-medium">Skipped</th>
-                                    <th class="text-right px-3 py-2 font-medium">Total</th>
+                                    <th class="text-left px-2 py-2 font-medium">Uploaded</th>
+                                    <th class="text-left px-2 py-2 font-medium">File</th>
+                                    <th class="text-left px-2 py-2 font-medium">Status</th>
+                                    <th class="text-right px-2 py-2 font-medium">Ins</th>
+                                    <th class="text-right px-2 py-2 font-medium">Upd</th>
+                                    <th class="text-right px-2 py-2 font-medium">Skip</th>
+                                    <th class="text-right px-2 py-2 font-medium">Total</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 bg-white">
@@ -175,13 +188,13 @@
                                         };
                                     @endphp
                                     <tr class="hover:bg-gray-50 cursor-pointer" wire:click="$set('currentUploadId', {{ $h->id }})">
-                                        <td class="px-3 py-1.5 whitespace-nowrap text-gray-700">{{ $h->created_at?->timezone('Asia/Manila')->format('M j, g:i A') }}</td>
-                                        <td class="px-3 py-1.5 text-gray-900 max-w-[240px] truncate" title="{{ $h->original_name }}">{{ $h->original_name }}</td>
-                                        <td class="px-3 py-1.5"><span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase {{ $hb }}">{{ str_replace('_',' ',$h->status) }}</span></td>
-                                        <td class="px-3 py-1.5 text-right tabular-nums text-gray-900">{{ number_format($h->inserted) }}</td>
-                                        <td class="px-3 py-1.5 text-right tabular-nums text-gray-900">{{ number_format($h->updated) }}</td>
-                                        <td class="px-3 py-1.5 text-right tabular-nums text-gray-600">{{ number_format($h->skipped) }}</td>
-                                        <td class="px-3 py-1.5 text-right tabular-nums text-gray-500">{{ $h->total_rows ? number_format($h->total_rows) : '—' }}</td>
+                                        <td class="px-2 py-1.5 truncate text-gray-700" title="{{ $h->created_at?->timezone('Asia/Manila')->format('M j, Y g:i A') }}">{{ $h->created_at?->timezone('Asia/Manila')->format('M j, g:i A') }}</td>
+                                        <td class="px-2 py-1.5 text-gray-900 truncate" title="{{ $h->original_name }}">{{ $h->original_name }}</td>
+                                        <td class="px-2 py-1.5"><span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase {{ $hb }}">{{ str_replace('_',' ',$h->status) }}</span></td>
+                                        <td class="px-2 py-1.5 text-right tabular-nums text-gray-900">{{ number_format($h->inserted) }}</td>
+                                        <td class="px-2 py-1.5 text-right tabular-nums text-gray-900">{{ number_format($h->updated) }}</td>
+                                        <td class="px-2 py-1.5 text-right tabular-nums text-gray-600">{{ number_format($h->skipped) }}</td>
+                                        <td class="px-2 py-1.5 text-right tabular-nums text-gray-500">{{ $h->total_rows ? number_format($h->total_rows) : '—' }}</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="7" class="px-3 py-6 text-center text-gray-400">No uploads yet.</td></tr>

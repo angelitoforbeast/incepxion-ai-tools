@@ -42,6 +42,19 @@
                     <dt class="text-slate-400">Member since</dt>
                     <dd class="font-medium text-slate-800">{{ $user->created_at->format('M d, Y') }}</dd>
                 </div>
+                @php $fees = $user->remitFees(); @endphp
+                <div>
+                    <dt class="text-slate-400">COD Fee rate</dt>
+                    <dd class="font-medium text-slate-800">
+                        {{ $fees['cod_fee_rate'] !== null ? rtrim(rtrim(number_format($fees['cod_fee_rate'] * 100, 4), '0'), '.').'%' : '— (set in Settings)' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-slate-400">VAT rate</dt>
+                    <dd class="font-medium text-slate-800">
+                        {{ $fees['cod_fee_vat_rate'] !== null ? rtrim(rtrim(number_format($fees['cod_fee_vat_rate'] * 100, 4), '0'), '.').'%' : '— (set in Settings)' }}
+                    </dd>
+                </div>
             </dl>
         </div>
 

@@ -162,9 +162,11 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach ($results as $r)
                                 @php
-                                    $rtsColor = $r['rts_percent'] > 25 ? 'bg-red-100'
-                                              : ($r['rts_percent'] > 20 ? 'bg-orange-100'
-                                              : ($r['rts_percent'] > 15 ? 'bg-green-100' : 'bg-cyan-50'));
+                                    $rtsColorFor = fn ($p) => $p > 25 ? 'bg-red-100'
+                                        : ($p > 20 ? 'bg-orange-100'
+                                        : ($p > 15 ? 'bg-green-100' : 'bg-cyan-50'));
+                                    $rtsColor = $rtsColorFor($r['rts_percent']);
+                                    $curColor = is_numeric($r['current_rts']) ? $rtsColorFor($r['current_rts']) : '';
                                 @endphp
                                 <tr class="hover:bg-blue-50" x-show="q === '' || (@js(mb_strtolower($r['sender'].' '.$r['item'].' '.$r['cod']))).includes(q.toLowerCase())">
                                     <td class="px-3 py-1.5 whitespace-nowrap text-gray-600">{{ $r['date_range'] }}</td>
@@ -178,7 +180,7 @@
                                     <td class="px-3 py-1.5 text-right font-semibold {{ $rtsColor }}">{{ number_format($r['rts_percent'], 2) }}%</td>
                                     <td class="px-3 py-1.5 text-right text-gray-700">{{ number_format($r['delivered_percent'], 2) }}%</td>
                                     <td class="px-3 py-1.5 text-right text-gray-700">{{ number_format($r['transit_percent'], 2) }}%</td>
-                                    <td class="px-3 py-1.5 text-right text-gray-700">{{ is_numeric($r['current_rts']) ? number_format($r['current_rts'], 2).'%' : 'N/A' }}</td>
+                                    <td class="px-3 py-1.5 text-right font-semibold {{ $curColor }}">{{ is_numeric($r['current_rts']) ? number_format($r['current_rts'], 2).'%' : 'N/A' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

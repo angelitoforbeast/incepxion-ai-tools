@@ -15,8 +15,26 @@ class RtsRemittance extends Component
 
     public function mount(): void
     {
-        $this->from = Carbon::now('Asia/Manila')->startOfMonth()->toDateString();
-        $this->to   = Carbon::now('Asia/Manila')->toDateString();
+        // Default: this month, ending on the LAST date that actually has data
+        // (so empty future days up to "today" aren't shown).
+        $today = Carbon::now('Asia/Manila');
+
+        $last = DB::table('from_jnts')
+            ->where('user_id', auth()->id())
+            ->selectRaw('MAX(DATE(signingtime)) AS s, MAX(DATE(submission_time)) AS p')
+            ->first();
+        $lastDate = collect([$last->s ?? null, $last->p ?? null])->filter()->max();
+
+        $to   = $lastDate ? Carbon::parse($lastDate) : $today->copy();
+        $from = $today->copy()->startOfMonth();
+
+        // If the latest data is before this month, show that month instead (avoid empty range).
+        if ($to->lt($from)) {
+            $from = $to->copy()->startOfMonth();
+        }
+
+        $this->from = $from->toDateString();
+        $this->to   = $to->toDateString();
     }
 
     private function emptyTotals(): array

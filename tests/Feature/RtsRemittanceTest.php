@@ -7,6 +7,7 @@ use App\Models\FromJnt;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserFeeRate;
+use Illuminate\Support\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Livewire\Volt\Volt;
@@ -123,6 +124,21 @@ class RtsRemittanceTest extends TestCase
             ->set('from', '2026-08-01')->set('to', '2026-08-31')
             ->assertViewHas('uncovered', fn ($u) => in_array('2026-08-05', $u))
             ->assertViewHas('totals', fn ($t) => $t['delivered'] === 1 && abs($t['cod_sum'] - 1000) < 0.01);
+    }
+
+    public function test_default_range_is_this_month_up_to_last_data_date(): void
+    {
+        Carbon::setTestNow('2026-08-19 10:00:00');
+
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->setRate($user, '2026-01-01', 2, 12);
+        $this->seedRow($user, '2026-08-15'); // last data date
+
+        Livewire::actingAs($user)->test(RtsRemittance::class)
+            ->assertSet('from', '2026-08-01')
+            ->assertSet('to', '2026-08-15');
+
+        Carbon::setTestNow();
     }
 
     public function test_remittance_is_scoped_per_user(): void

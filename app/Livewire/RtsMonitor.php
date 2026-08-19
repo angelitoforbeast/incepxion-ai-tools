@@ -26,7 +26,8 @@ class RtsMonitor extends Component
 
     public function mount(): void
     {
-        $this->from = Carbon::now('Asia/Manila')->subMonthNoOverflow()->startOfMonth()->toDateString();
+        // Default: this month, up to today (by submission_time / pickup date).
+        $this->from = Carbon::now('Asia/Manila')->startOfMonth()->toDateString();
         $this->to   = Carbon::now('Asia/Manila')->toDateString();
         $this->partialDays = $this->defaultPartialDays();
     }

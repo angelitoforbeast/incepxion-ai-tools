@@ -62,9 +62,9 @@ class RtsFileParser
 
     /** Parse a stored upload. Returns ['rows' => [waybill => row], 'total' => int]. */
     /**
-     * @param  callable|null  $cancelCheck  Optional; called periodically during the row
-     *                                       loop. If it returns true, parsing aborts by
-     *                                       throwing App\Exceptions\RtsUploadCanceled.
+     * @param  callable|null  $cancelCheck  Optional progress/cancel hook: called every ~1000
+     *                                       rows as fn(int $rowsRead): bool. Return true to
+     *                                       abort (throws App\Exceptions\RtsUploadCanceled).
      */
     public function parse(string $absPath, string $ext, ?callable $cancelCheck = null): array
     {
@@ -151,9 +151,9 @@ class RtsFileParser
         $seen = 0;
         foreach ($reader->getSheetIterator() as $sheet) {
             foreach ($sheet->getRowIterator() as $row) {
-                // Cooperative cancellation: check every ~2000 rows so a user can stop
-                // a long parse without waiting for it to finish.
-                if ($cancelCheck !== null && (++$seen % 2000 === 0) && $cancelCheck()) {
+                // Every ~1000 rows: report progress + allow cancellation. The callback
+                // receives the running row count and returns true to abort the parse.
+                if ($cancelCheck !== null && (++$seen % 1000 === 0) && $cancelCheck($seen)) {
                     $reader->close();
                     throw new \App\Exceptions\RtsUploadCanceled('Upload canceled by user.');
                 }

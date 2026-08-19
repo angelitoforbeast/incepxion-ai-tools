@@ -92,21 +92,38 @@
                             </div>
                         </div>
                     @elseif (in_array($current->status, ['queued','scanning','processing']))
-                        <div class="flex flex-wrap items-center justify-between gap-3">
-                            <div class="flex items-center gap-2 text-sm text-gray-500">
-                                <svg class="animate-spin w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-                                {{ $current->status === 'processing' ? 'Updating statuses…' : 'Scanning file…' }} You can keep using the app.
+                        <div class="space-y-2">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 text-sm text-gray-600">
+                                    <svg class="animate-spin w-4 h-4 text-indigo-500 flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                    @if ($current->status === 'processing')
+                                        <span>Saving to database…</span>
+                                    @elseif ($current->scanned_rows > 0)
+                                        <span>Scanning… <strong>{{ number_format($current->scanned_rows) }}</strong> rows read</span>
+                                    @else
+                                        <span>Scanning file…</span>
+                                    @endif
+                                    {{-- Elapsed timer (wire:key keeps it counting across polls) --}}
+                                    <span class="text-gray-400" wire:key="rts-timer-{{ $current->id }}"
+                                          x-data="{ s: 0 }" x-init="setInterval(() => s++, 1000)"
+                                          x-text="'· ' + Math.floor(s/60) + 'm ' + String(s%60).padStart(2,'0') + 's'"></span>
+                                </div>
+                                {{-- Plain form submit (not Livewire) so Cancel works even if the tab's Livewire runtime is stale. --}}
+                                <form method="POST" action="{{ route('tools.rts.cancel') }}" class="flex-shrink-0"
+                                      onsubmit="return confirm('Stop this upload? Any progress will be discarded and no data imported.');">
+                                    @csrf
+                                    <input type="hidden" name="upload" value="{{ $current->id }}">
+                                    <button type="submit"
+                                            class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+                                        Cancel
+                                    </button>
+                                </form>
                             </div>
-                            {{-- Plain form submit (not Livewire) so Cancel works even if the tab's Livewire runtime is stale. --}}
-                            <form method="POST" action="{{ route('tools.rts.cancel') }}" class="flex-shrink-0"
-                                  onsubmit="return confirm('Stop this upload? Any progress will be discarded and no data imported.');">
-                                @csrf
-                                <input type="hidden" name="upload" value="{{ $current->id }}">
-                                <button type="submit"
-                                        class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">
-                                    Cancel
-                                </button>
-                            </form>
+                            {{-- Indeterminate activity bar (the total is unknown until the parse finishes) --}}
+                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div class="h-1.5 w-1/3 rounded-full bg-indigo-500 animate-pulse"></div>
+                            </div>
+                            <p class="text-xs text-gray-400">You can keep using the app — this runs in the background.</p>
                         </div>
                     @elseif ($current->status === 'canceled')
                         <p class="text-sm text-gray-500">🛑 Upload canceled — no data was imported from this file.</p>

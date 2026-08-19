@@ -47,8 +47,9 @@ class ProcessRtsUpload implements ShouldQueue
         }
 
         $upload->forceFill([
-            'status'     => 'scanning',
-            'started_at' => $upload->started_at ?? Carbon::now('Asia/Manila'),
+            'status'       => 'scanning',
+            'scanned_rows' => 0,
+            'started_at'   => $upload->started_at ?? Carbon::now('Asia/Manila'),
         ])->save();
 
         $disk    = $upload->disk ?: 'local';
@@ -56,8 +57,12 @@ class ProcessRtsUpload implements ShouldQueue
         $ext     = strtolower(pathinfo($upload->path, PATHINFO_EXTENSION));
 
         try {
-            // The parser polls this every ~2000 rows so a long scan can be stopped.
-            $parsed = $parser->parse($absPath, $ext, fn () => $this->isCanceled());
+            // Called every ~1000 rows: publish scan progress AND allow cancellation.
+            $parsed = $parser->parse($absPath, $ext, function (int $rowsRead) {
+                RtsUpload::whereKey($this->uploadId)->update(['scanned_rows' => $rowsRead]);
+
+                return $this->isCanceled();
+            });
             $rows   = $parsed['rows'];              // [waybill => normalized row]
             $upload->total_rows = count($rows);
 

@@ -146,6 +146,23 @@ class RtsProcessorTest extends TestCase
         Storage::disk('local')->assertMissing($upload->path);
     }
 
+    public function test_scan_progress_is_reported(): void
+    {
+        $user = User::factory()->create();
+        $rows = [];
+        for ($i = 0; $i < 1100; $i++) {
+            $rows[] = ['waybill' => "WB{$i}", 'status' => 'In Transit'];
+        }
+        $upload = $this->makeUpload($user, $this->jntCsv($rows));
+
+        ProcessRtsUpload::dispatchSync($upload->id);
+        $fresh = $upload->fresh();
+
+        $this->assertSame('done', $fresh->status);
+        // The parser reports progress every 1000 rows, so scanned_rows advances past 0.
+        $this->assertGreaterThanOrEqual(1000, $fresh->scanned_rows);
+    }
+
     public function test_exact_matching_ignores_lookalike_columns(): void
     {
         $user = User::factory()->create();

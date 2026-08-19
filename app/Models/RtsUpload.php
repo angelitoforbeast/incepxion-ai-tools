@@ -17,6 +17,7 @@ class RtsUpload extends Model
         'status',
         'batch_at',
         'total_rows',
+        'scanned_rows',
         'processed_rows',
         'inserted',
         'updated',

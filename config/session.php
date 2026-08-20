@@ -32,7 +32,7 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => (int) env('SESSION_LIFETIME', 20160), // 14 days — avoids self-signout on return (single-session still enforced)
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 

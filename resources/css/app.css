@@ -1,3 +1,73 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Two-handle range slider.
+ *
+ * HTML has no dual-range input, so two normal ranges are stacked on the same track. Each
+ * input ignores pointer events except on its own thumb, which lets both handles be grabbed
+ * even though the elements fully overlap. The visible track and the selected span are drawn
+ * by the markup behind them; these inputs render only their thumbs.
+ */
+.range-dual {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    margin: 0;
+    background: transparent;
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.range-dual:focus {
+    outline: none;
+}
+
+.range-dual::-webkit-slider-runnable-track,
+.range-dual::-moz-range-track {
+    background: transparent;
+    border: none;
+}
+
+.range-dual::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: auto;
+    height: 1rem;
+    width: 1rem;
+    border-radius: 9999px;
+    background: #4f46e5;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+    cursor: grab;
+}
+
+.range-dual::-webkit-slider-thumb:active {
+    cursor: grabbing;
+}
+
+.range-dual::-moz-range-thumb {
+    pointer-events: auto;
+    height: 1rem;
+    width: 1rem;
+    border-radius: 9999px;
+    background: #4f46e5;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+    cursor: grab;
+}
+
+.range-dual:disabled::-webkit-slider-thumb {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.range-dual:disabled::-moz-range-thumb {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}

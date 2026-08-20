@@ -34,10 +34,11 @@ class RtsProjectionTest extends TestCase
     {
         $user = User::factory()->create();
 
-        // Aug 1-2 fully settled; Aug 3 is half in transit, which pushes the cumulative
-        // share over 1% — so the default cutoff should stop at Aug 2.
-        $this->shipments($user, '2026-08-01', 'Delivered', 100, 'a');
-        $this->shipments($user, '2026-08-02', 'Returned', 100, 'b');
+        // Aug 1-2 fully settled and already past the minimum size, so only the transit rule
+        // decides here. Aug 3 pushes the cumulative in-transit share over 1%, so the cutoff
+        // should stop at Aug 2.
+        $this->shipments($user, '2026-08-01', 'Delivered', 200, 'a');
+        $this->shipments($user, '2026-08-02', 'Returned', 200, 'b');
         $this->shipments($user, '2026-08-03', 'In Transit', 100, 'c');
 
         Livewire::actingAs($user)->test(RtsMonitor::class)
@@ -45,6 +46,54 @@ class RtsProjectionTest extends TestCase
             ->set('to', '2026-08-05')
             ->assertSet('projFrom', '2026-08-01')
             ->assertSet('projTo', '2026-08-02');
+    }
+
+    public function test_cutoff_extends_until_the_cohort_reaches_the_minimum(): void
+    {
+        $user = User::factory()->create();
+
+        // Aug 1 is settled but only 50 shipments — too few to project from. Aug 2 and Aug 3
+        // carry it past 300, so the cutoff has to reach Aug 3 even though Aug 3 adds transit.
+        $this->shipments($user, '2026-08-01', 'Delivered', 50, 'a');
+        $this->shipments($user, '2026-08-02', 'Delivered', 150, 'b');
+        $this->shipments($user, '2026-08-03', 'Returned', 150, 'c');
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-08-01')
+            ->set('to', '2026-08-10')
+            ->assertSet('projTo', '2026-08-03')
+            ->assertViewHas('projection', fn ($p) => $p['total'] === 350);
+    }
+
+    public function test_whole_range_is_used_when_the_minimum_is_never_reached(): void
+    {
+        $user = User::factory()->create();
+
+        // 20 shipments in total — never 300, so the window opens to everything available.
+        $this->shipments($user, '2026-08-01', 'Delivered', 10, 'a');
+        $this->shipments($user, '2026-08-06', 'In Transit', 10, 'b');
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-08-01')
+            ->set('to', '2026-08-10')
+            ->assertSet('projTo', '2026-08-06')
+            ->assertViewHas('projection', fn ($p) => $p['total'] === 20);
+    }
+
+    public function test_settled_cutoff_wins_when_it_already_has_enough(): void
+    {
+        $user = User::factory()->create();
+
+        // 400 settled on Aug 1 — past the minimum already, so a later unsettled day is not
+        // pulled in just to grow the cohort.
+        $this->shipments($user, '2026-08-01', 'Delivered', 400, 'a');
+        $this->shipments($user, '2026-08-05', 'In Transit', 400, 'b');
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-08-01')
+            ->set('to', '2026-08-10')
+            ->assertSet('projTo', '2026-08-01')
+            ->assertViewHas('projection', fn ($p) => $p['total'] === 400);
     }
 
     public function test_a_tiny_unsettled_tail_is_tolerated(): void

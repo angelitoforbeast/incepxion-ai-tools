@@ -37,6 +37,9 @@ class RtsMonitor extends Component
      */
     private const SETTLED_MAX_TRANSIT_PCT = 1.0;
 
+    /** A cohort under this size says too little to project from, settled or not. */
+    private const PROJECTION_MIN = 300;
+
     public function mount(): void
     {
         // Default: this month, up to today (by submission_time / pickup date).
@@ -130,8 +133,11 @@ class RtsMonitor extends Component
 
     /**
      * Latest day whose cohort [from → day] is still settled, i.e. under
-     * SETTLED_MAX_TRANSIT_PCT in transit. That's the largest cohort whose RTS% can be
-     * trusted. Falls back to the first day when nothing has settled yet.
+     * SETTLED_MAX_TRANSIT_PCT in transit — the largest cohort whose RTS% can be trusted.
+     *
+     * That cutoff is then pushed out far enough to hold at least PROJECTION_MIN shipments:
+     * a settled cohort of a handful of parcels is settled but meaningless. If the range
+     * never reaches that many, the whole range is used.
      */
     private function defaultProjectionEnd(): string
     {
@@ -152,21 +158,35 @@ class RtsMonitor extends Component
             return $this->to;
         }
 
-        $cumTotal = 0;
+        $cumTotal   = 0;
         $cumSettled = 0;
-        $best = null;
+        $settledDay = null;   // last day still under the transit threshold
+        $enoughDay  = null;   // first day the cohort reaches PROJECTION_MIN
 
         foreach ($rows as $r) {
             $cumTotal   += (int) $r->total;
             $cumSettled += (int) $r->delivered + (int) $r->rts;
+            $day = substr((string) $r->d, 0, 10);
 
             $transitPct = $cumTotal > 0 ? (($cumTotal - $cumSettled) / $cumTotal) * 100 : 100;
             if ($transitPct < self::SETTLED_MAX_TRANSIT_PCT) {
-                $best = substr((string) $r->d, 0, 10);
+                $settledDay = $day;
+            }
+
+            if ($enoughDay === null && $cumTotal >= self::PROJECTION_MIN) {
+                $enoughDay = $day;
             }
         }
 
-        return $best ?? substr((string) $rows->first()->d, 0, 10);
+        // Never enough shipments in the whole range — use all of it.
+        if ($enoughDay === null) {
+            return substr((string) $rows->last()->d, 0, 10);
+        }
+
+        $day = $settledDay ?? substr((string) $rows->first()->d, 0, 10);
+
+        // Settled but too small: extend until the cohort is big enough to mean something.
+        return max($day, $enoughDay);
     }
 
     public function clearFilters(): void

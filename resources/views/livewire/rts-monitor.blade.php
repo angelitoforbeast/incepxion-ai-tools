@@ -114,13 +114,25 @@
                         </label>
                     </div>
 
-                    {{-- Both sliders span the whole filtered range, so their positions compare. --}}
-                    <input type="range" min="0" max="{{ max(1, $totalDays) }}" wire:model.live.debounce.400ms="projStartDays"
-                           @if ($totalDays === 0) disabled @endif
-                           class="w-full accent-indigo-600 cursor-pointer">
-                    <input type="range" min="0" max="{{ max(1, $totalDays) }}" wire:model.live.debounce.400ms="projEndDays"
-                           @if ($totalDays === 0) disabled @endif
-                           class="w-full accent-indigo-600 cursor-pointer mt-1">
+                    @php
+                        $sliderSpan = max(1, $totalDays);
+                        $startPos   = min(100, max(0, ((int) $projStartDays / $sliderSpan) * 100));
+                        $endPos     = min(100, max(0, ((int) $projEndDays / $sliderSpan) * 100));
+                    @endphp
+                    {{-- One track, two handles. Both are measured from the range start, so the
+                         window between them is the projection window. --}}
+                    <div class="relative h-4">
+                        <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-gray-200"></div>
+                        <div class="absolute top-1/2 -translate-y-1/2 h-1 rounded-full bg-indigo-600"
+                             style="left: {{ $startPos }}%; width: {{ max(0, $endPos - $startPos) }}%;"></div>
+
+                        <input type="range" min="0" max="{{ $sliderSpan }}" wire:model.live.debounce.400ms="projStartDays"
+                               @if ($totalDays === 0) disabled @endif
+                               aria-label="Projection start" class="range-dual">
+                        <input type="range" min="0" max="{{ $sliderSpan }}" wire:model.live.debounce.400ms="projEndDays"
+                               @if ($totalDays === 0) disabled @endif
+                               aria-label="Projection end" class="range-dual">
+                    </div>
                     {{-- Dated scale under the slider, so a position on the bar reads as a date. --}}
                     @php
                         $span      = max(1, $totalDays);
@@ -137,22 +149,13 @@
                                 'align' => $i === 0 ? '0' : ($i === $tickCount - 1 ? '-100%' : '-50%'),
                             ];
                         }
-                        $startPct = min(100, max(0, ((int) $projStartDays / $span) * 100));
-                        $endPct   = min(100, max(0, ((int) $projEndDays / $span) * 100));
                     @endphp
                     <div class="relative h-8 mt-1">
-                        {{-- The selected span, so the two handles read as one window. --}}
-                        <span class="absolute top-0.5 h-1 bg-indigo-200 rounded-full"
-                              style="left: {{ $startPct }}%; width: {{ max(0, $endPct - $startPct) }}%;"></span>
-
                         @foreach ($ticks as $t)
                             <span class="absolute top-0 w-px h-1.5 bg-gray-300" style="left: {{ $t['pct'] }}%;"></span>
                             <span class="absolute top-2.5 text-[10px] text-gray-400 whitespace-nowrap"
                                   style="left: {{ $t['pct'] }}%; transform: translateX({{ $t['align'] }});">{{ $t['label'] }}</span>
                         @endforeach
-
-                        <span class="absolute top-0 w-0.5 h-2.5 bg-indigo-600 rounded-full" style="left: {{ $startPct }}%; transform: translateX(-50%);"></span>
-                        <span class="absolute top-0 w-0.5 h-2.5 bg-indigo-600 rounded-full" style="left: {{ $endPct }}%; transform: translateX(-50%);"></span>
                     </div>
                 </div>
 

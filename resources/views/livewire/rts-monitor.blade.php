@@ -110,9 +110,31 @@
                     <input type="range" min="0" max="{{ max(1, $totalDays) }}" wire:model.live.debounce.400ms="partialDays"
                            @if ($totalDays === 0) disabled @endif
                            class="w-full accent-indigo-600 cursor-pointer">
-                    <div class="flex justify-between text-[10px] text-gray-400 mt-1">
-                        <span>{{ \Carbon\Carbon::parse($from)->format('M j') }}</span>
-                        <span>{{ \Carbon\Carbon::parse($to)->format('M j') }}</span>
+                    {{-- Dated scale under the slider, so a position on the bar reads as a date. --}}
+                    @php
+                        $span      = max(1, $totalDays);
+                        $tickCount = min(6, $span + 1);          // never more ticks than days
+                        $start     = \Carbon\Carbon::parse($from);
+                        $ticks     = [];
+                        for ($i = 0; $i < $tickCount; $i++) {
+                            $frac    = $tickCount > 1 ? $i / ($tickCount - 1) : 0;
+                            $ticks[] = [
+                                'pct'   => $frac * 100,
+                                'label' => $start->copy()->addDays((int) round($frac * $span))->format('M j'),
+                                'align' => $i === 0 ? '0' : ($i === $tickCount - 1 ? '-100%' : '-50%'),
+                            ];
+                        }
+                        $currentPct = min(100, max(0, ((int) $partialDays / $span) * 100));
+                    @endphp
+                    <div class="relative h-8 mt-1">
+                        @foreach ($ticks as $t)
+                            <span class="absolute top-0 w-px h-1.5 bg-gray-300" style="left: {{ $t['pct'] }}%;"></span>
+                            <span class="absolute top-2.5 text-[10px] text-gray-400 whitespace-nowrap"
+                                  style="left: {{ $t['pct'] }}%; transform: translateX({{ $t['align'] }});">{{ $t['label'] }}</span>
+                        @endforeach
+
+                        {{-- Where the slider currently sits. --}}
+                        <span class="absolute top-0 w-0.5 h-2.5 bg-indigo-600 rounded-full" style="left: {{ $currentPct }}%; transform: translateX(-50%);"></span>
                     </div>
                 </div>
 
@@ -125,7 +147,7 @@
                     <h2 class="text-sm font-semibold text-gray-800">📊 Full Range</h2>
                     <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($to)->format('M j, Y') }}{{ $activeFilters ? ' · filtered' : '' }}</span>
                 </div>
-                <div class="mt-[55px]">
+                <div class="mt-[72px]">
                     @include('partials.rts-pie', $full)
                 </div>
             </div>

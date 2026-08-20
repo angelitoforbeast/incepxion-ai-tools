@@ -218,7 +218,6 @@ class RtsMonitor extends Component
             $rtsPct       = round($rts / $total * 100, 2);
             $deliveredPct = round($delivered / $total * 100, 2);
             $transitPct   = round(max(0, 100 - $rtsPct - $deliveredPct), 2);
-            $settled      = $rts + $delivered;
 
             return [
                 'date_range'        => $fmt($r->min_sub).' to '.$fmt($r->max_sub),
@@ -232,7 +231,6 @@ class RtsMonitor extends Component
                 'rts_percent'       => $rtsPct,
                 'delivered_percent' => $deliveredPct,
                 'transit_percent'   => $transitPct,
-                'current_rts'       => $settled > 0 ? round($rts / $settled * 100, 2) : null,
             ];
         })->sortByDesc('rts_percent')->values()->all();
     }

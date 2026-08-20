@@ -140,10 +140,13 @@
                             <div class="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2"><div class="text-lg font-bold text-blue-700">{{ number_format($current->updated) }}</div><div class="text-xs text-gray-500">Updated</div></div>
                             <div class="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2"><div class="text-lg font-bold text-gray-600">{{ number_format($current->skipped) }}</div><div class="text-xs text-gray-500">Skipped (final)</div></div>
                         </div>
+                        @if ($current->user_message)
+                            <p class="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠️ {{ $current->user_message }}</p>
+                        @endif
                         <a href="{{ route('tools.rts.monitor') }}" wire:navigate class="mt-3 inline-block text-xs font-semibold text-indigo-600 hover:text-indigo-800">View RTS Monitoring →</a>
                         <button wire:click="dismissCurrent" class="mt-3 ml-3 text-xs font-semibold text-gray-400 hover:text-gray-600">Dismiss</button>
                     @elseif ($current->status === 'failed')
-                        <p class="text-sm text-red-600">❌ {{ $current->error_message ?: 'Processing failed.' }}</p>
+                        <p class="text-sm text-red-600">❌ {{ $current->user_message ?: 'This file couldn’t be processed. Please try again.' }}</p>
                         <button wire:click="dismissCurrent" class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-800">Dismiss</button>
                     @endif
                 </div>

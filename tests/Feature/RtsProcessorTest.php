@@ -146,6 +146,57 @@ class RtsProcessorTest extends TestCase
         Storage::disk('local')->assertMissing($upload->path);
     }
 
+    public function test_formula_in_required_column_fails_cleanly_no_crash(): void
+    {
+        $user = User::factory()->create();
+        // Order Status is a formula → cleared to empty → every row skipped. Must NOT crash,
+        // and the user message must be clean (no SQL), mentioning the required column.
+        $csv = "Waybill Number,Order Status,Item Name,Sender Name,Cod,Submission Time,SigningTime,Total Shipping Cost\n"
+            ."WB1,=A1,ITEM,ShopA,100,2026-07-01 08:00:00,2026-07-02 08:00:00,50\n"
+            ."WB2,=B2,ITEM,ShopA,100,2026-07-01 08:00:00,2026-07-02 08:00:00,50\n";
+
+        $upload = $this->makeUpload($user, $csv);
+        ProcessRtsUpload::dispatchSync($upload->id);
+        $fresh = $upload->fresh();
+
+        $this->assertSame('failed', $fresh->status);
+        $this->assertStringContainsString('Order Status', (string) $fresh->user_message);
+        $this->assertStringNotContainsString('SQLSTATE', (string) $fresh->user_message);
+        $this->assertSame(0, FromJnt::where('user_id', $user->id)->count());
+    }
+
+    public function test_oversized_value_is_truncated_not_crashed(): void
+    {
+        $user = User::factory()->create();
+        $long = str_repeat('X', 400); // > 255 → would overflow without truncation
+        $csv = "Waybill Number,Order Status,Item Name,Sender Name,Cod,Submission Time,SigningTime,Total Shipping Cost\n"
+            ."WB1,Delivered,{$long},ShopA,100,2026-07-01 08:00:00,2026-07-02 08:00:00,50\n";
+
+        $upload = $this->makeUpload($user, $csv);
+        ProcessRtsUpload::dispatchSync($upload->id);
+
+        $this->assertSame('done', $upload->fresh()->status);
+        $item = FromJnt::where('user_id', $user->id)->value('item_name');
+        $this->assertLessThanOrEqual(255, mb_strlen((string) $item));
+    }
+
+    public function test_skipped_rows_are_reported_on_success(): void
+    {
+        $user = User::factory()->create();
+        $csv = $this->jntCsv([
+            ['waybill' => 'WB1', 'status' => 'Delivered'],
+            ['waybill' => 'WB2', 'status' => ''], // empty required status → skipped
+        ]);
+
+        $upload = $this->makeUpload($user, $csv);
+        ProcessRtsUpload::dispatchSync($upload->id);
+        $fresh = $upload->fresh();
+
+        $this->assertSame('done', $fresh->status);
+        $this->assertSame(1, $fresh->inserted);
+        $this->assertStringContainsString('Skipped 1', (string) $fresh->user_message);
+    }
+
     public function test_scan_progress_is_reported(): void
     {
         $user = User::factory()->create();

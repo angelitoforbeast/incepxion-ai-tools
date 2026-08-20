@@ -75,28 +75,32 @@ class RtsFileParser
         }
 
         if (! in_array($ext, ['csv', 'xlsx'], true)) {
-            throw new RuntimeException('Unsupported file type: '.$ext.'. Please upload a CSV, XLSX, or ZIP.');
+            throw new \App\Exceptions\RtsFileInvalid('Unsupported file type. Please upload a CSV, XLSX, or ZIP export.');
         }
 
-        $rows  = [];
+        $rows = [];
         $total = 0;
-        $this->readFile($absPath, $ext, $rows, $total, $cancelCheck);
+        $skippedCount = 0;
+        $skippedSample = [];
+        $this->readFile($absPath, $ext, $rows, $total, $skippedCount, $skippedSample, $cancelCheck);
 
-        return ['rows' => $rows, 'total' => $total];
+        return ['rows' => $rows, 'total' => $total, 'skipped_count' => $skippedCount, 'skipped_sample' => $skippedSample];
     }
 
     private function parseZip(string $zipPath, ?callable $cancelCheck = null): array
     {
         $zip = new ZipArchive();
         if ($zip->open($zipPath) !== true) {
-            throw new RuntimeException('Cannot open the ZIP file.');
+            throw new \App\Exceptions\RtsFileInvalid('Cannot open the ZIP file. Please upload a valid J&T export.');
         }
 
         $tmpDir = storage_path('app/tmp/rts_zip_'.uniqid());
         @mkdir($tmpDir, 0777, true);
 
-        $rows  = [];
+        $rows = [];
         $total = 0;
+        $skippedCount = 0;
+        $skippedSample = [];
         $found = false;
 
         try {
@@ -118,7 +122,7 @@ class RtsFileParser
                 fclose($out);
 
                 $found = true;
-                $this->readFile($target, $ext, $rows, $total, $cancelCheck);
+                $this->readFile($target, $ext, $rows, $total, $skippedCount, $skippedSample, $cancelCheck);
                 @unlink($target);
             }
         } finally {
@@ -127,14 +131,14 @@ class RtsFileParser
         }
 
         if (! $found) {
-            throw new RuntimeException('The ZIP has no CSV or XLSX files inside.');
+            throw new \App\Exceptions\RtsFileInvalid('The ZIP has no CSV or XLSX files inside.');
         }
 
-        return ['rows' => $rows, 'total' => $total];
+        return ['rows' => $rows, 'total' => $total, 'skipped_count' => $skippedCount, 'skipped_sample' => $skippedSample];
     }
 
     /** Stream one CSV/XLSX file, appending normalized rows into $rows (deduped by waybill). */
-    private function readFile(string $absPath, string $ext, array &$rows, int &$total, ?callable $cancelCheck = null): void
+    private function readFile(string $absPath, string $ext, array &$rows, int &$total, int &$skippedCount, array &$skippedSample, ?callable $cancelCheck = null): void
     {
         if ($ext === 'xlsx') {
             $reader = new XlsxReader();
@@ -151,9 +155,10 @@ class RtsFileParser
         $seen = 0;
         foreach ($reader->getSheetIterator() as $sheet) {
             foreach ($sheet->getRowIterator() as $row) {
-                // Every ~1000 rows: report progress + allow cancellation. The callback
-                // receives the running row count and returns true to abort the parse.
-                if ($cancelCheck !== null && (++$seen % 1000 === 0) && $cancelCheck($seen)) {
+                $seen++;
+
+                // Every ~1000 rows: report progress + allow cancellation.
+                if ($cancelCheck !== null && ($seen % 1000 === 0) && $cancelCheck($seen)) {
                     $reader->close();
                     throw new \App\Exceptions\RtsUploadCanceled('Upload canceled by user.');
                 }
@@ -166,13 +171,24 @@ class RtsFileParser
                     if (! empty($missing)) {
                         $reader->close();
                         $labels = array_map(fn ($c) => self::REQUIRED_LABELS[$c] ?? $c, $missing);
-                        throw new RuntimeException('Wrong file — these required J&T columns are missing: '.implode(', ', $labels).'. Please upload the complete J&T export.');
+                        throw new \App\Exceptions\RtsFileInvalid('Wrong file — these required J&T columns are missing: '.implode(', ', $labels).'. Please upload the complete J&T export.');
                     }
                     continue;
                 }
 
                 $norm = $this->normalizeRow($cells, $headerMap);
+
+                // A row can only be imported if its key required fields are real values.
+                // (Formula/blank cells were cleared to '' in normalizeRow.)
                 if ($norm['waybill_number'] === '' || $norm['status'] === '') {
+                    $skippedCount++;
+                    if (count($skippedSample) < 25) {
+                        $skippedSample[] = [
+                            'row'   => $seen,
+                            'field' => $norm['waybill_number'] === '' ? 'Waybill Number' : 'Order Status',
+                        ];
+                    }
+
                     continue;
                 }
 
@@ -226,8 +242,15 @@ class RtsFileParser
                 return $val->format('Y-m-d H:i:s');
             }
             $val = is_scalar($val) ? (string) $val : '';
+            $val = trim(preg_replace('/\s+/u', ' ', $val));
 
-            return trim(preg_replace('/\s+/u', ' ', $val));
+            // Un-evaluated Excel formula (e.g. "=IF(...)") — can't be read, so drop it.
+            if ($val !== '' && $val[0] === '=') {
+                return '';
+            }
+
+            // Never exceed the DB column length (guards against oversized/garbage cells).
+            return mb_substr($val, 0, 255);
         };
 
         return [

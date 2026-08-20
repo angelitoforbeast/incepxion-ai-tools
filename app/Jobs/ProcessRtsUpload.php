@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\RtsFileInvalid;
 use App\Exceptions\RtsUploadCanceled;
 use App\Models\FromJnt;
 use App\Models\RtsUpload;
@@ -63,8 +64,24 @@ class ProcessRtsUpload implements ShouldQueue
 
                 return $this->isCanceled();
             });
-            $rows   = $parsed['rows'];              // [waybill => normalized row]
+            $rows          = $parsed['rows'];       // [waybill => normalized row]
+            $skippedCount  = $parsed['skipped_count'] ?? 0;
+            $skippedSample = $parsed['skipped_sample'] ?? [];
             $upload->total_rows = count($rows);
+
+            // Nothing usable — every row's required keys (Waybill Number / Order Status)
+            // were blank or a formula. Fail cleanly with a user-safe message.
+            if (count($rows) === 0) {
+                $this->deleteSource($upload);
+                $upload->forceFill([
+                    'status'        => 'failed',
+                    'user_message'  => $this->buildNoValidRowsMessage($skippedSample),
+                    'error_message' => 'No valid rows after parse (required keys empty/formula).',
+                    'finished_at'   => Carbon::now('Asia/Manila'),
+                ])->save();
+
+                return;
+            }
 
             $waybills = array_keys($rows);
 
@@ -112,23 +129,61 @@ class ProcessRtsUpload implements ShouldQueue
             $this->deleteSource($upload); // data is now in from_jnts
 
             $upload->forceFill([
-                'status'      => 'done',
-                'finished_at' => Carbon::now('Asia/Manila'),
+                'status'       => 'done',
+                'user_message' => $skippedCount > 0 ? $this->buildSkippedMessage($skippedCount, $skippedSample) : null,
+                'finished_at'  => Carbon::now('Asia/Manila'),
             ])->save();
         } catch (RtsUploadCanceled $e) {
             // User stopped it — clean finish, no failed_jobs entry.
             $this->finalizeCanceled($upload);
-        } catch (\Throwable $e) {
-            $this->deleteSource($upload); // auto-clean even on failure (no retries)
-
+        } catch (RtsFileInvalid $e) {
+            // Clean, user-facing validation error (safe message — only required columns).
+            $this->deleteSource($upload);
             $upload->forceFill([
                 'status'        => 'failed',
-                'error_message' => mb_substr($e->getMessage(), 0, 1000),
+                'user_message'  => $e->getMessage(),
+                'error_message' => $e->getMessage(),
+                'finished_at'   => Carbon::now('Asia/Manila'),
+            ])->save();
+        } catch (\Throwable $e) {
+            // Unexpected/technical error — hide the details from the user, keep the full
+            // detail for admins (error_message + the app error log).
+            $this->deleteSource($upload);
+            \Illuminate\Support\Facades\Log::error('RTS upload failed', [
+                'upload' => $upload->id, 'user' => $upload->user_id, 'error' => $e->getMessage(),
+            ]);
+            $upload->forceFill([
+                'status'        => 'failed',
+                'user_message'  => 'Couldn’t process this file. Please make sure it’s a plain J&T export (no formulas) with the complete required columns, then try again.',
+                'error_message' => mb_substr($e->getMessage(), 0, 2000),
                 'finished_at'   => Carbon::now('Asia/Manila'),
             ])->save();
 
             throw $e;
         }
+    }
+
+    /** User-safe summary when some rows were skipped for invalid required data. */
+    private function buildSkippedMessage(int $count, array $sample): string
+    {
+        return "Imported. Skipped {$count} row(s) with missing/invalid required data".$this->sampleSuffix($sample).'.';
+    }
+
+    /** User-safe message when no rows could be imported at all. */
+    private function buildNoValidRowsMessage(array $sample): string
+    {
+        return 'No rows could be imported — the required Waybill Number / Order Status columns are empty or contain formulas'
+            .$this->sampleSuffix($sample).'. Please upload a plain-values J&T export.';
+    }
+
+    private function sampleSuffix(array $sample): string
+    {
+        if (empty($sample)) {
+            return '';
+        }
+        $parts = array_map(fn ($s) => 'row '.$s['row'].' ('.$s['field'].')', array_slice($sample, 0, 5));
+
+        return ' — e.g. '.implode(', ', $parts);
     }
 
     /**

@@ -26,6 +26,7 @@ class RtsUpload extends Model
         'conflict_count',
         'conflicts',
         'error_message',
+        'user_message',
         'started_at',
         'finished_at',
         'canceled_at',

@@ -6,9 +6,11 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Services\VdoCipherService;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Course')]
 class CourseShow extends Component
 {
     public Course $course;

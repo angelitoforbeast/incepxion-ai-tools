@@ -3,9 +3,11 @@
 namespace App\Livewire;
 
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Account Status')]
 class AccountRejected extends Component
 {
     public function mount()

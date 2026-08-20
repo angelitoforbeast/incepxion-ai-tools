@@ -5,10 +5,12 @@ namespace App\Livewire\Admin;
 use App\Models\AccessLog as AccessLogModel;
 use App\Models\User;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
+#[Title('Admin · Access Log')]
 class AccessLog extends Component
 {
     use WithPagination;

@@ -7,9 +7,11 @@ use App\Models\Tool;
 use App\Services\AdCopyService;
 use App\Services\SalesPromptService;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Admin · Prompts')]
 class PromptManager extends Component
 {
     public string $systemPrompt = '';

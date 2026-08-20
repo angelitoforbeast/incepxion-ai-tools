@@ -7,9 +7,11 @@ use App\Models\Lesson;
 use App\Models\Setting;
 use App\Services\VdoCipherService;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Admin · Courses')]
 class CourseManager extends Component
 {
     // Watermark settings (global)

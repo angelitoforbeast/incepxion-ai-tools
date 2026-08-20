@@ -1,9 +1,10 @@
 <?php
 
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.guest')] class extends Component {}; ?>
+new #[Layout('layouts.guest')] #[Title('Register')] class extends Component {}; ?>
 
 <div>
     <div class="text-center mb-6">

@@ -4,10 +4,12 @@ namespace App\Livewire\Admin;
 
 use App\Models\ErrorLog;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
+#[Title('Admin · Error Logs')]
 class ErrorLogs extends Component
 {
     use WithPagination;

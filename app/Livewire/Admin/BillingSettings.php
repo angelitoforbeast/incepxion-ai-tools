@@ -5,9 +5,11 @@ namespace App\Livewire\Admin;
 use App\Livewire\Settle;
 use App\Models\Setting;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Admin · Billing')]
 class BillingSettings extends Component
 {
     public string $message = '';

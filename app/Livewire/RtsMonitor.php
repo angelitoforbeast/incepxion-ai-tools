@@ -5,9 +5,11 @@ namespace App\Livewire;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('RTS Monitoring')]
 class RtsMonitor extends Component
 {
     public string $from = '';

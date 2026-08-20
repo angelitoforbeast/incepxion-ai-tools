@@ -3,9 +3,11 @@
 namespace App\Livewire;
 
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Pending Approval')]
 class ApprovalPending extends Component
 {
     public function mount()

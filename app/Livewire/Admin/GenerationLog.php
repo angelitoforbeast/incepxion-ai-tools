@@ -4,10 +4,12 @@ namespace App\Livewire\Admin;
 
 use App\Models\Generation;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
+#[Title('Admin · Data Logs')]
 class GenerationLog extends Component
 {
     use WithPagination;

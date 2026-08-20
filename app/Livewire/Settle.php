@@ -4,9 +4,11 @@ namespace App\Livewire;
 
 use App\Models\Setting;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Settle Account')]
 class Settle extends Component
 {
     public static function defaults(): array

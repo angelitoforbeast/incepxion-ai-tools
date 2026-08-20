@@ -7,11 +7,13 @@ use App\Models\Tool;
 use App\Services\AdCopyService;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 #[Layout('layouts.app')]
+#[Title('Ad Copy Generator')]
 class AdCopyGenerator extends Component
 {
     use WithFileUploads;

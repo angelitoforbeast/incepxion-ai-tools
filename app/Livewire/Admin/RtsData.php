@@ -7,10 +7,12 @@ use App\Models\RtsUpload;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
+#[Title('Admin · RTS Data')]
 class RtsData extends Component
 {
     use WithPagination;

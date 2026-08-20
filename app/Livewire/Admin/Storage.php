@@ -5,9 +5,11 @@ namespace App\Livewire\Admin;
 use App\Models\FromJnt;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Admin · Storage')]
 class Storage extends Component
 {
     private function human($bytes): string

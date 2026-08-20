@@ -4,9 +4,11 @@ namespace App\Livewire\Courses;
 
 use App\Models\Course;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Courses')]
 class CourseIndex extends Component
 {
     public function render()

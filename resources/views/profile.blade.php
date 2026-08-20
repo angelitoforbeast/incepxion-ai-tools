@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Profile">
     <x-slot name="header">
         <div>
             <h1 class="text-xl font-bold text-slate-900">Profile</h1>

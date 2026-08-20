@@ -7,10 +7,12 @@ use App\Models\RtsUpload;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 #[Layout('layouts.app')]
+#[Title('RTS Processor')]
 class RtsProcessor extends Component
 {
     use WithFileUploads;

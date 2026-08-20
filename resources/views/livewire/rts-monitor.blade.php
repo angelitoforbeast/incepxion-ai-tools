@@ -117,10 +117,12 @@
                         $start     = \Carbon\Carbon::parse($from);
                         $ticks     = [];
                         for ($i = 0; $i < $tickCount; $i++) {
-                            $frac    = $tickCount > 1 ? $i / ($tickCount - 1) : 0;
+                            // Pick the day FIRST, then derive the position from it. Deriving the
+                            // two separately let a tick's label drift off its own date's spot.
+                            $day     = $tickCount > 1 ? (int) round($i * $span / ($tickCount - 1)) : 0;
                             $ticks[] = [
-                                'pct'   => $frac * 100,
-                                'label' => $start->copy()->addDays((int) round($frac * $span))->format('M j'),
+                                'pct'   => ($day / $span) * 100,
+                                'label' => $start->copy()->addDays($day)->format('M j'),
                                 'align' => $i === 0 ? '0' : ($i === $tickCount - 1 ? '-100%' : '-50%'),
                             ];
                         }

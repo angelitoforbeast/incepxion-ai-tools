@@ -95,8 +95,9 @@
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <div class="flex items-center gap-2 text-sm text-gray-600">
                                     <svg class="animate-spin w-4 h-4 text-indigo-500 flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                    @php $saved = (int) $current->inserted + (int) $current->updated + (int) $current->skipped; @endphp
                                     @if ($current->status === 'processing')
-                                        <span>Saving to database…</span>
+                                        <span>Importing… <strong>{{ number_format($saved) }}</strong> rows saved</span>
                                     @elseif ($current->scanned_rows > 0)
                                         <span>Scanning… <strong>{{ number_format($current->scanned_rows) }}</strong> rows read</span>
                                     @else
@@ -118,7 +119,7 @@
                                 </div>
                                 {{-- Plain form submit (not Livewire) so Cancel works even if the tab's Livewire runtime is stale. --}}
                                 <form method="POST" action="{{ route('tools.rts.cancel') }}" class="flex-shrink-0"
-                                      onsubmit="return confirm('Stop this upload? Any progress will be discarded and no data imported.');">
+                                      onsubmit="return confirm('Stop this upload? Rows already saved will stay imported; the rest of the file will be skipped.');">
                                     @csrf
                                     <input type="hidden" name="upload" value="{{ $current->id }}">
                                     <button type="submit"
@@ -130,7 +131,7 @@
                             <p class="text-xs text-gray-400">You can keep using the app — this runs in the background.</p>
                         </div>
                     @elseif ($current->status === 'canceled')
-                        <p class="text-sm text-gray-500">🛑 Upload canceled — no data was imported from this file.</p>
+                        <p class="text-sm text-gray-500">🛑 {{ $current->user_message ?: 'Upload canceled — no data was imported from this file.' }}</p>
                         <button wire:click="dismissCurrent" class="mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-800">Dismiss</button>
                     @elseif ($current->status === 'done')
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">

@@ -77,6 +77,8 @@ class RtsProcessorTest extends TestCase
 
         $this->assertSame('needs_confirmation', $upload->status);
         $this->assertSame(1, $upload->conflict_count);
+        // Nothing may be written while we're still asking — WB2 is new and must not exist yet.
+        $this->assertFalse(FromJnt::where('waybill_number', 'WB2')->exists());
 
         // User continues: apply, skipping backward rows.
         $upload->update(['status' => 'processing']);
@@ -341,6 +343,33 @@ class RtsProcessorTest extends TestCase
         $this->assertFalse(FromJnt::where('waybill_number', 'WB9')->exists());
     }
 
+    public function test_formula_mirror_sheet_is_skipped_for_the_real_data_sheet(): void
+    {
+        $user = User::factory()->create();
+
+        $upload = $this->makeXlsxUpload($user, [
+            // Same headers as the export, but every required cell is a formula pointing at
+            // the real sheet — it reads back blank, so it must not be chosen.
+            'View' => array_merge([self::JNT_HEADERS], array_map(fn ($i) => [
+                "=Data!A{$i}", "=Data!B{$i}", '=Data!C'.$i, 'ShopA', '100',
+                '2026-07-01 08:00:00', '', '50',
+            ], range(2, 60))),
+            'Data' => [
+                self::JNT_HEADERS,
+                ['WB1', 'Delivered', 'ITEM', 'ShopA', '100', '2026-07-01 08:00:00', '2026-07-02 08:00:00', '50'],
+                ['WB2', 'In Transit', 'ITEM', 'ShopA', '100', '2026-07-03 08:00:00', '', '50'],
+            ],
+        ]);
+
+        ProcessRtsUpload::dispatchSync($upload->id);
+
+        $upload->refresh();
+        $this->assertSame('done', $upload->status);
+        $this->assertSame(2, $upload->inserted);
+        $this->assertSame('Delivered', FromJnt::where('waybill_number', 'WB1')->value('status'));
+        $this->assertSame('In Transit', FromJnt::where('waybill_number', 'WB2')->value('status'));
+    }
+
     public function test_xlsx_with_no_matching_sheet_is_rejected_with_column_names(): void
     {
         $user = User::factory()->create();
@@ -359,6 +388,48 @@ class RtsProcessorTest extends TestCase
         $upload->refresh();
         $this->assertSame('failed', $upload->status);
         $this->assertStringContainsString('Waybill Number', (string) $upload->user_message);
+    }
+
+    public function test_file_larger_than_one_batch_is_written_in_batches(): void
+    {
+        $user = User::factory()->create();
+
+        // 6,000 rows spans two batches (5,000 + 1,000) — the whole point of streaming.
+        $rows = [];
+        for ($i = 1; $i <= 6000; $i++) {
+            $rows[] = ['waybill' => 'WB'.$i, 'status' => 'In Transit'];
+        }
+
+        $upload = $this->makeUpload($user, $this->jntCsv($rows));
+        ProcessRtsUpload::dispatchSync($upload->id);
+        $upload->refresh();
+
+        $this->assertSame('done', $upload->status);
+        $this->assertSame(6000, $upload->inserted);
+        $this->assertSame(6000, FromJnt::where('user_id', $user->id)->count());
+        // First and last rows both landed, so no batch was dropped in between.
+        $this->assertTrue(FromJnt::where('waybill_number', 'WB1')->exists());
+        $this->assertTrue(FromJnt::where('waybill_number', 'WB6000')->exists());
+    }
+
+    public function test_second_batch_updates_rows_written_by_the_first(): void
+    {
+        $user = User::factory()->create();
+
+        // The same waybill appears in batch 1 and again in batch 2; the later row wins.
+        $rows = [['waybill' => 'DUP', 'status' => 'In Transit']];
+        for ($i = 1; $i <= 5200; $i++) {
+            $rows[] = ['waybill' => 'WB'.$i, 'status' => 'In Transit'];
+        }
+        $rows[] = ['waybill' => 'DUP', 'status' => 'Delivered'];
+
+        $upload = $this->makeUpload($user, $this->jntCsv($rows));
+        ProcessRtsUpload::dispatchSync($upload->id);
+        $upload->refresh();
+
+        $this->assertSame('done', $upload->status);
+        $this->assertSame('Delivered', FromJnt::where('waybill_number', 'DUP')->value('status'));
+        $this->assertSame(1, FromJnt::where('waybill_number', 'DUP')->count());
     }
 
     public function test_monitor_classifies_strictly_by_status(): void

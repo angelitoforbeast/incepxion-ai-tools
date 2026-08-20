@@ -23,6 +23,7 @@ class ErrorLogger
         \Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class,
         \App\Exceptions\RtsFileInvalid::class,
         \App\Exceptions\RtsUploadCanceled::class,
+        \App\Exceptions\RtsNeedsConfirmation::class,
     ];
 
     public static function capture(Throwable $e): void

@@ -43,6 +43,13 @@ class RtsFileParser
     ];
 
     /** Columns that MUST be present for RTS + remittance to compute correctly. */
+    /**
+     * How many rows a sheet gets to produce one readable row before we move on. A sheet whose
+     * required cells are all formulas (a mirror of the real export) reads back blank, so
+     * matching headers alone can't tell us which sheet actually holds the data.
+     */
+    private const PROBE_ROWS = 50;
+
     private const REQUIRED = [
         'waybill_number', 'status', 'item_name', 'sender',
         'cod', 'submission_time', 'signingtime', 'total_shipping_cost',
@@ -66,12 +73,12 @@ class RtsFileParser
      *                                       rows as fn(int $rowsRead): bool. Return true to
      *                                       abort (throws App\Exceptions\RtsUploadCanceled).
      */
-    public function parse(string $absPath, string $ext, ?callable $cancelCheck = null): array
+    public function parse(string $absPath, string $ext, ?callable $cancelCheck = null, ?callable $onBatch = null, int $batchSize = 5000): array
     {
         $ext = strtolower($ext);
 
         if ($ext === 'zip') {
-            return $this->parseZip($absPath, $cancelCheck);
+            return $this->parseZip($absPath, $cancelCheck, $onBatch, $batchSize);
         }
 
         if (! in_array($ext, ['csv', 'xlsx'], true)) {
@@ -82,12 +89,12 @@ class RtsFileParser
         $total = 0;
         $skippedCount = 0;
         $skippedSample = [];
-        $this->readFile($absPath, $ext, $rows, $total, $skippedCount, $skippedSample, $cancelCheck);
+        $this->readFile($absPath, $ext, $rows, $total, $skippedCount, $skippedSample, $cancelCheck, $onBatch, $batchSize);
 
         return ['rows' => $rows, 'total' => $total, 'skipped_count' => $skippedCount, 'skipped_sample' => $skippedSample];
     }
 
-    private function parseZip(string $zipPath, ?callable $cancelCheck = null): array
+    private function parseZip(string $zipPath, ?callable $cancelCheck = null, ?callable $onBatch = null, int $batchSize = 5000): array
     {
         $zip = new ZipArchive();
         if ($zip->open($zipPath) !== true) {
@@ -122,7 +129,7 @@ class RtsFileParser
                 fclose($out);
 
                 $found = true;
-                $this->readFile($target, $ext, $rows, $total, $skippedCount, $skippedSample, $cancelCheck);
+                $this->readFile($target, $ext, $rows, $total, $skippedCount, $skippedSample, $cancelCheck, $onBatch, $batchSize);
                 @unlink($target);
             }
         } finally {
@@ -138,7 +145,7 @@ class RtsFileParser
     }
 
     /** Stream one CSV/XLSX file, appending normalized rows into $rows (deduped by waybill). */
-    private function readFile(string $absPath, string $ext, array &$rows, int &$total, int &$skippedCount, array &$skippedSample, ?callable $cancelCheck = null): void
+    private function readFile(string $absPath, string $ext, array &$rows, int &$total, int &$skippedCount, array &$skippedSample, ?callable $cancelCheck = null, ?callable $onBatch = null, int $batchSize = 5000): void
     {
         if ($ext === 'xlsx') {
             $reader = new XlsxReader();
@@ -151,16 +158,44 @@ class RtsFileParser
 
         $reader->open($absPath);
 
-        // Import exactly ONE sheet: the first whose header row carries all the required J&T
-        // columns. Workbooks often carry extra helper sheets, and reading them too meant
-        // re-reading the same volume several times over (a 97k-row export scanned ~292k rows)
-        // while reusing the data sheet's column map on sheets that don't match it.
+        // Import exactly ONE sheet. A workbook often carries helper sheets beside the export:
+        // reading them all meant re-reading the same volume several times over (a 97k-row
+        // export scanned ~292k rows) and reusing one sheet's column map on sheets that don't
+        // share it. Matching headers alone isn't enough either — a sheet can mirror the export
+        // through formulas, which read back as blanks — so a sheet must also PROVE it holds
+        // real values before we commit to it.
         $processed    = false;
         $firstMissing = null;
+        $sawHeaders   = false;
+
+        // Store one parsed row, flushing the batch when it fills.
+        $ingest = function (array $norm) use (&$rows, &$total, $onBatch, $batchSize) {
+            $rows[$norm['waybill_number']] = $norm; // dedupe: last occurrence of a waybill wins
+            $total++;
+
+            // Hand the batch off to be written, then drop it. Keeps memory flat instead of
+            // growing with the file, and means the rows are saved as we go.
+            if ($onBatch !== null && count($rows) >= $batchSize) {
+                $onBatch($rows);
+                $rows = [];
+            }
+        };
+
+        $skip = function (array $norm, int $rowNo) use (&$skippedCount, &$skippedSample) {
+            $skippedCount++;
+            if (count($skippedSample) < 25) {
+                $skippedSample[] = [
+                    'row'   => $rowNo,
+                    'field' => $norm['waybill_number'] === '' ? 'Waybill Number' : 'Order Status',
+                ];
+            }
+        };
 
         foreach ($reader->getSheetIterator() as $sheet) {
             $headerMap = null;
             $seen      = 0;
+            $probe     = [];    // rows held back until the sheet proves itself
+            $committed = false;
 
             foreach ($sheet->getRowIterator() as $row) {
                 $seen++;
@@ -174,7 +209,8 @@ class RtsFileParser
 
                         continue 2; // not the data sheet — try the next one
                     }
-                    $headerMap = $candidate;
+                    $headerMap  = $candidate;
+                    $sawHeaders = true;
 
                     continue;
                 }
@@ -185,37 +221,46 @@ class RtsFileParser
                     throw new \App\Exceptions\RtsUploadCanceled('Upload canceled by user.');
                 }
 
-                $norm = $this->normalizeRow($cells, $headerMap);
+                $norm     = $this->normalizeRow($cells, $headerMap);
+                $isUsable = $norm['waybill_number'] !== '' && $norm['status'] !== '';
 
-                // A row can only be imported if its key required fields are real values.
-                // (Formula/blank cells were cleared to '' in normalizeRow.)
-                if ($norm['waybill_number'] === '' || $norm['status'] === '') {
-                    $skippedCount++;
-                    if (count($skippedSample) < 25) {
-                        $skippedSample[] = [
-                            'row'   => $seen,
-                            'field' => $norm['waybill_number'] === '' ? 'Waybill Number' : 'Order Status',
-                        ];
+                if (! $committed) {
+                    $probe[] = [$seen, $norm];
+
+                    if ($isUsable) {
+                        // Real data — take this sheet and replay what we held back.
+                        $committed = true;
+                        foreach ($probe as [$n, $p]) {
+                            ($p['waybill_number'] !== '' && $p['status'] !== '') ? $ingest($p) : $skip($p, $n);
+                        }
+                        $probe = [];
+                    } elseif (count($probe) >= self::PROBE_ROWS) {
+                        // Headers match but nothing readable — a formula mirror of the real
+                        // sheet. Leave it untouched and keep looking.
+                        continue 2;
                     }
 
                     continue;
                 }
 
-                // Dedupe within the file — last occurrence of a waybill wins.
-                $rows[$norm['waybill_number']] = $norm;
-                $total++;
+                $isUsable ? $ingest($norm) : $skip($norm, $seen);
             }
 
-            if ($headerMap !== null) {
+            if ($committed) {
                 $processed = true;
 
                 break; // done — every other sheet is ignored
+            }
+
+            // Sheet ended while still probing: keep whatever it did yield, if anything.
+            foreach ($probe as [$n, $p]) {
+                $skip($p, $n);
             }
         }
 
         $reader->close();
 
-        if (! $processed) {
+        if (! $processed && ! $sawHeaders) {
             $labels = array_map(fn ($c) => self::REQUIRED_LABELS[$c] ?? $c, $firstMissing ?? self::REQUIRED);
             throw new \App\Exceptions\RtsFileInvalid('Wrong file — these required J&T columns are missing: '.implode(', ', $labels).'. Please upload the complete J&T export.');
         }

@@ -250,6 +250,117 @@ class RtsProcessorTest extends TestCase
         $this->assertStringContainsString('Total Shipping Cost', (string) $upload->error_message);
     }
 
+    /** Write a real .xlsx whose sheets are [name => rows-of-cells]. */
+    private function makeXlsxUpload(User $user, array $sheets): RtsUpload
+    {
+        Storage::fake('local');
+        $abs = tempnam(sys_get_temp_dir(), 'rts').'.xlsx';
+
+        $writer = new \OpenSpout\Writer\XLSX\Writer();
+        $writer->openToFile($abs);
+        $first = true;
+        foreach ($sheets as $name => $rows) {
+            if (! $first) {
+                $writer->addNewSheetAndMakeItCurrent();
+            }
+            $writer->getCurrentSheet()->setName($name);
+            foreach ($rows as $cells) {
+                $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues($cells));
+            }
+            $first = false;
+        }
+        $writer->close();
+
+        $path = 'uploads/rts/test.xlsx';
+        Storage::disk('local')->put($path, file_get_contents($abs));
+        @unlink($abs);
+
+        return RtsUpload::create([
+            'user_id' => $user->id, 'original_name' => 'test.xlsx',
+            'disk' => 'local', 'path' => $path, 'status' => 'queued',
+        ]);
+    }
+
+    private const JNT_HEADERS = [
+        'Waybill Number', 'Order Status', 'Item Name', 'Sender Name',
+        'Cod', 'Submission Time', 'SigningTime', 'Total Shipping Cost',
+    ];
+
+    public function test_only_the_matching_sheet_is_imported(): void
+    {
+        $user = User::factory()->create();
+
+        $upload = $this->makeXlsxUpload($user, [
+            // A helper sheet that is NOT the J&T export — must be ignored entirely.
+            'Helper' => [
+                ['Shop', 'Notes'],
+                ['SHOP 1', 'ignore me'],
+                ['SHOP 2', 'ignore me too'],
+            ],
+            'Export' => [
+                self::JNT_HEADERS,
+                ['WB1', 'Delivered', 'ITEM', 'ShopA', '100', '2026-07-01 08:00:00', '2026-07-02 08:00:00', '50'],
+                ['WB2', 'In Transit', 'ITEM', 'ShopA', '100', '2026-07-03 08:00:00', '', '50'],
+            ],
+        ]);
+
+        ProcessRtsUpload::dispatchSync($upload->id);
+
+        $upload->refresh();
+        $this->assertSame('done', $upload->status);
+        $this->assertSame(2, FromJnt::where('user_id', $user->id)->count());
+        $this->assertSame(2, $upload->inserted);
+        // The helper sheet's rows never became skipped rows — it was skipped as a whole.
+        $this->assertSame(0, $upload->skipped);
+        $this->assertNull($upload->user_message);
+    }
+
+    public function test_sheets_after_the_data_sheet_are_ignored(): void
+    {
+        $user = User::factory()->create();
+
+        $upload = $this->makeXlsxUpload($user, [
+            'Export' => [
+                self::JNT_HEADERS,
+                ['WB1', 'Delivered', 'ITEM', 'ShopA', '100', '2026-07-01 08:00:00', '2026-07-02 08:00:00', '50'],
+            ],
+            // A second copy of the data must NOT be read again (this is what inflated the
+            // scanned-row count to ~3x the file's real size).
+            'Copy' => [
+                self::JNT_HEADERS,
+                ['WB9', 'Delivered', 'ITEM', 'ShopA', '100', '2026-07-04 08:00:00', '2026-07-05 08:00:00', '50'],
+            ],
+        ]);
+
+        ProcessRtsUpload::dispatchSync($upload->id);
+
+        $upload->refresh();
+        $this->assertSame('done', $upload->status);
+        $this->assertSame(1, FromJnt::where('user_id', $user->id)->count());
+        $this->assertTrue(FromJnt::where('waybill_number', 'WB1')->exists());
+        $this->assertFalse(FromJnt::where('waybill_number', 'WB9')->exists());
+    }
+
+    public function test_xlsx_with_no_matching_sheet_is_rejected_with_column_names(): void
+    {
+        $user = User::factory()->create();
+
+        $upload = $this->makeXlsxUpload($user, [
+            'One' => [['Shop', 'Notes'], ['SHOP 1', 'x']],
+            'Two' => [['A', 'B'], ['1', '2']],
+        ]);
+
+        try {
+            ProcessRtsUpload::dispatchSync($upload->id);
+        } catch (\Throwable $e) {
+            // rethrown after marking failed
+        }
+
+        $upload->refresh();
+        $this->assertSame('failed', $upload->status);
+        $this->assertStringContainsString('Waybill Number', (string) $upload->user_message);
+    }
+
     public function test_monitor_classifies_strictly_by_status(): void
     {
         $user = User::factory()->create();

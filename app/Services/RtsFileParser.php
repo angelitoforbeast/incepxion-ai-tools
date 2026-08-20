@@ -151,29 +151,38 @@ class RtsFileParser
 
         $reader->open($absPath);
 
-        $headerMap = null;
-        $seen = 0;
+        // Import exactly ONE sheet: the first whose header row carries all the required J&T
+        // columns. Workbooks often carry extra helper sheets, and reading them too meant
+        // re-reading the same volume several times over (a 97k-row export scanned ~292k rows)
+        // while reusing the data sheet's column map on sheets that don't match it.
+        $processed    = false;
+        $firstMissing = null;
+
         foreach ($reader->getSheetIterator() as $sheet) {
+            $headerMap = null;
+            $seen      = 0;
+
             foreach ($sheet->getRowIterator() as $row) {
                 $seen++;
+                $cells = $row->toArray();
+
+                if ($headerMap === null) {
+                    $candidate = $this->buildHeaderMap($cells);
+                    $missing   = $this->missingRequired($candidate);
+                    if (! empty($missing)) {
+                        $firstMissing ??= $missing;
+
+                        continue 2; // not the data sheet — try the next one
+                    }
+                    $headerMap = $candidate;
+
+                    continue;
+                }
 
                 // Every ~1000 rows: report progress + allow cancellation.
                 if ($cancelCheck !== null && ($seen % 1000 === 0) && $cancelCheck($seen)) {
                     $reader->close();
                     throw new \App\Exceptions\RtsUploadCanceled('Upload canceled by user.');
-                }
-
-                $cells = $row->toArray();
-
-                if ($headerMap === null) {
-                    $headerMap = $this->buildHeaderMap($cells);
-                    $missing = $this->missingRequired($headerMap);
-                    if (! empty($missing)) {
-                        $reader->close();
-                        $labels = array_map(fn ($c) => self::REQUIRED_LABELS[$c] ?? $c, $missing);
-                        throw new \App\Exceptions\RtsFileInvalid('Wrong file — these required J&T columns are missing: '.implode(', ', $labels).'. Please upload the complete J&T export.');
-                    }
-                    continue;
                 }
 
                 $norm = $this->normalizeRow($cells, $headerMap);
@@ -196,9 +205,20 @@ class RtsFileParser
                 $rows[$norm['waybill_number']] = $norm;
                 $total++;
             }
+
+            if ($headerMap !== null) {
+                $processed = true;
+
+                break; // done — every other sheet is ignored
+            }
         }
 
         $reader->close();
+
+        if (! $processed) {
+            $labels = array_map(fn ($c) => self::REQUIRED_LABELS[$c] ?? $c, $firstMissing ?? self::REQUIRED);
+            throw new \App\Exceptions\RtsFileInvalid('Wrong file — these required J&T columns are missing: '.implode(', ', $labels).'. Please upload the complete J&T export.');
+        }
     }
 
     /** Map each column index to a from_jnts field by EXACT header name (first match wins). */

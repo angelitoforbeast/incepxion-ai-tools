@@ -21,6 +21,24 @@ class SalesPromptService
     /** Placeholder fields that must be filled before generating. */
     public const REQUIRED = ['STORE_NAME', 'PRODUCT_PRICE', 'PROMO'];
 
+    /**
+     * Max character length per placeholder field. Single source of truth for both the
+     * server-side validation and the client-side maxlength/counter — bounds each field so
+     * the stored generation row (input JSON) can never balloon.
+     */
+    public const MAX = [
+        'STORE_NAME'          => 100,
+        'PRODUCT_NAME'        => 200,
+        'PRODUCT_INFORMATION' => 4000,
+        'PRODUCT_FEATURES'    => 2000,
+        'PRODUCT_PRICE'       => 100,
+        'PROMO'               => 500,
+        'DELIVERY_TIME'       => 200,
+        'PAYMENT_METHOD'      => 100,
+        'LEGITIMACY_INFO'     => 1000,
+        'ORDER_FIELDS'        => 1000,
+    ];
+
     /** System default values applied before the user's own saved defaults. */
     public const DEFAULTS = [
         'PAYMENT_METHOD' => 'COD',

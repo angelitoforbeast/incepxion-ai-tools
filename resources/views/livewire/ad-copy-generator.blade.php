@@ -73,14 +73,14 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service Name</label>
-                    <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum"
+                    <input type="text" wire:model="product_name" placeholder="e.g. GlowUp Vitamin C Serum" maxlength="200"
                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                     @error('product_name') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea wire:model="product_description" rows="4" placeholder="What is the product, benefits, price, offer..."
+                    <textarea wire:model="product_description" rows="4" maxlength="4000" placeholder="What is the product, benefits, price, offer..."
                               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
                     @error('product_description') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
@@ -94,13 +94,17 @@
                             <span wire:loading wire:target="generateFeatures">Generating…</span>
                         </button>
                     </div>
-                    <textarea wire:model="sp.PRODUCT_FEATURES" rows="3" placeholder="✅ Feature 1&#10;✅ Feature 2&#10;✅ Feature 3"
-                              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                    <div x-data="{ n: {{ mb_strlen($sp['PRODUCT_FEATURES'] ?? '') }} }">
+                        <textarea wire:model="sp.PRODUCT_FEATURES" rows="3" maxlength="2000" x-on:input="n = $event.target.value.length" placeholder="✅ Feature 1&#10;✅ Feature 2&#10;✅ Feature 3"
+                                  class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                        <div class="mt-0.5 text-right text-[10px] text-gray-400"><span x-text="n">0</span>/2,000</div>
+                    </div>
+                    @error('sp.PRODUCT_FEATURES') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Target Audience <span class="text-gray-400">(optional)</span></label>
-                    <input type="text" wire:model="audience" placeholder="e.g. Moms 25-40, budget-conscious"
+                    <input type="text" wire:model="audience" placeholder="e.g. Moms 25-40, budget-conscious" maxlength="500"
                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                 </div>
 
@@ -123,7 +127,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tone</label>
-                    <input type="text" wire:model="tone" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    <input type="text" wire:model="tone" maxlength="60" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                 </div>
 
                 <div x-data="{ c: @entangle('creativity') }">
@@ -160,10 +164,14 @@
                                         </button>
                                     @endif
                                 </div>
+                                @php $spMax = \App\Services\SalesPromptService::MAX[$k] ?? 1000; @endphp
                                 @if (in_array($k, $spMulti))
-                                    <textarea wire:model="sp.{{ $k }}" rows="{{ $k === 'PRODUCT_FEATURES' ? 3 : 2 }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                                    <div x-data="{ n: {{ mb_strlen($sp[$k] ?? '') }} }">
+                                        <textarea wire:model="sp.{{ $k }}" rows="{{ $k === 'PRODUCT_FEATURES' ? 3 : 2 }}" maxlength="{{ $spMax }}" x-on:input="n = $event.target.value.length" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
+                                        <div class="mt-0.5 text-right text-[10px] text-gray-400"><span x-text="n">0</span>/{{ number_format($spMax) }}</div>
+                                    </div>
                                 @else
-                                    <input type="text" wire:model="sp.{{ $k }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                    <input type="text" wire:model="sp.{{ $k }}" maxlength="{{ $spMax }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 @endif
                                 @error('sp.'.$k) <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                             </div>
@@ -226,7 +234,7 @@
                             <div class="mt-3 border-t border-gray-100 pt-3">
                                 <label class="text-xs font-semibold text-gray-500">🧪 Test this prompt — type a customer message:</label>
                                 <div class="flex gap-2 mt-1">
-                                    <input type="text" wire:model="salesTestInput" wire:keydown.enter.prevent="testSales" placeholder="e.g. Magkano po? Legit ba kayo?"
+                                    <input type="text" wire:model="salesTestInput" wire:keydown.enter.prevent="testSales" maxlength="2000" placeholder="e.g. Magkano po? Legit ba kayo?"
                                            class="flex-1 rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <button type="button" wire:click="testSales" wire:loading.attr="disabled" wire:target="testSales"
                                             class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
@@ -258,7 +266,7 @@
                             <div class="mt-3 border-t border-gray-100 pt-3">
                                 <label class="text-xs font-semibold text-gray-500">🧪 Test this prompt — type a customer message:</label>
                                 <div class="flex gap-2 mt-1">
-                                    <input type="text" wire:model="afterSalesTestInput" wire:keydown.enter.prevent="testAfterSales" placeholder="e.g. Nasaan na po order ko? Pwede po bang buksan?"
+                                    <input type="text" wire:model="afterSalesTestInput" wire:keydown.enter.prevent="testAfterSales" maxlength="2000" placeholder="e.g. Nasaan na po order ko? Pwede po bang buksan?"
                                            class="flex-1 rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <button type="button" wire:click="testAfterSales" wire:loading.attr="disabled" wire:target="testAfterSales"
                                             class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">

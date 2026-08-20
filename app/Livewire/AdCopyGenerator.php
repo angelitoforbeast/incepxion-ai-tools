@@ -55,8 +55,10 @@ class AdCopyGenerator extends Component
     public array $sequenceMessages = [];
 
     // Prompt playground (test a customer message against the generated prompt)
+    #[Validate('nullable|string|max:2000')]
     public string $salesTestInput = '';
     public ?string $salesTestReply = null;
+    #[Validate('nullable|string|max:2000')]
     public string $afterSalesTestInput = '';
     public ?string $afterSalesTestReply = null;
 
@@ -88,9 +90,28 @@ class AdCopyGenerator extends Component
         $this->sp = $sp;
     }
 
+    /** Length caps for every persisted text field (guards the stored JSON row size). */
+    private function lengthRules(): array
+    {
+        $rules = [
+            'product_name'        => ['nullable', 'string', 'max:200'],
+            'product_description' => ['nullable', 'string', 'max:4000'],
+            'audience'            => ['nullable', 'string', 'max:500'],
+            'tone'                => ['nullable', 'string', 'max:60'],
+        ];
+        foreach (array_keys(\App\Services\SalesPromptService::FIELDS) as $key) {
+            $rules['sp.'.$key] = ['nullable', 'string', 'max:'.(\App\Services\SalesPromptService::MAX[$key] ?? 1000)];
+        }
+
+        return $rules;
+    }
+
     /** Save ALL current inputs as this user's defaults. */
     public function saveDefaults(): void
     {
+        // Cap every field so a bypassed client can't store an oversized defaults blob.
+        $this->validate($this->lengthRules());
+
         auth()->user()->update(['sp_defaults' => [
             'product_name'        => $this->product_name,
             'product_description' => $this->product_description,
@@ -115,12 +136,16 @@ class AdCopyGenerator extends Component
     {
         $this->validate();
 
-        // Required sales-prompt placeholder fields.
+        // Sales-prompt placeholder fields: required ones must be filled, and EVERY field is
+        // length-capped so the stored generation row can't balloon (see SalesPromptService::MAX).
         $rules = [];
         $messages = [];
-        foreach (\App\Services\SalesPromptService::REQUIRED as $key) {
-            $rules['sp.'.$key] = ['required', 'string'];
+        foreach (array_keys(\App\Services\SalesPromptService::FIELDS) as $key) {
+            $max = \App\Services\SalesPromptService::MAX[$key] ?? 1000;
+            $required = in_array($key, \App\Services\SalesPromptService::REQUIRED, true);
+            $rules['sp.'.$key] = [$required ? 'required' : 'nullable', 'string', 'max:'.$max];
             $messages['sp.'.$key.'.required'] = \App\Services\SalesPromptService::FIELDS[$key].' is required.';
+            $messages['sp.'.$key.'.max'] = \App\Services\SalesPromptService::FIELDS[$key].' is too long (max '.number_format($max).' characters).';
         }
         $this->validate($rules, $messages);
 
@@ -419,6 +444,8 @@ class AdCopyGenerator extends Component
     /** Run one customer message against the generated prompt and show the AI reply. */
     private function runTest(AdCopyService $service, string $type): void
     {
+        $this->validateOnly($type === 'aftersales' ? 'afterSalesTestInput' : 'salesTestInput');
+
         $prompt = $type === 'aftersales' ? $this->generatedAfterSalesPrompt : $this->generatedPrompt;
         $message = trim($type === 'aftersales' ? $this->afterSalesTestInput : $this->salesTestInput);
 

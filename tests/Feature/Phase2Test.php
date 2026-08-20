@@ -149,4 +149,55 @@ class Phase2Test extends TestCase
 
     // Note: daily-quota enforcement was intentionally removed (unlimited generation,
     // users bring their own OpenAI key), so the old over-quota guard test no longer applies.
+
+    public function test_generate_rejects_oversized_sales_prompt_field(): void
+    {
+        $user = $this->approvedUser();
+
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->set('product_name', 'Test')
+            ->set('product_description', 'A description')
+            ->set('sp.STORE_NAME', 'MyShop')
+            ->set('sp.PRODUCT_PRICE', 'P299')
+            ->set('sp.PROMO', str_repeat('x', 600))   // PROMO cap is 500
+            ->call('generate')
+            ->assertHasErrors(['sp.PROMO']);
+    }
+
+    public function test_generate_allows_field_at_the_limit(): void
+    {
+        $user = $this->approvedUser();
+
+        // At exactly the cap, the length rule passes (fails later only on the missing API key).
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->set('product_name', 'Test')
+            ->set('product_description', 'A description')
+            ->set('sp.STORE_NAME', 'MyShop')
+            ->set('sp.PRODUCT_PRICE', 'P299')
+            ->set('sp.PROMO', str_repeat('x', 500))
+            ->call('generate')
+            ->assertHasNoErrors(['sp.PROMO']);
+    }
+
+    public function test_save_defaults_rejects_oversized_field(): void
+    {
+        $user = $this->approvedUser();
+
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->set('sp.LEGITIMACY_INFO', str_repeat('x', 1200))   // cap is 1000
+            ->call('saveDefaults')
+            ->assertHasErrors(['sp.LEGITIMACY_INFO']);
+
+        $this->assertNull($user->fresh()->sp_defaults);
+    }
+
+    public function test_playground_rejects_oversized_message(): void
+    {
+        $user = $this->approvedUser();
+
+        Livewire::actingAs($user)->test(AdCopyGenerator::class)
+            ->set('salesTestInput', str_repeat('x', 2100))   // cap is 2000
+            ->call('testSales')
+            ->assertHasErrors(['salesTestInput']);
+    }
 }

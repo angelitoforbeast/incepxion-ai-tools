@@ -96,6 +96,7 @@ Route::middleware(['auth', 'admin'])->prefix('console-7k29fx')->group(function (
     Route::get('billing', \App\Livewire\Admin\BillingSettings::class)->name('admin.billing');
     Route::get('rts-data', \App\Livewire\Admin\RtsData::class)->name('admin.rts');
     Route::get('storage', \App\Livewire\Admin\Storage::class)->name('admin.storage');
+    Route::get('error-logs', \App\Livewire\Admin\ErrorLogs::class)->name('admin.errors');
     Route::get('logs', GenerationLog::class)->name('admin.logs');
 });
 

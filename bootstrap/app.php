@@ -26,4 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Mirror real errors into the admin Error Logs page (best-effort).
+        $exceptions->report(function (\Throwable $e): void {
+            \App\Support\ErrorLogger::capture($e);
+        });
     })->create();

@@ -88,6 +88,67 @@ class RtsRemittanceTest extends TestCase
             ->assertSet('adding', false);
     }
 
+    public function test_adding_an_existing_date_updates_it_instead_of_duplicating(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->setRate($user, '2026-08-01', 2, 12);
+        $this->actingAs($user);
+
+        Volt::test('profile.fee-rates-form')
+            ->call('startAdd')
+            ->set('newDate', '2026-08-01')
+            ->set('newCod', 3)
+            ->set('newVat', 12)
+            ->call('addRate')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, UserFeeRate::where('user_id', $user->id)->count());
+        $this->assertEqualsWithDelta(0.03, (float) UserFeeRate::where('user_id', $user->id)->value('cod_fee_rate'), 0.0001);
+    }
+
+    public function test_edit_loads_the_row_and_updates_it_in_place(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->setRate($user, '2026-08-01', 2, 12);
+        $this->actingAs($user);
+
+        $rate = UserFeeRate::where('user_id', $user->id)->first();
+
+        Volt::test('profile.fee-rates-form')
+            ->call('startEdit', $rate->id)
+            ->assertSet('adding', true)
+            ->assertSet('editingId', $rate->id)
+            ->assertSet('newDate', '2026-08-01')
+            ->set('newCod', 2.5)
+            ->call('addRate')
+            ->assertHasNoErrors()
+            ->assertSet('editingId', null);
+
+        // Same row updated — not a second one added.
+        $this->assertSame(1, UserFeeRate::where('user_id', $user->id)->count());
+        $this->assertEqualsWithDelta(0.025, (float) $rate->fresh()->cod_fee_rate, 0.0001);
+    }
+
+    public function test_edit_onto_a_date_another_rate_uses_is_rejected(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->setRate($user, '2026-08-01', 2, 12);
+        $this->setRate($user, '2026-08-02', 3, 12);
+        $this->actingAs($user);
+
+        $first = UserFeeRate::where('user_id', $user->id)->orderBy('effective_date')->first();
+
+        Volt::test('profile.fee-rates-form')
+            ->call('startEdit', $first->id)
+            ->set('newDate', '2026-08-02')   // already taken by the other row
+            ->call('addRate')
+            ->assertHasErrors(['newDate']);
+
+        // Nothing collapsed — both rows still there, first one untouched.
+        $this->assertSame(2, UserFeeRate::where('user_id', $user->id)->count());
+        $this->assertSame('2026-08-01', $first->fresh()->effective_date->format('Y-m-d'));
+    }
+
     public function test_add_form_stays_open_on_validation_error_and_closes_on_save(): void
     {
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);

@@ -8,17 +8,37 @@ new class extends Component {
     public $newCod = null;
     public $newVat = null;
 
-    /** The add form stays hidden behind a button until it's actually wanted. */
+    /** The form stays hidden behind a button until it's actually wanted. */
     public bool $adding = false;
+
+    /** Set when the form is editing an existing row rather than adding a new one. */
+    public ?int $editingId = null;
 
     public function startAdd(): void
     {
+        $this->reset('newDate', 'newCod', 'newVat', 'editingId');
+        $this->resetErrorBag();
         $this->adding = true;
+    }
+
+    public function startEdit(int $id): void
+    {
+        $rate = UserFeeRate::where('user_id', auth()->id())->whereKey($id)->first();
+        if (! $rate) {
+            return;
+        }
+
+        $this->resetErrorBag();
+        $this->editingId = $rate->id;
+        $this->newDate   = $rate->effective_date->format('Y-m-d');
+        $this->newCod    = (float) $rate->cod_fee_rate * 100;
+        $this->newVat    = (float) $rate->cod_fee_vat_rate * 100;
+        $this->adding    = true;
     }
 
     public function cancelAdd(): void
     {
-        $this->reset('newDate', 'newCod', 'newVat', 'adding');
+        $this->reset('newDate', 'newCod', 'newVat', 'adding', 'editingId');
         $this->resetErrorBag();
     }
 
@@ -34,16 +54,44 @@ new class extends Component {
             'newVat'  => 'VAT rate',
         ]);
 
-        // One row per effective date — re-adding the same date updates it.
-        UserFeeRate::updateOrCreate(
-            ['user_id' => auth()->id(), 'effective_date' => $this->newDate],
-            [
-                'cod_fee_rate'     => round(((float) $this->newCod) / 100, 6),
-                'cod_fee_vat_rate' => round(((float) $this->newVat) / 100, 6),
-            ],
-        );
+        $values = [
+            'cod_fee_rate'     => round(((float) $this->newCod) / 100, 6),
+            'cod_fee_vat_rate' => round(((float) $this->newVat) / 100, 6),
+        ];
 
-        $this->reset('newDate', 'newCod', 'newVat', 'adding');
+        // Match on the date part: effective_date is stored with a zero time, so comparing it
+        // to a plain 'Y-m-d' string never matches and we'd hit the unique index instead.
+        $onThatDate = UserFeeRate::where('user_id', auth()->id())
+            ->whereDate('effective_date', $this->newDate)
+            ->when($this->editingId, fn ($q) => $q->whereKeyNot($this->editingId))
+            ->first();
+
+        if ($this->editingId) {
+            $rate = UserFeeRate::where('user_id', auth()->id())->whereKey($this->editingId)->first();
+            if (! $rate) {
+                $this->cancelAdd();
+
+                return;
+            }
+
+            // Moving a rate onto a date another row already uses would collapse the two.
+            if ($onThatDate) {
+                $this->addError('newDate', 'You already have a rate for that date.');
+
+                return;
+            }
+
+            $rate->update($values + ['effective_date' => $this->newDate]);
+        } elseif ($onThatDate) {
+            $onThatDate->update($values); // one row per date — re-adding a date updates it
+        } else {
+            UserFeeRate::create($values + [
+                'user_id'        => auth()->id(),
+                'effective_date' => $this->newDate,
+            ]);
+        }
+
+        $this->reset('newDate', 'newCod', 'newVat', 'adding', 'editingId');
         session()->flash('fee-status', 'saved');
     }
 
@@ -85,7 +133,9 @@ new class extends Component {
                         <td class="px-3 py-2 whitespace-nowrap">{{ $rate->effective_date->format('M d, Y') }}</td>
                         <td class="px-3 py-2 text-right">{{ rtrim(rtrim(number_format($rate->cod_fee_rate * 100, 4), '0'), '.') }}%</td>
                         <td class="px-3 py-2 text-right">{{ rtrim(rtrim(number_format($rate->cod_fee_vat_rate * 100, 4), '0'), '.') }}%</td>
-                        <td class="px-3 py-2 text-right">
+                        <td class="px-3 py-2 text-right whitespace-nowrap">
+                            <button wire:click="startEdit({{ $rate->id }})" class="text-xs text-indigo-600 hover:underline">Edit</button>
+                            <span class="text-gray-300 mx-1">·</span>
                             <button wire:click="deleteRate({{ $rate->id }})" wire:confirm="Remove this rate?" class="text-xs text-red-600 hover:underline">Remove</button>
                         </td>
                     </tr>
@@ -107,7 +157,7 @@ new class extends Component {
         </div>
     @else
     <form wire:submit="addRate" class="mt-6 border-t border-gray-100 pt-4">
-        <p class="text-sm font-semibold text-gray-700 mb-2">Add a rate</p>
+        <p class="text-sm font-semibold text-gray-700 mb-2">{{ $editingId ? __('Edit rate') : __('Add a rate') }}</p>
         <div class="grid sm:grid-cols-3 gap-3">
             <div>
                 <x-input-label for="newDate" :value="__('Effective from')" />
@@ -126,7 +176,7 @@ new class extends Component {
             </div>
         </div>
         <div class="mt-3 flex items-center gap-4">
-            <x-primary-button>{{ __('Save rate') }}</x-primary-button>
+            <x-primary-button>{{ $editingId ? __('Update rate') : __('Save rate') }}</x-primary-button>
             <button type="button" wire:click="cancelAdd" class="text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
     </form>

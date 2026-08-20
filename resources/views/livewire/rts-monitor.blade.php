@@ -101,7 +101,6 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <div class="flex items-center justify-between mb-1">
                     <h2 class="text-sm font-semibold text-gray-800">🔮 RTS Projection</h2>
-                    <span class="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">Partial cohort</span>
                 </div>
                 <div class="mb-4 mt-3">
                     <div class="flex items-center justify-between text-xs mb-1">

@@ -26,7 +26,6 @@
                     <div class="flex items-center justify-between mb-3">
                         <div class="min-w-0">
                             <p class="font-semibold text-gray-900 truncate">{{ $current->original_name }}</p>
-                            <p class="text-xs text-gray-400">Upload #{{ $current->id }}</p>
                         </div>
                         @php
                             $badge = match ($current->status) {

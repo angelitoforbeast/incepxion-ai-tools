@@ -22,7 +22,17 @@ class ProcessRtsUpload implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 1200; // 20 min
-    public int $tries = 1;
+
+    /**
+     * Allow a couple of retries. A big export can be interrupted through no fault of the
+     * file — a deploy restarting the worker, or the worker hitting its memory ceiling —
+     * and previously that killed the upload outright ("attempted too many times").
+     * The source file is kept until the final attempt so a retry can actually re-read it.
+     */
+    public int $tries = 3;
+
+    /** Wait a few seconds between attempts (e.g. let a deploy finish). */
+    public array $backoff = [10, 30];
 
     private const INSERT_CHUNK = 1000;
     private const LOOKUP_CHUNK = 3000;
@@ -148,10 +158,17 @@ class ProcessRtsUpload implements ShouldQueue
         } catch (\Throwable $e) {
             // Unexpected/technical error — hide the details from the user, keep the full
             // detail for admins (error_message + the app error log).
-            $this->deleteSource($upload);
             \Illuminate\Support\Facades\Log::error('RTS upload failed', [
-                'upload' => $upload->id, 'user' => $upload->user_id, 'error' => $e->getMessage(),
+                'upload' => $upload->id, 'user' => $upload->user_id,
+                'attempt' => $this->attempts(), 'error' => $e->getMessage(),
             ]);
+
+            // Retries left: keep the source file and let the queue run it again.
+            if ($this->attempts() < $this->tries) {
+                throw $e;
+            }
+
+            $this->deleteSource($upload);
             $upload->forceFill([
                 'status'        => 'failed',
                 'user_message'  => 'Couldn’t process this file. Please make sure it’s a plain J&T export (no formulas) with the complete required columns, then try again.',
@@ -201,6 +218,10 @@ class ProcessRtsUpload implements ShouldQueue
         $this->deleteSource($upload);
         $upload->forceFill([
             'status'        => $upload->canceled_at ? 'canceled' : 'failed',
+            // Interrupted (not a bad file) — say so plainly, without the queue internals.
+            'user_message'  => $upload->canceled_at
+                ? null
+                : ($upload->user_message ?: 'Processing was interrupted before it could finish. Please upload the file again.'),
             'error_message' => $upload->error_message ?: ('Processing stopped: '.mb_substr($e->getMessage(), 0, 300)),
             'finished_at'   => Carbon::now('Asia/Manila'),
         ])->save();
@@ -241,7 +262,7 @@ class ProcessRtsUpload implements ShouldQueue
      * Insert new waybills; update non-final existing ones. FINAL rows (delivered/returned)
      * are never touched — regressions are skipped, preserving the final status.
      */
-    private function apply(RtsUpload $upload, array $rows, $existing): void
+    private function apply(RtsUpload $upload, array &$rows, $existing): void
     {
         $now = Carbon::now('Asia/Manila')->format('Y-m-d H:i:s');
 
@@ -250,63 +271,85 @@ class ProcessRtsUpload implements ShouldQueue
         $updNoRts       = []; // update status + signingtime only
         $inserted = 0; $updated = 0; $skipped = 0;
 
-        foreach ($rows as $wb => $r) {
-            if (isset($existing[$wb])) {
-                if (RtsStatus::isFinal($existing[$wb])) {
-                    $skipped++; // never downgrade a finalized shipment
-                    continue;
-                }
+        // Write each batch as soon as it fills up and release it, instead of building three
+        // full-size arrays alongside $rows first. On a ~100k-row export that second copy was
+        // doubling peak memory and pushing the worker past its --memory limit mid-run.
+        $flush = function () use (&$toInsert, &$updWithRts, &$updNoRts) {
+            if ($toInsert) {
+                FromJnt::insert($toInsert);
+                $toInsert = [];
+            }
+            if ($updWithRts) {
+                FromJnt::upsert($updWithRts, ['user_id', 'waybill_number'], ['status', 'signingtime', 'rts_reason', 'updated_at']);
+                $updWithRts = [];
+            }
+            if ($updNoRts) {
+                FromJnt::upsert($updNoRts, ['user_id', 'waybill_number'], ['status', 'signingtime', 'updated_at']);
+                $updNoRts = [];
+            }
+        };
 
-                $base = [
-                    'user_id'        => $upload->user_id,
-                    'waybill_number' => $wb,
-                    'status'         => $r['status'],
-                    'signingtime'    => $r['signingtime'],
-                    'updated_at'     => $now,
-                ];
+        // Still one transaction, so the import stays all-or-nothing. The batching below only
+        // bounds PHP memory — it does not make the write partial.
+        DB::transaction(function () use (&$rows, $existing, $upload, $now, $flush, &$toInsert, &$updWithRts, &$updNoRts, &$inserted, &$updated, &$skipped) {
+            foreach ($rows as $wb => $r) {
+                if (isset($existing[$wb])) {
+                    if (RtsStatus::isFinal($existing[$wb])) {
+                        $skipped++; // never downgrade a finalized shipment
+                        unset($rows[$wb]);
+                        continue;
+                    }
 
-                if (trim((string) ($r['rts_reason'] ?? '')) !== '') {
-                    $base['rts_reason'] = $r['rts_reason'];
-                    $updWithRts[] = $base;
+                    $base = [
+                        'user_id'        => $upload->user_id,
+                        'waybill_number' => $wb,
+                        'status'         => $r['status'],
+                        'signingtime'    => $r['signingtime'],
+                        'updated_at'     => $now,
+                    ];
+
+                    if (trim((string) ($r['rts_reason'] ?? '')) !== '') {
+                        $base['rts_reason'] = $r['rts_reason'];
+                        $updWithRts[] = $base;
+                    } else {
+                        $updNoRts[] = $base;
+                    }
+                    $updated++;
                 } else {
-                    $updNoRts[] = $base;
+                    $toInsert[] = [
+                        'user_id'             => $upload->user_id,
+                        'waybill_number'      => $wb,
+                        'sender'              => $r['sender'],
+                        'cod'                 => $r['cod'],
+                        'status'              => $r['status'],
+                        'item_name'           => $r['item_name'],
+                        'submission_time'     => $r['submission_time'],
+                        'receiver'            => $r['receiver'],
+                        'receiver_cellphone'  => $r['receiver_cellphone'],
+                        'signingtime'         => $r['signingtime'],
+                        'remarks'             => $r['remarks'],
+                        'province'            => $r['province'],
+                        'city'                => $r['city'],
+                        'barangay'            => $r['barangay'],
+                        'total_shipping_cost' => $r['total_shipping_cost'],
+                        'rts_reason'          => $r['rts_reason'],
+                        'created_at'          => $now,
+                        'updated_at'          => $now,
+                    ];
+                    $inserted++;
                 }
-                $updated++;
-            } else {
-                $toInsert[] = [
-                    'user_id'             => $upload->user_id,
-                    'waybill_number'      => $wb,
-                    'sender'              => $r['sender'],
-                    'cod'                 => $r['cod'],
-                    'status'              => $r['status'],
-                    'item_name'           => $r['item_name'],
-                    'submission_time'     => $r['submission_time'],
-                    'receiver'            => $r['receiver'],
-                    'receiver_cellphone'  => $r['receiver_cellphone'],
-                    'signingtime'         => $r['signingtime'],
-                    'remarks'             => $r['remarks'],
-                    'province'            => $r['province'],
-                    'city'                => $r['city'],
-                    'barangay'            => $r['barangay'],
-                    'total_shipping_cost' => $r['total_shipping_cost'],
-                    'rts_reason'          => $r['rts_reason'],
-                    'created_at'          => $now,
-                    'updated_at'          => $now,
-                ];
-                $inserted++;
-            }
-        }
 
-        DB::transaction(function () use ($toInsert, $updWithRts, $updNoRts) {
-            foreach (array_chunk($toInsert, self::INSERT_CHUNK) as $chunk) {
-                FromJnt::insert($chunk);
+                // Row is now staged in a batch — drop it so $rows shrinks as we advance.
+                unset($rows[$wb]);
+
+                if (count($toInsert) >= self::INSERT_CHUNK
+                    || count($updWithRts) >= self::INSERT_CHUNK
+                    || count($updNoRts) >= self::INSERT_CHUNK) {
+                    $flush();
+                }
             }
-            foreach (array_chunk($updWithRts, self::INSERT_CHUNK) as $chunk) {
-                FromJnt::upsert($chunk, ['user_id', 'waybill_number'], ['status', 'signingtime', 'rts_reason', 'updated_at']);
-            }
-            foreach (array_chunk($updNoRts, self::INSERT_CHUNK) as $chunk) {
-                FromJnt::upsert($chunk, ['user_id', 'waybill_number'], ['status', 'signingtime', 'updated_at']);
-            }
+
+            $flush(); // whatever is left over
         });
 
         $upload->forceFill([

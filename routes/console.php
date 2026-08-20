@@ -33,3 +33,39 @@ Artisan::command('rts:prune-tmp', function () {
 })->purpose('Delete Livewire temp upload files older than 24h');
 
 Schedule::command('rts:prune-tmp')->hourly()->withoutOverlapping();
+
+// Block until no RTS upload is being scanned/processed, so a deploy doesn't restart the
+// worker out from under a running import. Exits 0 when idle, 1 if it gives up waiting
+// (deploy.sh then asks before continuing).
+Artisan::command('rts:wait-idle {--timeout=1500 : Seconds to wait before giving up}', function () {
+    $limit   = (int) $this->option('timeout');
+    $waited  = 0;
+    $active  = fn () => \App\Models\RtsUpload::whereIn('status', ['queued', 'scanning', 'processing'])->count();
+
+    if ($active() === 0) {
+        $this->info('RTS worker is idle.');
+
+        return 0;
+    }
+
+    $this->warn('An RTS import is still running — waiting for it to finish before restarting the worker.');
+
+    while ($waited < $limit) {
+        sleep(10);
+        $waited += 10;
+
+        if ($active() === 0) {
+            $this->info("RTS worker is idle (waited {$waited}s).");
+
+            return 0;
+        }
+
+        if ($waited % 60 === 0) {
+            $this->line("  still running… {$waited}s");
+        }
+    }
+
+    $this->error("Still running after {$limit}s — giving up waiting.");
+
+    return 1;
+})->purpose('Wait until no RTS upload is being processed');

@@ -94,12 +94,8 @@
                             <span wire:loading wire:target="generateFeatures">Generating…</span>
                         </button>
                     </div>
-                    <div x-data="{ n: {{ mb_strlen($sp['PRODUCT_FEATURES'] ?? '') }} }">
-                        <textarea wire:model="sp.PRODUCT_FEATURES" rows="3" maxlength="2000" x-on:input="n = $event.target.value.length" placeholder="✅ Feature 1&#10;✅ Feature 2&#10;✅ Feature 3"
-                                  class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
-                        <div class="mt-0.5 text-right text-[10px] text-gray-400"><span x-text="n">0</span>/2,000</div>
-                    </div>
-                    @error('sp.PRODUCT_FEATURES') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    <textarea wire:model="sp.PRODUCT_FEATURES" rows="3" maxlength="{{ \App\Services\SalesPromptService::MAX['PRODUCT_FEATURES'] }}" placeholder="✅ Feature 1&#10;✅ Feature 2&#10;✅ Feature 3"
+                              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
                 </div>
 
                 <div>
@@ -166,10 +162,7 @@
                                 </div>
                                 @php $spMax = \App\Services\SalesPromptService::MAX[$k] ?? 1000; @endphp
                                 @if (in_array($k, $spMulti))
-                                    <div x-data="{ n: {{ mb_strlen($sp[$k] ?? '') }} }">
-                                        <textarea wire:model="sp.{{ $k }}" rows="{{ $k === 'PRODUCT_FEATURES' ? 3 : 2 }}" maxlength="{{ $spMax }}" x-on:input="n = $event.target.value.length" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
-                                        <div class="mt-0.5 text-right text-[10px] text-gray-400"><span x-text="n">0</span>/{{ number_format($spMax) }}</div>
-                                    </div>
+                                    <textarea wire:model="sp.{{ $k }}" rows="{{ $k === 'PRODUCT_FEATURES' ? 3 : 2 }}" maxlength="{{ $spMax }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"></textarea>
                                 @else
                                     <input type="text" wire:model="sp.{{ $k }}" maxlength="{{ $spMax }}" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                 @endif

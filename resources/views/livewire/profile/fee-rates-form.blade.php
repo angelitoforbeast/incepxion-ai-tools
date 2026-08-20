@@ -8,6 +8,20 @@ new class extends Component {
     public $newCod = null;
     public $newVat = null;
 
+    /** The add form stays hidden behind a button until it's actually wanted. */
+    public bool $adding = false;
+
+    public function startAdd(): void
+    {
+        $this->adding = true;
+    }
+
+    public function cancelAdd(): void
+    {
+        $this->reset('newDate', 'newCod', 'newVat', 'adding');
+        $this->resetErrorBag();
+    }
+
     public function addRate(): void
     {
         $this->validate([
@@ -29,7 +43,7 @@ new class extends Component {
             ],
         );
 
-        $this->reset('newDate', 'newCod', 'newVat');
+        $this->reset('newDate', 'newCod', 'newVat', 'adding');
         session()->flash('fee-status', 'saved');
     }
 
@@ -76,7 +90,7 @@ new class extends Component {
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">No rates yet — add one below.</td></tr>
+                    <tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">No rates yet.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -86,7 +100,12 @@ new class extends Component {
         <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2500)" class="mt-2 text-sm text-green-600">{{ __('Saved!') }}</p>
     @endif
 
-    {{-- Add a new dated rate --}}
+    {{-- Add a new dated rate — revealed on demand, like the API key form. --}}
+    @if (! $adding)
+        <div class="mt-4">
+            <x-primary-button type="button" wire:click="startAdd">{{ __('Add rate') }}</x-primary-button>
+        </div>
+    @else
     <form wire:submit="addRate" class="mt-6 border-t border-gray-100 pt-4">
         <p class="text-sm font-semibold text-gray-700 mb-2">Add a rate</p>
         <div class="grid sm:grid-cols-3 gap-3">
@@ -106,8 +125,10 @@ new class extends Component {
                 <x-input-error class="mt-2" :messages="$errors->get('newVat')" />
             </div>
         </div>
-        <div class="mt-3">
-            <x-primary-button>{{ __('Add rate') }}</x-primary-button>
+        <div class="mt-3 flex items-center gap-4">
+            <x-primary-button>{{ __('Save rate') }}</x-primary-button>
+            <button type="button" wire:click="cancelAdd" class="text-sm font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
     </form>
+    @endif
 </section>

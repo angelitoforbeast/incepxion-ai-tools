@@ -103,9 +103,7 @@
                     <h2 class="text-sm font-semibold text-gray-800">🔮 RTS Projection</h2>
                     <span class="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">Partial cohort</span>
                 </div>
-                <p class="text-xs text-gray-400 mb-3">Older shipments are already settled, so their RTS% projects where the full period is headed.</p>
-
-                <div class="mb-4">
+                <div class="mb-4 mt-3">
                     <div class="flex items-center justify-between text-xs mb-1">
                         <span class="text-gray-500">Data up to</span>
                         <span class="font-semibold text-gray-800">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($partialDate)->format('M j, Y') }}</span>
@@ -128,8 +126,7 @@
                     <h2 class="text-sm font-semibold text-gray-800">📊 Full Range</h2>
                     <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($to)->format('M j, Y') }}{{ $activeFilters ? ' · filtered' : '' }}</span>
                 </div>
-                <p class="text-xs text-gray-400 mb-3">All shipments in the selected date range (includes those still in transit).</p>
-                <div class="mt-[52px]">
+                <div class="mt-[55px]">
                     @include('partials.rts-pie', $full)
                 </div>
             </div>

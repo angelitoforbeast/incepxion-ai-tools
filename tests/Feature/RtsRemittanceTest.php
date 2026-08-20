@@ -75,6 +75,37 @@ class RtsRemittanceTest extends TestCase
         $this->assertEqualsWithDelta(0.12, (float) $rate->cod_fee_vat_rate, 0.0001);
     }
 
+    public function test_add_form_is_hidden_until_requested(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->actingAs($user);
+
+        Volt::test('profile.fee-rates-form')
+            ->assertSet('adding', false)
+            ->call('startAdd')
+            ->assertSet('adding', true)
+            ->call('cancelAdd')
+            ->assertSet('adding', false);
+    }
+
+    public function test_add_form_stays_open_on_validation_error_and_closes_on_save(): void
+    {
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->actingAs($user);
+
+        Volt::test('profile.fee-rates-form')
+            ->call('startAdd')
+            ->call('addRate')                 // nothing filled in
+            ->assertHasErrors(['newDate'])
+            ->assertSet('adding', true)       // must not close, or the errors vanish
+            ->set('newDate', '2026-01-01')
+            ->set('newCod', 2)
+            ->set('newVat', 12)
+            ->call('addRate')
+            ->assertHasNoErrors()
+            ->assertSet('adding', false);
+    }
+
     public function test_computes_remittance_with_effective_rate(): void
     {
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);

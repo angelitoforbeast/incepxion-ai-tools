@@ -20,61 +20,136 @@ class RtsMonitor extends Component
     public array $selectedSenders = [];
     public array $selectedCods = [];
 
-    /** Projection cutoff: number of days from $from (partial end date = from + partialDays). */
+    /** Projection window — independently adjustable inside the selected range. */
+    public string $projFrom = '';
+    public string $projTo   = '';
+
+    /** Slider position: days from $projFrom. Kept in step with $projTo. */
     public ?int $partialDays = null;
 
-    /** Default projection window aims for at least this many shipments (or all, if fewer). */
-    private const PROJECTION_MIN = 300;
+    /**
+     * A cohort counts as settled once fewer than this share of it is still in transit —
+     * at that point almost nothing is left to change, so its RTS% is effectively final.
+     */
+    private const SETTLED_MAX_TRANSIT_PCT = 1.0;
 
     public function mount(): void
     {
         // Default: this month, up to today (by submission_time / pickup date).
         $this->from = Carbon::now('Asia/Manila')->startOfMonth()->toDateString();
         $this->to   = Carbon::now('Asia/Manila')->toDateString();
-        $this->partialDays = $this->defaultPartialDays();
+        $this->refreshProjectionDefault();
     }
 
     private function refreshProjectionDefault(): void
     {
-        $this->partialDays = $this->defaultPartialDays();
+        $this->projFrom = $this->from;
+        $this->projTo   = $this->defaultProjectionEnd();
+        $this->syncPartialDays();
     }
 
-    // Recompute the projection cohort whenever the date range OR the filters change,
-    // so the "≥300 (or all available)" default always reflects the current dataset.
+    /** Slider position follows the dates. */
+    private function syncPartialDays(): void
+    {
+        $this->partialDays = max(0, Carbon::parse($this->projFrom, 'Asia/Manila')
+            ->diffInDays(Carbon::parse($this->projTo, 'Asia/Manila')));
+    }
+
+    // Recompute the projection window whenever the date range OR the filters change,
+    // so the settled-cohort default always reflects the current dataset.
     public function updatedFrom(): void            { $this->refreshProjectionDefault(); }
     public function updatedTo(): void              { $this->refreshProjectionDefault(); }
     public function updatedSelectedItems(): void   { $this->refreshProjectionDefault(); }
     public function updatedSelectedSenders(): void { $this->refreshProjectionDefault(); }
     public function updatedSelectedCods(): void    { $this->refreshProjectionDefault(); }
 
+    /** Dragging the slider moves the projection end. */
+    public function updatedPartialDays(): void
+    {
+        $days = max(0, min($this->projectionSpan(), (int) $this->partialDays));
+        $this->partialDays = $days;
+        $this->projTo = Carbon::parse($this->projFrom, 'Asia/Manila')->addDays($days)->toDateString();
+    }
+
+    /** Typing a projection start: clamp into the selected range, keep from <= to. */
+    public function updatedProjFrom(): void
+    {
+        $this->projFrom = $this->clampToRange($this->projFrom);
+        if ($this->projTo < $this->projFrom) {
+            $this->projTo = $this->projFrom;
+        }
+        $this->syncPartialDays();
+    }
+
+    /** Typing a projection end: clamp into the selected range, keep to >= from. */
+    public function updatedProjTo(): void
+    {
+        $this->projTo = $this->clampToRange($this->projTo);
+        if ($this->projTo < $this->projFrom) {
+            $this->projFrom = $this->projTo;
+        }
+        $this->syncPartialDays();
+    }
+
+    private function clampToRange(string $date): string
+    {
+        if (! $date) {
+            return $this->from;
+        }
+
+        return max($this->from, min($this->to, $date));
+    }
+
+    /** Days the slider can travel: projection start → end of the selected range. */
+    private function projectionSpan(): int
+    {
+        if (! $this->projFrom || ! $this->to) {
+            return 0;
+        }
+
+        return max(0, Carbon::parse($this->projFrom, 'Asia/Manila')
+            ->diffInDays(Carbon::parse($this->to, 'Asia/Manila')));
+    }
+
     /**
-     * Default projection cutoff: the earliest window [from → D] that reaches at least
-     * PROJECTION_MIN shipments. If fewer than that exist, use the whole range.
+     * Latest day whose cohort [from → day] is still settled, i.e. under
+     * SETTLED_MAX_TRANSIT_PCT in transit. That's the largest cohort whose RTS% can be
+     * trusted. Falls back to the first day when nothing has settled yet.
      */
-    private function defaultPartialDays(): int
+    private function defaultProjectionEnd(): string
     {
         if (! $this->from || ! $this->to) {
-            return 0;
+            return $this->to ?: $this->from;
         }
 
         [$fromDt, $toDt] = $this->rangeFull();
 
-        // submission_time of the Nth-earliest shipment (N = PROJECTION_MIN).
-        $row = $this->filteredQuery($fromDt, $toDt)
-            ->orderBy('submission_time')
-            ->offset(self::PROJECTION_MIN - 1)
-            ->limit(1)
-            ->get(['submission_time'])
-            ->first();
+        $rows = $this->filteredQuery($fromDt, $toDt)->selectRaw("
+            DATE(submission_time) as d,
+            COUNT(*) as total,
+            SUM(CASE WHEN LOWER(TRIM(status)) = 'delivered' THEN 1 ELSE 0 END) as delivered,
+            SUM(CASE WHEN LOWER(status) LIKE '%return%' OR LOWER(status) LIKE '%rts%' THEN 1 ELSE 0 END) as rts
+        ")->groupBy('d')->orderBy('d')->get();
 
-        if (! $row || empty($row->submission_time)) {
-            return $this->totalDays(); // fewer than PROJECTION_MIN → use all available
+        if ($rows->isEmpty()) {
+            return $this->to;
         }
 
-        $days = Carbon::parse($this->from, 'Asia/Manila')
-            ->diffInDays(Carbon::parse($row->submission_time, 'Asia/Manila'));
+        $cumTotal = 0;
+        $cumSettled = 0;
+        $best = null;
 
-        return max(0, min($this->totalDays(), $days));
+        foreach ($rows as $r) {
+            $cumTotal   += (int) $r->total;
+            $cumSettled += (int) $r->delivered + (int) $r->rts;
+
+            $transitPct = $cumTotal > 0 ? (($cumTotal - $cumSettled) / $cumTotal) * 100 : 100;
+            if ($transitPct < self::SETTLED_MAX_TRANSIT_PCT) {
+                $best = substr((string) $r->d, 0, 10);
+            }
+        }
+
+        return $best ?? substr((string) $rows->first()->d, 0, 10);
     }
 
     public function clearFilters(): void
@@ -245,10 +320,21 @@ class RtsMonitor extends Component
 
         [$fromDt, $toDt] = $this->rangeFull();
 
-        // Projection window: from → (from + partialDays).
-        $totalDays = $this->totalDays();
-        $days      = max(0, min($totalDays, (int) ($this->partialDays ?? $totalDays)));
-        $partialTo = Carbon::parse($this->from, 'Asia/Manila')->addDays($days)->endOfDay();
+        // Projection window is its own range inside the selected one.
+        if (! $this->projFrom || ! $this->projTo) {
+            $this->refreshProjectionDefault();
+        }
+
+        $projFromDt = Carbon::parse($this->projFrom, 'Asia/Manila')->startOfDay();
+        $projToDt   = Carbon::parse($this->projTo, 'Asia/Manila')->endOfDay();
+        $projection = $this->breakdown($projFromDt, $projToDt);
+
+        // RTS share of the shipments that have actually finished — ignores whatever is
+        // still moving, so it doesn't get diluted by an unsettled tail.
+        $settled = $projection['totalRts'] + $projection['totalDelivered'];
+        $projection['estimatedRts'] = $settled > 0
+            ? round($projection['totalRts'] / $settled * 100, 1)
+            : null;
 
         return view('livewire.rts-monitor', [
             'activeRtsTab'  => 'tools.rts.monitor',
@@ -259,9 +345,9 @@ class RtsMonitor extends Component
             'activeFilters' => count($this->selectedItems) + count($this->selectedSenders) + count($this->selectedCods),
 
             'full'          => $this->breakdown($fromDt, $toDt),
-            'projection'    => $this->breakdown($fromDt, $partialTo),
-            'totalDays'     => $totalDays,
-            'partialDate'   => $partialTo->toDateString(),
+            'projection'    => $projection,
+            'totalDays'     => $this->totalDays(),
+            'projSpan'      => $this->projectionSpan(),
         ]);
     }
 }

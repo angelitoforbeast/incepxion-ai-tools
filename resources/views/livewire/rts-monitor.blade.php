@@ -103,18 +103,26 @@
                     <h2 class="text-sm font-semibold text-gray-800">🔮 RTS Projection</h2>
                 </div>
                 <div class="mb-4 mt-3">
-                    <div class="flex items-center justify-between text-xs mb-1">
-                        <span class="text-gray-500">Data up to</span>
-                        <span class="font-semibold text-gray-800">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($partialDate)->format('M j, Y') }}</span>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <label class="block">
+                            <span class="block text-[11px] font-medium text-gray-500 mb-1">From</span>
+                            <input type="date" wire:model.live="projFrom" min="{{ $from }}" max="{{ $to }}"
+                                   class="w-full rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                        </label>
+                        <label class="block">
+                            <span class="block text-[11px] font-medium text-gray-500 mb-1">To</span>
+                            <input type="date" wire:model.live="projTo" min="{{ $from }}" max="{{ $to }}"
+                                   class="w-full rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                        </label>
                     </div>
-                    <input type="range" min="0" max="{{ max(1, $totalDays) }}" wire:model.live.debounce.400ms="partialDays"
-                           @if ($totalDays === 0) disabled @endif
+                    <input type="range" min="0" max="{{ max(1, $projSpan) }}" wire:model.live.debounce.400ms="partialDays"
+                           @if ($projSpan === 0) disabled @endif
                            class="w-full accent-indigo-600 cursor-pointer">
                     {{-- Dated scale under the slider, so a position on the bar reads as a date. --}}
                     @php
-                        $span      = max(1, $totalDays);
+                        $span      = max(1, $projSpan);
                         $tickCount = min(6, $span + 1);          // never more ticks than days
-                        $start     = \Carbon\Carbon::parse($from);
+                        $start     = \Carbon\Carbon::parse($projFrom);
                         $ticks     = [];
                         for ($i = 0; $i < $tickCount; $i++) {
                             // Pick the day FIRST, then derive the position from it. Deriving the
@@ -141,6 +149,13 @@
                 </div>
 
                 @include('partials.rts-pie', $projection)
+
+                <div class="mt-4 flex items-center justify-between rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Estimated RTS</span>
+                    <span class="text-xl font-bold text-indigo-700">
+                        {{ is_numeric($projection['estimatedRts']) ? number_format($projection['estimatedRts'], 1).'%' : '—' }}
+                    </span>
+                </div>
             </div>
 
             {{-- Chart 2: Full selected range --}}
@@ -149,7 +164,9 @@
                     <h2 class="text-sm font-semibold text-gray-800">📊 Full Range</h2>
                     <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($to)->format('M j, Y') }}{{ $activeFilters ? ' · filtered' : '' }}</span>
                 </div>
-                <div class="mt-[72px]">
+                {{-- Offset so this pie lines up with the projection pie, which sits below the
+                     date pickers, slider and scale. --}}
+                <div class="mt-[133px]">
                     @include('partials.rts-pie', $full)
                 </div>
             </div>

@@ -118,7 +118,7 @@ class RtsProjectionTest extends TestCase
             ->assertSet('projTo', '2026-08-08'); // end follows the start
     }
 
-    public function test_slider_moves_the_projection_end(): void
+    public function test_end_slider_moves_the_projection_end(): void
     {
         $user = User::factory()->create();
         $this->shipments($user, '2026-08-01', 'Delivered', 5, 'a');
@@ -126,8 +126,52 @@ class RtsProjectionTest extends TestCase
         Livewire::actingAs($user)->test(RtsMonitor::class)
             ->set('from', '2026-08-01')
             ->set('to', '2026-08-10')
-            ->set('projFrom', '2026-08-01')
-            ->set('partialDays', 4)
+            ->set('projEndDays', 4)
             ->assertSet('projTo', '2026-08-05');
+    }
+
+    public function test_start_slider_moves_the_projection_start(): void
+    {
+        $user = User::factory()->create();
+        $this->shipments($user, '2026-08-01', 'Delivered', 5, 'a');
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-08-01')
+            ->set('to', '2026-08-10')
+            ->set('projEndDays', 8)
+            ->set('projStartDays', 3)
+            ->assertSet('projFrom', '2026-08-04')
+            ->assertSet('projTo', '2026-08-09');   // end untouched
+    }
+
+    public function test_start_slider_pushes_the_end_when_it_passes_it(): void
+    {
+        $user = User::factory()->create();
+        $this->shipments($user, '2026-08-01', 'Delivered', 5, 'a');
+
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-08-01')
+            ->set('to', '2026-08-10')
+            ->set('projEndDays', 2)          // Aug 3
+            ->set('projStartDays', 6)        // Aug 7 — past the end
+            ->assertSet('projFrom', '2026-08-07')
+            ->assertSet('projTo', '2026-08-07')
+            ->assertSet('projEndDays', 6);   // slider follows
+    }
+
+    public function test_sliders_span_the_whole_selected_range(): void
+    {
+        $user = User::factory()->create();
+        $this->shipments($user, '2026-08-05', 'Delivered', 5, 'a');
+
+        // Both sliders are measured from the range start, not from the projection start,
+        // so their positions are directly comparable on one scale.
+        Livewire::actingAs($user)->test(RtsMonitor::class)
+            ->set('from', '2026-08-01')
+            ->set('to', '2026-08-11')
+            ->set('projFrom', '2026-08-03')
+            ->set('projTo', '2026-08-09')
+            ->assertSet('projStartDays', 2)
+            ->assertSet('projEndDays', 8);
     }
 }

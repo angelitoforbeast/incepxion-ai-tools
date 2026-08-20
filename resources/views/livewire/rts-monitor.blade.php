@@ -6,13 +6,13 @@
         {{-- Filters --}}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
             <div class="flex flex-wrap items-end gap-3">
-                <div>
+                <div class="w-40">
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">From</label>
-                    <input type="date" wire:model.live="from" class="border border-gray-300 rounded-lg p-2 text-sm">
+                    <x-date-field model="from" size="text-sm" class="border border-gray-300 rounded-lg p-2 text-sm" />
                 </div>
-                <div>
+                <div class="w-40">
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">To</label>
-                    <input type="date" wire:model.live="to" class="border border-gray-300 rounded-lg p-2 text-sm">
+                    <x-date-field model="to" size="text-sm" class="border border-gray-300 rounded-lg p-2 text-sm" />
                 </div>
 
                 @php
@@ -106,23 +106,26 @@
                     <div class="grid grid-cols-2 gap-3 mb-3">
                         <label class="block">
                             <span class="block text-[11px] font-medium text-gray-500 mb-1">From</span>
-                            <input type="date" wire:model.live="projFrom" min="{{ $from }}" max="{{ $to }}"
-                                   class="w-full rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-date-field model="projFrom" :min="$from" :max="$to" />
                         </label>
                         <label class="block">
                             <span class="block text-[11px] font-medium text-gray-500 mb-1">To</span>
-                            <input type="date" wire:model.live="projTo" min="{{ $from }}" max="{{ $to }}"
-                                   class="w-full rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-date-field model="projTo" :min="$from" :max="$to" />
                         </label>
                     </div>
-                    <input type="range" min="0" max="{{ max(1, $projSpan) }}" wire:model.live.debounce.400ms="partialDays"
-                           @if ($projSpan === 0) disabled @endif
+
+                    {{-- Both sliders span the whole filtered range, so their positions compare. --}}
+                    <input type="range" min="0" max="{{ max(1, $totalDays) }}" wire:model.live.debounce.400ms="projStartDays"
+                           @if ($totalDays === 0) disabled @endif
                            class="w-full accent-indigo-600 cursor-pointer">
+                    <input type="range" min="0" max="{{ max(1, $totalDays) }}" wire:model.live.debounce.400ms="projEndDays"
+                           @if ($totalDays === 0) disabled @endif
+                           class="w-full accent-indigo-600 cursor-pointer mt-1">
                     {{-- Dated scale under the slider, so a position on the bar reads as a date. --}}
                     @php
-                        $span      = max(1, $projSpan);
+                        $span      = max(1, $totalDays);
                         $tickCount = min(6, $span + 1);          // never more ticks than days
-                        $start     = \Carbon\Carbon::parse($projFrom);
+                        $start     = \Carbon\Carbon::parse($from);
                         $ticks     = [];
                         for ($i = 0; $i < $tickCount; $i++) {
                             // Pick the day FIRST, then derive the position from it. Deriving the
@@ -134,17 +137,22 @@
                                 'align' => $i === 0 ? '0' : ($i === $tickCount - 1 ? '-100%' : '-50%'),
                             ];
                         }
-                        $currentPct = min(100, max(0, ((int) $partialDays / $span) * 100));
+                        $startPct = min(100, max(0, ((int) $projStartDays / $span) * 100));
+                        $endPct   = min(100, max(0, ((int) $projEndDays / $span) * 100));
                     @endphp
                     <div class="relative h-8 mt-1">
+                        {{-- The selected span, so the two handles read as one window. --}}
+                        <span class="absolute top-0.5 h-1 bg-indigo-200 rounded-full"
+                              style="left: {{ $startPct }}%; width: {{ max(0, $endPct - $startPct) }}%;"></span>
+
                         @foreach ($ticks as $t)
                             <span class="absolute top-0 w-px h-1.5 bg-gray-300" style="left: {{ $t['pct'] }}%;"></span>
                             <span class="absolute top-2.5 text-[10px] text-gray-400 whitespace-nowrap"
                                   style="left: {{ $t['pct'] }}%; transform: translateX({{ $t['align'] }});">{{ $t['label'] }}</span>
                         @endforeach
 
-                        {{-- Where the slider currently sits. --}}
-                        <span class="absolute top-0 w-0.5 h-2.5 bg-indigo-600 rounded-full" style="left: {{ $currentPct }}%; transform: translateX(-50%);"></span>
+                        <span class="absolute top-0 w-0.5 h-2.5 bg-indigo-600 rounded-full" style="left: {{ $startPct }}%; transform: translateX(-50%);"></span>
+                        <span class="absolute top-0 w-0.5 h-2.5 bg-indigo-600 rounded-full" style="left: {{ $endPct }}%; transform: translateX(-50%);"></span>
                     </div>
                 </div>
 
@@ -159,14 +167,14 @@
             </div>
 
             {{-- Chart 2: Full selected range --}}
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col">
                 <div class="flex items-center justify-between mb-1">
                     <h2 class="text-sm font-semibold text-gray-800">📊 Full Range</h2>
                     <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{{ \Carbon\Carbon::parse($from)->format('M j') }} → {{ \Carbon\Carbon::parse($to)->format('M j, Y') }}{{ $activeFilters ? ' · filtered' : '' }}</span>
                 </div>
-                {{-- Offset so this pie lines up with the projection pie, which sits below the
-                     date pickers, slider and scale. --}}
-                <div class="mt-[133px]">
+                {{-- Centred in the leftover height instead of nudged down by a fixed offset,
+                     so it stays balanced as the projection card's controls change size. --}}
+                <div class="flex-1 flex items-center">
                     @include('partials.rts-pie', $full)
                 </div>
             </div>

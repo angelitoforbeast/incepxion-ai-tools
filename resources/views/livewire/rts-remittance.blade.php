@@ -6,15 +6,15 @@
         {{-- Filters + fee-rate summary --}}
         <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <div class="flex flex-wrap items-end gap-4">
-                <div>
+                <div class="w-40">
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">From</label>
-                    <input type="date" wire:model.live="from" @if ($minData) min="{{ $minData }}" @endif @if ($maxData) max="{{ $maxData }}" @endif
-                           class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-date-field model="from" :min="$minData" :max="$maxData" size="text-sm"
+                                  class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                 </div>
-                <div>
+                <div class="w-40">
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">To</label>
-                    <input type="date" wire:model.live="to" @if ($minData) min="{{ $minData }}" @endif @if ($maxData) max="{{ $maxData }}" @endif
-                           class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-date-field model="to" :min="$minData" :max="$maxData" size="text-sm"
+                                  class="rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                 </div>
                 @if ($minData && $maxData)
                     <div class="text-[11px] text-gray-400 self-center">Pickup dates: {{ \Illuminate\Support\Carbon::parse($minData)->format('M d, Y') }} – {{ \Illuminate\Support\Carbon::parse($maxData)->format('M d, Y') }}</div>

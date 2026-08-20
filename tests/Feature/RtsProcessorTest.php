@@ -469,14 +469,14 @@ class RtsProcessorTest extends TestCase
             ->set('from', '2026-07-01')
             ->set('to', '2026-07-21')
             ->assertViewHas('full', fn ($f) => $f['total'] === 4)
-            ->set('partialDays', 5) // project only Jul 1 → Jul 6 (early cohort only)
+            ->set('projEndDays', 5) // project only Jul 1 → Jul 6 (early cohort only)
             ->assertViewHas('projection', fn ($p) => $p['total'] === 2
                 && $p['totalRts'] === 1
                 && $p['totalDelivered'] === 1
                 && $p['totalTransit'] === 0);
     }
 
-    public function test_projection_defaults_to_all_when_below_threshold(): void
+    public function test_projection_defaults_to_all_when_everything_has_settled(): void
     {
         $user = User::factory()->create();
         FromJnt::insert([
@@ -484,7 +484,8 @@ class RtsProcessorTest extends TestCase
             ['user_id' => $user->id, 'waybill_number' => 'X2', 'status' => 'Returned',  'submission_time' => '2026-07-20 08:00:00', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        // Fewer than 300 shipments → default projection window = entire range → projection == full.
+        // Nothing is still in transit, so the default window covers the whole range and the
+        // projection matches the full breakdown.
         Livewire::actingAs($user)->test(RtsMonitor::class)
             ->set('from', '2026-07-01')
             ->set('to', '2026-07-21')
@@ -521,9 +522,10 @@ class RtsProcessorTest extends TestCase
         Livewire::actingAs($user)->test(RtsMonitor::class)
             ->set('from', '2026-07-01')
             ->set('to', '2026-07-21')
-            ->set('partialDays', 1)                 // simulate a stale, tiny projection window
+            ->set('projEndDays', 1)                 // simulate a stale, tiny projection window
             ->set('selectedItems', ['ITEM A'])      // filter change must recompute the default
-            // Filtered set (2 rows) < 300 → projection uses ALL available, not the stale 1-day window.
+            // Nothing in the filtered set is still moving, so the window reopens to all of
+            // it rather than staying on the stale 1-day window.
             ->assertViewHas('projection', fn ($p) => $p['total'] === 2);
     }
 

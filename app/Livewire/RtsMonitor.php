@@ -24,8 +24,12 @@ class RtsMonitor extends Component
     public string $projFrom = '';
     public string $projTo   = '';
 
-    /** Slider position: days from $projFrom. Kept in step with $projTo. */
-    public ?int $partialDays = null;
+    /**
+     * Slider positions, both measured in days from the SELECTED range's start so the two
+     * sliders share one scale spanning the whole filtered range.
+     */
+    public ?int $projStartDays = null;
+    public ?int $projEndDays   = null;
 
     /**
      * A cohort counts as settled once fewer than this share of it is still in transit —
@@ -45,14 +49,24 @@ class RtsMonitor extends Component
     {
         $this->projFrom = $this->from;
         $this->projTo   = $this->defaultProjectionEnd();
-        $this->syncPartialDays();
+        $this->syncSliders();
     }
 
-    /** Slider position follows the dates. */
-    private function syncPartialDays(): void
+    /** Slider positions follow the dates. */
+    private function syncSliders(): void
     {
-        $this->partialDays = max(0, Carbon::parse($this->projFrom, 'Asia/Manila')
-            ->diffInDays(Carbon::parse($this->projTo, 'Asia/Manila')));
+        $this->projStartDays = $this->daysFromRangeStart($this->projFrom);
+        $this->projEndDays   = $this->daysFromRangeStart($this->projTo);
+    }
+
+    private function daysFromRangeStart(string $date): int
+    {
+        if (! $this->from || ! $date) {
+            return 0;
+        }
+
+        return max(0, min($this->totalDays(), (int) Carbon::parse($this->from, 'Asia/Manila')
+            ->diffInDays(Carbon::parse($date, 'Asia/Manila'))));
     }
 
     // Recompute the projection window whenever the date range OR the filters change,
@@ -63,12 +77,26 @@ class RtsMonitor extends Component
     public function updatedSelectedSenders(): void { $this->refreshProjectionDefault(); }
     public function updatedSelectedCods(): void    { $this->refreshProjectionDefault(); }
 
-    /** Dragging the slider moves the projection end. */
-    public function updatedPartialDays(): void
+    /** Dragging the start slider. */
+    public function updatedProjStartDays(): void
     {
-        $days = max(0, min($this->projectionSpan(), (int) $this->partialDays));
-        $this->partialDays = $days;
-        $this->projTo = Carbon::parse($this->projFrom, 'Asia/Manila')->addDays($days)->toDateString();
+        $days = max(0, min($this->totalDays(), (int) $this->projStartDays));
+        $this->projFrom = Carbon::parse($this->from, 'Asia/Manila')->addDays($days)->toDateString();
+        if ($this->projTo < $this->projFrom) {
+            $this->projTo = $this->projFrom;
+        }
+        $this->syncSliders();
+    }
+
+    /** Dragging the end slider. */
+    public function updatedProjEndDays(): void
+    {
+        $days = max(0, min($this->totalDays(), (int) $this->projEndDays));
+        $this->projTo = Carbon::parse($this->from, 'Asia/Manila')->addDays($days)->toDateString();
+        if ($this->projTo < $this->projFrom) {
+            $this->projFrom = $this->projTo;
+        }
+        $this->syncSliders();
     }
 
     /** Typing a projection start: clamp into the selected range, keep from <= to. */
@@ -78,7 +106,7 @@ class RtsMonitor extends Component
         if ($this->projTo < $this->projFrom) {
             $this->projTo = $this->projFrom;
         }
-        $this->syncPartialDays();
+        $this->syncSliders();
     }
 
     /** Typing a projection end: clamp into the selected range, keep to >= from. */
@@ -88,7 +116,7 @@ class RtsMonitor extends Component
         if ($this->projTo < $this->projFrom) {
             $this->projFrom = $this->projTo;
         }
-        $this->syncPartialDays();
+        $this->syncSliders();
     }
 
     private function clampToRange(string $date): string
@@ -98,17 +126,6 @@ class RtsMonitor extends Component
         }
 
         return max($this->from, min($this->to, $date));
-    }
-
-    /** Days the slider can travel: projection start → end of the selected range. */
-    private function projectionSpan(): int
-    {
-        if (! $this->projFrom || ! $this->to) {
-            return 0;
-        }
-
-        return max(0, Carbon::parse($this->projFrom, 'Asia/Manila')
-            ->diffInDays(Carbon::parse($this->to, 'Asia/Manila')));
     }
 
     /**
@@ -347,7 +364,6 @@ class RtsMonitor extends Component
             'full'          => $this->breakdown($fromDt, $toDt),
             'projection'    => $projection,
             'totalDays'     => $this->totalDays(),
-            'projSpan'      => $this->projectionSpan(),
         ]);
     }
 }

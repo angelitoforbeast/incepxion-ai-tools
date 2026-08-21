@@ -50,10 +50,13 @@ class CourseShow extends Component
         }
 
         try {
-            // Per-viewer forensic watermark: email · name · IP (captured at playback time).
+            // Per-viewer forensic watermark: email · name · code · IP (captured at playback
+            // time). The code is what still identifies the account if the email or name is
+            // changed later — those are editable, the code is derived from the user id.
             $parts = array_filter([
                 auth()->user()->email ?? 'guest',
                 auth()->user()->name,
+                'WM-'.\App\Support\WatermarkCode::for(auth()->id()),
                 request()->ip(),
             ]);
             $watermark = implode(' · ', $parts);

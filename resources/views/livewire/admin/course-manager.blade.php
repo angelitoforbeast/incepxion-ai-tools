@@ -68,11 +68,47 @@
         <div class="mt-4">
             <span class="block text-xs font-medium text-slate-500 mb-1">Preview</span>
             <div class="relative h-24 rounded-lg bg-slate-800 overflow-hidden flex items-center justify-center">
-                <span style="color: {{ $wm_color }}; opacity: {{ $wm_opacity / 100 }}; font-size: {{ $wm_size }}px;">{{ auth()->user()->email }} · {{ auth()->user()->name }}</span>
+                <span style="color: {{ $wm_color }}; opacity: {{ $wm_opacity / 100 }}; font-size: {{ $wm_size }}px;">{{ auth()->user()->email }} · {{ auth()->user()->name }} · WM-{{ \App\Support\WatermarkCode::for(auth()->id()) }} · 112.198.45.7</span>
             </div>
         </div>
 
         <button wire:click="saveWatermark" class="mt-4 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">Save watermark</button>
+    </div>
+
+    {{-- Read a code off a leaked video and find the account it was stamped for. --}}
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
+        <h2 class="text-lg font-semibold text-slate-900">🔎 Identify a watermark code</h2>
+        <p class="text-sm text-slate-500 mb-4">Type the <span class="font-mono">WM-XXXXXX</span> code from a leaked video to see whose account it was stamped for.</p>
+
+        <div class="flex flex-wrap items-end gap-3">
+            <div class="w-56">
+                <input type="text" wire:model="wm_lookup" wire:keydown.enter.prevent="findWatermarkCode"
+                       placeholder="WM-K7M2QX" maxlength="16"
+                       class="w-full rounded-lg border-slate-300 font-mono text-sm uppercase focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+            <button wire:click="findWatermarkCode" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900">Identify</button>
+            @if ($wm_searched)
+                <button wire:click="clearWatermarkLookup" class="text-sm font-semibold text-slate-500 hover:text-slate-700">Clear</button>
+            @endif
+        </div>
+
+        @if ($wm_searched)
+            @if ($wm_found)
+                <div class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <p class="text-sm text-emerald-900">
+                        <span class="font-semibold">#{{ $wm_found['id'] }} · {{ $wm_found['name'] }}</span>
+                        <span class="text-emerald-700">· {{ $wm_found['email'] }}</span>
+                    </p>
+                    <p class="mt-0.5 text-xs text-emerald-700">
+                        Status: {{ $wm_found['status'] }}@if ($wm_found['expires']) · access until {{ $wm_found['expires'] }}@endif
+                    </p>
+                </div>
+            @else
+                <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p class="text-sm text-amber-800">No account matches that code. Check for misread characters — the code never contains I, L, O or U.</p>
+                </div>
+            @endif
+        @endif
     </div>
 
     <div class="flex items-center justify-between mb-4">

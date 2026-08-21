@@ -55,6 +55,35 @@ class CourseManager extends Component
         session()->flash('msg', 'Watermark settings saved. Applies to the next video load.');
     }
 
+    // Watermark code lookup — read the code off a leaked video and find the account.
+    public string $wm_lookup = '';
+    public ?array $wm_found = null;
+    public bool $wm_searched = false;
+
+    public function findWatermarkCode(): void
+    {
+        $this->wm_searched = true;
+        $this->wm_found = null;
+
+        $user = \App\Support\WatermarkCode::resolve($this->wm_lookup);
+        if (! $user) {
+            return;
+        }
+
+        $this->wm_found = [
+            'id'      => $user->id,
+            'name'    => $user->name,
+            'email'   => $user->email,
+            'status'  => $user->status,
+            'expires' => $user->access_expires_at?->format('M d, Y'),
+        ];
+    }
+
+    public function clearWatermarkLookup(): void
+    {
+        $this->reset('wm_lookup', 'wm_found', 'wm_searched');
+    }
+
     // Course form
     public ?int $editingCourseId = null;
     public string $c_title = '';

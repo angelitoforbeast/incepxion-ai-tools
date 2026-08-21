@@ -18,8 +18,8 @@
     <!-- Brand -->
     {{-- The wordmark already says the name, so the text beside it would only repeat it. --}}
     <a href="{{ route('dashboard') }}" wire:navigate
-       class="flex items-center px-5 h-16 border-b border-slate-800 transition hover:bg-slate-800/40">
-        <x-brand dark class="h-8" />
+       class="flex items-center justify-center px-5 h-20 border-b border-slate-800 transition hover:bg-slate-800/40">
+        <x-brand dark class="h-11" />
     </a>
 
     <!-- Nav (approved users only) -->

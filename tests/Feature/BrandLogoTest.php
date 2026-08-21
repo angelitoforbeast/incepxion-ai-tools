@@ -32,13 +32,16 @@ class BrandLogoTest extends TestCase
         $this->assertSame(127, $alpha, 'The corner pixel should be fully transparent.');
     }
 
-    public function test_dashboard_sidebar_shows_the_logo(): void
+    public function test_dashboard_sidebar_shows_the_logo_centred(): void
     {
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/dashboard')
-            ->assertOk()
-            ->assertSee('Incepxion Services Inc.', false);
+        $html = $this->actingAs($user)->get('/dashboard')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Incepxion Services Inc.', $html);
+        // Tailwind only ships the utilities it finds in the markup, so a rename here would
+        // silently leave the mark left-aligned and small again.
+        $this->assertMatchesRegularExpression('/class="[^"]*justify-center[^"]*h-20[^"]*"/', $html);
     }
 
     public function test_login_and_register_show_the_logo(): void

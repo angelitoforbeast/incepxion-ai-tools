@@ -67,6 +67,14 @@ a{color:inherit;text-decoration:none}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 55px rgba(128,43,255,.5)}
 .btn-secondary{background:rgba(255,255,255,.035)}
 .btn-secondary:hover{background:rgba(255,255,255,.07);transform:translateY(-2px)}
+.btn-outline{background:transparent;border-color:rgba(174,115,255,.5);color:#d7b9ff}
+.btn-outline:hover{background:rgba(132,54,255,.14);border-color:rgba(200,150,255,.75);transform:translateY(-2px)}
+/* Nav-sized buttons: the full 15px padding makes three of them overflow a phone. */
+.btn-sm{padding:10px 15px;font-size:13px;border-radius:10px}
+.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-short{display:none}
+/* The buttons are the point of the bar; let the wordmark give up room before they do. */
+.brand{flex-shrink:1;min-width:0}
 .hero{min-height:100vh;display:grid;align-items:center;padding:130px 0 70px;position:relative}
 .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:54px;align-items:center}
 .eyebrow{
@@ -155,12 +163,25 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
   .offer-panel{padding:30px} section{padding:78px 0}
 }
 @media(max-width:620px){
+  /* Three buttons won't fit a phone at full width, so the wording shortens and the
+     padding tightens rather than any of them being dropped. */
+  .btn-sm{padding:9px 11px;font-size:12px;gap:5px}
+  .nav-actions{gap:6px}
+  .btn-full{display:none} .btn-short{display:inline}
   .container{width:min(100% - 24px,1180px)} .nav-inner{height:68px} .brand{font-size:21px}
   .hero{padding-top:108px} h1{font-size:55px} .hero-copy{font-size:16px} .hero-visual{min-height:330px}
   .hero-x{font-size:220px} .fc1{left:0} .fc2{right:0} .fc3{left:5%}
   .stats,.feature-grid{grid-template-columns:1fr} .roadmap-wrap{border-radius:18px;padding:6px}
   .roadmap{border-radius:14px} .roadmap-note{display:none} .offer-panel{padding:24px;border-radius:20px}
   .closing{padding:90px 0} .btn{width:100%}
+  /* ...but not the nav ones, which sit side by side in a row. */
+  .nav-actions .btn{width:auto}
+}
+/* Narrow phones (360–390px): squeeze the bar rather than lose a button. */
+@media(max-width:430px){
+  .brand{font-size:18px} .brand-x{font-size:25px}
+  .btn-sm{padding:8px 9px;font-size:11.5px}
+  .nav-actions{gap:5px}
 }
 </style>
 {{-- .reveal starts invisible and is uncovered by script. Without this, a blocked or failed
@@ -178,14 +199,20 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
       <a href="#system">The System</a>
       <a href="#roadmap">Roadmap</a>
       <a href="#offer">Enrollment</a>
-      {{-- Members already paid; they just need the way back in. --}}
-      @auth
-        <a href="{{ route('dashboard') }}">Dashboard</a>
-      @else
-        <a href="{{ route('login') }}">Log in</a>
-      @endauth
     </div>
-    <a class="btn btn-primary" href="{{ $fb }}" target="_blank" rel="noopener">Message Nand Sam ↗</a>
+    {{-- Kept outside .nav-links, which the design hides on phones — these are the only way
+         into the app, so they have to survive on every screen. --}}
+    <div class="nav-actions">
+      @auth
+        <a class="btn btn-secondary btn-sm" href="{{ route('dashboard') }}">Dashboard</a>
+      @else
+        <a class="btn btn-secondary btn-sm" href="{{ route('login') }}">Log in</a>
+        <a class="btn btn-outline btn-sm" href="{{ route('register') }}">Register</a>
+      @endauth
+      <a class="btn btn-primary btn-sm" href="{{ $fb }}" target="_blank" rel="noopener">
+        <span class="btn-full">Message Nand Sam ↗</span><span class="btn-short">Enroll ↗</span>
+      </a>
+    </div>
   </div>
 </nav>
 
@@ -299,11 +326,14 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
 <footer>
   <div class="container footer-inner">
     <span>© {{ date('Y') }} IncepXion. All rights reserved.</span>
-    {{-- The nav hides its links on phones, so this is the only way back in on mobile. --}}
     @auth
       <a href="{{ route('dashboard') }}" style="color:#a664ff;font-weight:700">Go to dashboard →</a>
     @else
-      <a href="{{ route('login') }}" style="color:#a664ff;font-weight:700">Member log in →</a>
+      <span>
+        <a href="{{ route('login') }}" style="color:#a664ff;font-weight:700">Member log in</a>
+        <span style="opacity:.4;margin:0 8px">·</span>
+        <a href="{{ route('register') }}" style="color:#a664ff;font-weight:700">Create account</a>
+      </span>
     @endauth
     <span>Build systems that print profit.</span>
   </div>

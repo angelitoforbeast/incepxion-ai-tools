@@ -59,15 +59,40 @@ class LandingPageTest extends TestCase
         $this->assertGreaterThanOrEqual(4, substr_count($html, self::FB));
     }
 
-    public function test_visitors_are_offered_login_and_members_their_dashboard(): void
+    public function test_visitors_get_login_and_register_buttons(): void
     {
-        $this->get('/')->assertOk()->assertSee(route('login'), false);
+        $html = $this->get('/')->assertOk()->getContent();
 
+        // Both must be actual buttons in the nav, not links buried among the section
+        // anchors — and they sit outside .nav-links, which the design hides on phones.
+        $this->assertMatchesRegularExpression(
+            '/<div class="nav-actions">.*?class="btn[^"]*"[^>]*href="[^"]*\/login".*?<\/div>/s',
+            $html
+        );
+        $this->assertMatchesRegularExpression(
+            '/<div class="nav-actions">.*?class="btn[^"]*"[^>]*href="[^"]*\/register".*?<\/div>/s',
+            $html
+        );
+    }
+
+    public function test_login_and_register_are_also_in_the_footer(): void
+    {
+        $html = $this->get('/')->assertOk()->getContent();
+        $footer = substr($html, strpos($html, '<footer'));
+
+        $this->assertStringContainsString(route('login'), $footer);
+        $this->assertStringContainsString(route('register'), $footer);
+    }
+
+    public function test_members_get_the_dashboard_instead(): void
+    {
         $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+
         $this->actingAs($user)->get('/')
             ->assertOk()
             ->assertSee(route('dashboard'), false)
-            ->assertDontSee(route('login'), false);
+            ->assertDontSee(route('login'), false)
+            ->assertDontSee(route('register'), false);
     }
 
     public function test_the_page_is_not_blank_without_javascript(): void

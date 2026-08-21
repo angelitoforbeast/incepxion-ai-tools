@@ -45,8 +45,13 @@ Route::get('account/rejected', \App\Livewire\AccountRejected::class)
 Route::middleware(['auth', 'verified', 'approved', 'not-expired'])->group(function () {
     Route::get('dashboard', function () {
         return view('dashboard', [
-            // Courses is a top-level sidebar item, not a grid tool.
-            'tools' => Tool::where('is_active', true)->where('slug', '!=', 'courses')->orderBy('sort_order')->get(),
+            // Courses is a top-level sidebar item, not a grid tool. Anything with
+            // show_on_dashboard off still works by URL — it just isn't advertised here.
+            'tools' => Tool::where('is_active', true)
+                ->where('show_on_dashboard', true)
+                ->where('slug', '!=', 'courses')
+                ->orderBy('sort_order')
+                ->get(),
         ]);
     })->name('dashboard');
 

@@ -10,11 +10,12 @@ class Tool extends Model
 {
     protected $fillable = [
         'slug', 'name', 'description', 'icon', 'category',
-        'is_active', 'required_plan_id', 'config', 'sort_order',
+        'is_active', 'show_on_dashboard', 'required_plan_id', 'config', 'sort_order',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'show_on_dashboard' => 'boolean',
         'config'    => 'array',
     ];
 

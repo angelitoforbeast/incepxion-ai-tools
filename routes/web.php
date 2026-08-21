@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
+// The previous landing page, kept reachable in case we want to compare or fall back.
+Route::view('/classic', 'welcome-classic');
+
 // Named logout (Breeze Livewire logs out via a component action; this adds a POST route for forms)
 Route::post('logout', function (Logout $logout) {
     $logout();

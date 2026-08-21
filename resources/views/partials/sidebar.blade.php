@@ -16,13 +16,11 @@
        class="fixed inset-y-0 left-0 z-40 w-64 transform bg-slate-900 text-slate-300 transition-transform duration-200 lg:translate-x-0 flex flex-col">
 
     <!-- Brand -->
-    <div class="flex items-center gap-3 px-5 h-16 border-b border-slate-800">
-        <x-application-logo class="w-9 h-9" />
-        <div class="leading-tight">
-            <div class="text-white font-bold text-sm">Incepxion AI</div>
-            <div class="text-[11px] text-slate-400">E-commerce Tools</div>
-        </div>
-    </div>
+    {{-- The wordmark already says the name, so the text beside it would only repeat it. --}}
+    <a href="{{ route('dashboard') }}" wire:navigate
+       class="flex items-center px-5 h-16 border-b border-slate-800 transition hover:bg-slate-800/40">
+        <x-brand dark class="h-7" />
+    </a>
 
     <!-- Nav (approved users only) -->
     <nav class="flex-1 px-3 py-4 space-y-1">

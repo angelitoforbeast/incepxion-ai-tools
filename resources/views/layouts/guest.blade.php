@@ -12,12 +12,8 @@
     <body class="font-sans text-slate-800 antialiased">
         <div class="min-h-screen flex flex-col justify-center items-center px-4 py-10
                     bg-gradient-to-br from-slate-50 via-indigo-50 to-violet-50">
-            <a href="/" wire:navigate class="flex items-center gap-3 mb-6">
-                <x-application-logo class="w-11 h-11" />
-                <div class="leading-tight">
-                    <div class="text-lg font-bold text-slate-900">Incepxion AI</div>
-                    <div class="text-xs text-slate-500">E-commerce Tools</div>
-                </div>
+            <a href="/" wire:navigate class="mb-7">
+                <x-brand class="h-10" />
             </a>
 
             <div class="w-full sm:max-w-md bg-white shadow-xl shadow-indigo-100/50 rounded-2xl border border-slate-100 px-7 py-8">

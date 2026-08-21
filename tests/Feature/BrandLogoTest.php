@@ -38,7 +38,6 @@ class BrandLogoTest extends TestCase
 
         $this->actingAs($user)->get('/dashboard')
             ->assertOk()
-            ->assertSee('logo.png', false)
             ->assertSee('Incepxion Services Inc.', false);
     }
 
@@ -48,22 +47,49 @@ class BrandLogoTest extends TestCase
         $this->get('/register')->assertOk()->assertSee('logo.png', false);
     }
 
-    public function test_landing_page_shows_the_logo(): void
+    public function test_dark_surfaces_use_the_light_variant(): void
     {
-        $this->get('/')->assertOk()->assertSee('logo.png', false);
+        // Half the wordmark is near-black; on a dark surface the plain file would be
+        // half-invisible, so those placements must reach for the light variant.
+        $this->assertFileExists(public_path('logo-light.png'));
+
+        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->actingAs($user)->get('/dashboard')->assertOk()->assertSee('logo-light.png', false);
+
+        $this->get('/')->assertOk()->assertSee('logo-light.png', false);
     }
 
-    public function test_dark_placements_put_the_mark_on_a_light_plate(): void
+    public function test_light_surfaces_use_the_plain_mark(): void
     {
-        // Half the wordmark is near-black, so on the dark sidebar it needs a light
-        // background behind it or it simply vanishes.
-        $user = User::factory()->create(['status' => 'approved', 'email_verified_at' => now()]);
+        $this->get('/login')->assertOk()
+            ->assertSee('logo.png', false)
+            ->assertDontSee('logo-light.png', false);
+    }
 
-        $html = $this->actingAs($user)->get('/dashboard')->assertOk()->getContent();
+    public function test_the_light_variant_is_actually_light(): void
+    {
+        $img = imagecreatefrompng(public_path('logo-light.png'));
+        $w = imagesx($img);
+        $h = imagesy($img);
 
-        $this->assertMatchesRegularExpression(
-            '/<span class="[^"]*bg-white[^"]*">\s*<img src="[^"]*logo\.png"/s',
-            $html
-        );
+        $lit = 0;
+        $opaque = 0;
+        for ($y = 0; $y < $h; $y += 4) {
+            for ($x = 0; $x < $w; $x += 4) {
+                $c = imagecolorat($img, $x, $y);
+                if ((($c >> 24) & 0x7F) > 60) {
+                    continue;                       // transparent
+                }
+                $opaque++;
+                $avg = ((($c >> 16) & 0xFF) + (($c >> 8) & 0xFF) + ($c & 0xFF)) / 3;
+                if ($avg > 128) {
+                    $lit++;
+                }
+            }
+        }
+
+        $this->assertGreaterThan(0, $opaque);
+        // Most of the ink has to be brighter than mid-grey or it won't read on slate-900.
+        $this->assertGreaterThan(0.8, $lit / $opaque);
     }
 }

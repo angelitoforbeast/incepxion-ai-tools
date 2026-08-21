@@ -194,9 +194,8 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
 
 <nav class="nav">
   <div class="container nav-inner">
-    {{-- On this dark bar the mark needs its light plate, same as the app sidebar. --}}
-    <a class="brand" href="#top" style="padding:6px 11px;border-radius:11px;background:#fff">
-      <img src="{{ asset('logo.png') }}" alt="Incepxion Services Inc." style="height:26px;width:auto;display:block">
+    <a class="brand" href="#top">
+      <img src="{{ asset('logo-light.png') }}" alt="Incepxion Services Inc." style="height:30px;width:auto;display:block">
     </a>
     <div class="nav-links">
       <a href="#system">The System</a>

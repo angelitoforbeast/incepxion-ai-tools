@@ -1,20 +1,16 @@
 @props([
-    'dark' => false,   // sitting on a dark surface (the sidebar)
+    'dark' => false,   // sitting on a dark surface (sidebar, landing nav)
     'class' => 'h-8',
 ])
 
 {{--
     The Incepxion wordmark.
 
-    Half of it — "Xion" and "SERVICES INC." — is near-black, so on a dark surface it simply
-    disappears. Rather than recolour the mark and drift from the brand, dark placements set
-    it on a light plate and keep the artwork exactly as drawn.
+    Half the artwork — "Xion" and "SERVICES INC." — is near-black and vanishes on a dark
+    surface. Rather than boxing it on a white plate, dark placements use a variant with the
+    lightness flipped and the hue held, so the pink stays pink and the rest comes up bright
+    enough to read. Both files are generated from the same source.
 --}}
-@if ($dark)
-    <span class="inline-flex items-center rounded-xl bg-white px-3 py-2 shadow-sm">
-        <img src="{{ asset('logo.png') }}" alt="Incepxion Services Inc." class="{{ $class }} w-auto">
-    </span>
-@else
-    <img src="{{ asset('logo.png') }}" alt="Incepxion Services Inc."
-         {{ $attributes->merge(['class' => $class.' w-auto']) }}>
-@endif
+<img src="{{ asset($dark ? 'logo-light.png' : 'logo.png') }}"
+     alt="Incepxion Services Inc."
+     {{ $attributes->merge(['class' => $class.' w-auto']) }}>

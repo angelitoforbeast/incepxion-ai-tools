@@ -69,8 +69,8 @@ a{color:inherit;text-decoration:none}
 .btn-secondary:hover{background:rgba(255,255,255,.07);transform:translateY(-2px)}
 .btn-outline{background:transparent;border-color:rgba(174,115,255,.5);color:#d7b9ff}
 .btn-outline:hover{background:rgba(132,54,255,.14);border-color:rgba(200,150,255,.75);transform:translateY(-2px)}
-/* Nav-sized buttons: the full 15px padding makes three of them overflow a phone. */
-.btn-sm{padding:10px 15px;font-size:13px;border-radius:10px}
+/* Nav-sized buttons: smaller than the page's main CTAs, since three sit side by side. */
+.btn-sm{padding:13px 19px;font-size:14px;border-radius:11px}
 .nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .btn-short{display:none}
 /* The buttons are the point of the bar; let the wordmark give up room before they do. */
@@ -165,8 +165,8 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
 @media(max-width:620px){
   /* Three buttons won't fit a phone at full width, so the wording shortens and the
      padding tightens rather than any of them being dropped. */
-  .btn-sm{padding:9px 11px;font-size:12px;gap:5px}
-  .nav-actions{gap:6px}
+  .btn-sm{padding:11px 13px;font-size:13px;gap:5px}
+  .nav-actions{gap:7px}
   .btn-full{display:none} .btn-short{display:inline}
   .container{width:min(100% - 24px,1180px)} .nav-inner{height:68px} .brand{font-size:21px}
   .hero{padding-top:108px} h1{font-size:55px} .hero-copy{font-size:16px} .hero-visual{min-height:330px}
@@ -179,8 +179,8 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
 }
 /* Narrow phones (360–390px): squeeze the bar rather than lose a button. */
 @media(max-width:430px){
-  .brand{font-size:18px} .brand-x{font-size:25px}
-  .btn-sm{padding:8px 9px;font-size:11.5px}
+  .brand img{height:24px}
+  .btn-sm{padding:9px 10px;font-size:12px}
   .nav-actions{gap:5px}
 }
 </style>

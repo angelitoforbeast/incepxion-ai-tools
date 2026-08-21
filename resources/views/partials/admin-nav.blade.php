@@ -8,6 +8,7 @@
         ['route' => 'admin.subscriptions', 'label' => 'Subscriptions'],
         ['route' => 'admin.billing', 'label' => 'Billing'],
         ['route' => 'admin.rts', 'label' => 'RTS Data'],
+        ['route' => 'admin.rts-records', 'label' => 'RTS Records'],
         ['route' => 'admin.storage', 'label' => 'Storage'],
         ['route' => 'admin.errors', 'label' => 'Error Logs'],
         ['route' => 'admin.logs', 'label' => 'Data Logs'],

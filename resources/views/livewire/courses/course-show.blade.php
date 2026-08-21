@@ -3,9 +3,19 @@
             fetch('{{ route('session.ping') }}', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
                 .then(r => { if (r.status === 409 || r.status === 401) { window.location.href = '{{ route('login') }}'; } })
                 .catch(() => {});
+        },
+        /* Mark the lesson as still open. Skipped while the tab is in the background, so
+           leaving a tab parked overnight doesn't read as hours of watching. The server
+           enforces the real interval regardless of how often this fires. */
+        watchBeat() {
+            if (document.visibilityState !== 'visible') return;
+            $wire.heartbeat();
         }
      }"
-     x-init="beat(); const t = setInterval(() => beat(), 10000); window.addEventListener('beforeunload', () => clearInterval(t));">
+     x-init="beat();
+             const t = setInterval(() => beat(), 10000);
+             const w = setInterval(() => watchBeat(), 60000);
+             window.addEventListener('beforeunload', () => { clearInterval(t); clearInterval(w); });">
     <div class="bg-slate-50 border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <a href="{{ route('tools.courses') }}" wire:navigate class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">← All courses</a>

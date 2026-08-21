@@ -97,7 +97,7 @@
             <table class="min-w-full text-sm">
                 <thead class="sticky top-0 z-10">
                     <tr class="text-left text-[11px] uppercase tracking-wide text-slate-500">
-                        @foreach (['When', 'User', 'Lesson', 'Device', 'IP', 'Code'] as $h)
+                        @foreach (['When', 'User', 'Lesson', '', 'Device', 'IP', 'Code'] as $h)
                             <th class="bg-slate-100 border-b border-slate-200 px-4 py-2.5 font-semibold whitespace-nowrap">{{ $h }}</th>
                         @endforeach
                     </tr>
@@ -111,13 +111,20 @@
                                 <span class="block text-xs text-slate-400">{{ $r->user?->email }}</span>
                             </td>
                             <td class="px-4 py-2 text-slate-700 max-w-[280px] truncate" title="{{ $r->lesson?->title }}">{{ $r->lesson?->title ?? '—' }}</td>
+                            <td class="px-4 py-2 whitespace-nowrap">
+                                @if ($r->kind === 'start')
+                                    <span class="inline-flex rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-indigo-700">opened</span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500">still open</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-2 text-slate-600 whitespace-nowrap">{{ $r->device }}</td>
                             <td class="px-4 py-2 font-mono text-xs text-slate-600 whitespace-nowrap">{{ $r->ip_address ?? '—' }}</td>
                             <td class="px-4 py-2 font-mono text-xs text-indigo-700 whitespace-nowrap">{{ $r->watermark_code ? 'WM-'.$r->watermark_code : '—' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-12 text-center">
+                            <td colspan="7" class="px-4 py-12 text-center">
                                 <p class="text-slate-400">Nothing recorded for these filters.</p>
                                 @if ($this->activeFilters)
                                     <button wire:click="clearFilters" class="mt-2 text-sm font-semibold text-indigo-600 hover:underline">Clear filters</button>

@@ -149,6 +149,58 @@ class VideoLogTest extends TestCase
             ->assertDontSee('2.2.2.2');
     }
 
+    public function test_heartbeat_records_the_resumed_time_and_ip_not_the_original(): void
+    {
+        // Opened yesterday from home...
+        $this->logView($this->alice, 5, '49.144.64.121', 'Mozilla/5.0 (Windows NT 10.0)', now()->subDay()->toDateTimeString());
+
+        // ...resumed today from somewhere else.
+        $this->app['request']->server->set('REMOTE_ADDR', '112.198.45.7');
+        VideoView::heartbeat($this->alice->id, 1, 5, WatermarkCode::for($this->alice->id));
+
+        $latest = VideoView::latest('id')->first();
+        $this->assertSame('heartbeat', $latest->kind);
+        $this->assertSame('112.198.45.7', $latest->ip_address);
+        $this->assertTrue($latest->created_at->isToday());
+    }
+
+    public function test_heartbeat_is_rate_limited_server_side(): void
+    {
+        $code = WatermarkCode::for($this->alice->id);
+
+        $this->assertTrue(VideoView::heartbeat($this->alice->id, 1, 5, $code));
+        // However often the page calls in, only one row lands inside the window.
+        $this->assertFalse(VideoView::heartbeat($this->alice->id, 1, 5, $code));
+        $this->assertFalse(VideoView::heartbeat($this->alice->id, 1, 5, $code));
+
+        $this->assertSame(1, VideoView::count());
+    }
+
+    public function test_heartbeat_records_again_once_the_window_has_passed(): void
+    {
+        $code = VideoView::HEARTBEAT_MINUTES;
+        VideoView::create([
+            'user_id' => $this->alice->id, 'lesson_id' => 5, 'kind' => 'heartbeat',
+            'ip_address' => '1.1.1.1', 'created_at' => now()->subMinutes($code + 1),
+        ]);
+
+        $this->assertTrue(VideoView::heartbeat($this->alice->id, 1, 5, 'ABC123'));
+        $this->assertSame(2, VideoView::count());
+    }
+
+    public function test_page_heartbeat_does_nothing_when_no_video_is_loaded(): void
+    {
+        $course = \App\Models\Course::create(['title' => 'C', 'slug' => 'c', 'is_published' => true]);
+        \App\Models\Lesson::create(['course_id' => $course->id, 'title' => 'L', 'vdocipher_video_id' => 'vid1']);
+
+        // VdoCipher isn't configured in tests, so mount() leaves $otp null — a lesson that
+        // never started playing must not be recorded as being watched.
+        Livewire::actingAs($this->alice)->test(\App\Livewire\Courses\CourseShow::class, ['course' => $course])
+            ->call('heartbeat');
+
+        $this->assertSame(0, VideoView::count());
+    }
+
     public function test_a_logging_failure_never_breaks_playback(): void
     {
         // user_id 999999 has no matching row, so the FK insert fails — record() must swallow it.

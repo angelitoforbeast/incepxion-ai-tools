@@ -73,6 +73,25 @@ class CourseShow extends Component
         }
     }
 
+    /**
+     * Called by the page while a lesson is open, so a session paused and resumed the next
+     * day is recorded at the time and IP it was actually resumed from, not just when it was
+     * first loaded. The lesson comes from server-side state, not from the request.
+     */
+    public function heartbeat(): void
+    {
+        if (! $this->lessonId || ! $this->otp) {
+            return; // nothing loaded, or playback failed
+        }
+
+        \App\Models\VideoView::heartbeat(
+            auth()->id(),
+            $this->course->id,
+            $this->lessonId,
+            \App\Support\WatermarkCode::for(auth()->id()),
+        );
+    }
+
     public function getCurrentLessonProperty(): ?Lesson
     {
         return $this->lessonId

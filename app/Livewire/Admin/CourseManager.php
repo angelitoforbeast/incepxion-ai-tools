@@ -19,6 +19,7 @@ class CourseManager extends Component
     public int $wm_size = 12;
     public int $wm_opacity = 50;
     public int $wm_speed = 6000;
+    public int $wm_skip = 0;
     public bool $wm_two_tone = true;
     public string $wm_position = 'top-left';
 
@@ -29,6 +30,7 @@ class CourseManager extends Component
         $this->wm_size     = (int) $wm['size'];
         $this->wm_opacity  = (int) $wm['opacity'];
         $this->wm_speed    = (int) $wm['speed'];
+        $this->wm_skip     = (int) ($wm['skip'] ?? 0);
         $this->wm_two_tone = (bool) $wm['two_tone'];
         $this->wm_position = (string) $wm['position'];
     }
@@ -40,6 +42,7 @@ class CourseManager extends Component
             'wm_size'     => ['integer', 'min:6', 'max:60'],
             'wm_opacity'  => ['integer', 'min:5', 'max:100'],
             'wm_speed'    => ['integer', 'in:3000,5000,6000,8000'],
+            'wm_skip'     => ['integer', 'in:0,2000,5000,10000'],
             'wm_position' => ['in:top-left,top-right,bottom-left,bottom-right'],
         ]);
 
@@ -48,6 +51,7 @@ class CourseManager extends Component
             'size'     => $this->wm_size,
             'opacity'  => $this->wm_opacity,
             'speed'    => $this->wm_speed,
+            'skip'     => $this->wm_skip,
             'two_tone' => $this->wm_two_tone,
             'position' => $this->wm_position,
         ]);

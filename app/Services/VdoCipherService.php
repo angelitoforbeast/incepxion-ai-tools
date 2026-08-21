@@ -60,9 +60,14 @@ class VdoCipherService
     {
         return [
             'color'    => 'FF3333',   // hex, no #
-            'size'     => 12,
-            'opacity'  => 50,         // percent (0–100)
-            'speed'    => 6000,       // reposition interval in ms
+            'size'     => 15,
+            'opacity'  => 70,         // percent (0–100)
+            // VdoCipher's "interval" is how long the mark STAYS VISIBLE, and "skip" is how
+            // long it is HIDDEN before reappearing somewhere else. Sending no skip left that
+            // gap up to their default, which is why the mark could be missed entirely.
+            // Zero keeps it on screen continuously, just moving every interval.
+            'speed'    => 6000,       // ms the moving mark stays visible
+            'skip'     => 0,          // ms it stays hidden between appearances
             'two_tone' => true,       // add the fixed outlined mark
             'position' => 'top-left', // corner for the fixed mark
         ];
@@ -97,6 +102,9 @@ class VdoCipherService
             'color'    => $color,
             'size'     => $size,
             'interval' => (string) (int) $wm['speed'],
+            // Always send skip. Omitting it hands the hidden gap to VdoCipher's default,
+            // which can leave the mark off screen for long stretches.
+            'skip'     => (string) max(0, (int) ($wm['skip'] ?? 0)),
         ]];
 
         if (! empty($wm['two_tone'])) {

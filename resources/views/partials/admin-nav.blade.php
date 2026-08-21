@@ -5,6 +5,7 @@
         ['route' => 'admin.courses', 'label' => 'Courses'],
         ['route' => 'admin.profit', 'label' => 'Profit Log'],
         ['route' => 'admin.access', 'label' => 'Access Log'],
+        ['route' => 'admin.video-log', 'label' => 'Video Log'],
         ['route' => 'admin.subscriptions', 'label' => 'Subscriptions'],
         ['route' => 'admin.billing', 'label' => 'Billing'],
         ['route' => 'admin.rts', 'label' => 'RTS Data'],

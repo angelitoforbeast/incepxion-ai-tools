@@ -96,6 +96,7 @@ Route::middleware(['auth', 'admin'])->prefix('console-7k29fx')->group(function (
     Route::get('courses', CourseManager::class)->name('admin.courses');
     Route::get('profit-history', ProfitHistory::class)->name('admin.profit');
     Route::get('access-log', AccessLog::class)->name('admin.access');
+    Route::get('video-log', \App\Livewire\Admin\VideoLog::class)->name('admin.video-log');
     Route::get('subscriptions', \App\Livewire\Admin\SubscriptionManager::class)->name('admin.subscriptions');
     Route::get('subscriptions/log', \App\Livewire\Admin\SubscriptionLogs::class)->name('admin.subscriptions.log');
     Route::get('billing', \App\Livewire\Admin\BillingSettings::class)->name('admin.billing');

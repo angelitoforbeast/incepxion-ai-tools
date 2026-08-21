@@ -53,16 +53,21 @@ class CourseShow extends Component
             // Per-viewer forensic watermark: email · name · code · IP (captured at playback
             // time). The code is what still identifies the account if the email or name is
             // changed later — those are editable, the code is derived from the user id.
+            $code = \App\Support\WatermarkCode::for(auth()->id());
             $parts = array_filter([
                 auth()->user()->email ?? 'guest',
                 auth()->user()->name,
-                'WM-'.\App\Support\WatermarkCode::for(auth()->id()),
+                'WM-'.$code,
                 request()->ip(),
             ]);
             $watermark = implode(' · ', $parts);
             $res = $service->otp($lesson->vdocipher_video_id, $watermark);
             $this->otp = $res['otp'];
             $this->playbackInfo = $res['playbackInfo'];
+
+            // Nothing plays without the OTP above, so recording it here is something the
+            // viewer cannot avoid — the one part of this that isn't in their hands.
+            \App\Models\VideoView::record(auth()->id(), $this->course->id, $lesson->id, $code);
         } catch (\Throwable $e) {
             $this->error = 'Could not load the video. '.$e->getMessage();
         }

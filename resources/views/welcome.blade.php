@@ -130,7 +130,7 @@ section{padding:105px 0}
 .card h3{font-size:18px;margin-bottom:10px} .card p{color:#a99db8;line-height:1.65;font-size:14px}
 .roadmap-wrap{margin-top:45px;padding:10px;border-radius:26px;background:linear-gradient(140deg,rgba(155,83,255,.35),rgba(255,40,122,.12),rgba(255,255,255,.04));box-shadow:var(--shadow);perspective:1200px}
 .roadmap{
-  width:100%;display:block;border-radius:20px;transition:transform .16s ease;transform-origin:center;
+  width:100%;height:auto;display:block;border-radius:20px;transition:transform .16s ease;transform-origin:center;
   border:1px solid rgba(255,255,255,.07)
 }
 .roadmap-note{display:flex;justify-content:space-between;gap:20px;color:#8f839f;font-size:12px;margin-top:12px;padding:0 5px}

@@ -23,10 +23,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
                     </button>
-                    <div class="flex items-center gap-2">
-                        <x-application-logo class="w-7 h-7" />
-                        <span class="font-bold text-slate-900">Incepxion AI</span>
-                    </div>
+                    {{-- The sidebar is off-screen on a phone, so this bar carries the brand. --}}
+                    <a href="{{ route('dashboard') }}" wire:navigate>
+                        <x-brand class="h-7" />
+                    </a>
                 </div>
 
                 @isset($header)

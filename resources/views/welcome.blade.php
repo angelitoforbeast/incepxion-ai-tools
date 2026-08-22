@@ -158,9 +158,20 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
 .reveal{opacity:0;transform:translateY(28px);transition:.75s cubic-bezier(.2,.7,.2,1)} .reveal.visible{opacity:1;transform:none}
 .scrollbar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,#7a2dff,#ff2d7b);z-index:99;width:0}
 @media(max-width:900px){
-  .nav-links{display:none} .hero-grid,.offer-panel{grid-template-columns:1fr} .hero-visual{min-height:390px}
-  .hero-x{font-size:280px} .stats{grid-template-columns:repeat(2,1fr)} .feature-grid{grid-template-columns:1fr 1fr}
+  .nav-links{display:none} .hero-grid,.offer-panel{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)} .feature-grid{grid-template-columns:1fr 1fr}
   .offer-panel{padding:30px} section{padding:78px 0}
+
+  /* The three stat cards are pinned by percentage, which works while the column is wide.
+     Once the hero stacks, they drift into each other — "AI + AUTOMATION" was sitting on
+     top of "250+ STUDENTS". Below this width they stop floating and simply stack, with
+     the X left behind them as the backdrop it always was. */
+  .hero-visual{display:flex;flex-direction:column;justify-content:center;gap:12px;min-height:0;padding:34px 0}
+  .hero-x{position:absolute;font-size:300px;opacity:.45;z-index:0;pointer-events:none}
+  .float-card{position:relative;z-index:1;width:100%}
+  /* The per-card offsets still bite on a relatively positioned box, which left the three
+     stacked but stepped across the screen. Clear them so they line up. */
+  .fc1,.fc2,.fc3{left:auto;right:auto;top:auto;bottom:auto}
 }
 @media(max-width:620px){
   /* Three buttons won't fit a phone at full width, so the wording shortens and the
@@ -169,8 +180,8 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
   .nav-actions{gap:7px}
   .btn-full{display:none} .btn-short{display:inline}
   .container{width:min(100% - 24px,1180px)} .nav-inner{height:68px} .brand{font-size:21px}
-  .hero{padding-top:108px} h1{font-size:55px} .hero-copy{font-size:16px} .hero-visual{min-height:330px}
-  .hero-x{font-size:220px} .fc1{left:0} .fc2{right:0} .fc3{left:5%}
+  .hero{padding-top:108px} h1{font-size:55px} .hero-copy{font-size:16px}
+  .hero-x{font-size:230px}
   .stats,.feature-grid{grid-template-columns:1fr} .roadmap-wrap{border-radius:18px;padding:6px}
   .roadmap{border-radius:14px} .roadmap-note{display:none} .offer-panel{padding:24px;border-radius:20px}
   .closing{padding:90px 0} .btn{width:100%}

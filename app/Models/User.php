@@ -57,7 +57,7 @@ class User extends Authenticatable
     }
 
     /** Default account validity applied on approval. */
-    public const DEFAULT_VALIDITY_MONTHS = 3;
+    public const DEFAULT_VALIDITY_MONTHS = 12;
 
     /** Access has lapsed (has an expiry date and it is in the past). */
     public function isExpired(): bool

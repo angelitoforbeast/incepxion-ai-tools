@@ -29,11 +29,31 @@ class LandingPageTest extends TestCase
 
     public function test_the_offer_is_stated(): void
     {
-        $this->get('/')
-            ->assertOk()
+        $res = $this->get('/')->assertOk()
             ->assertSee('₱49,500', false)
-            ->assertSee('₱75,000', false)
-            ->assertSee('FREE 1-Year IncepXion Website Subscription', false);
+            ->assertSee('₱75,000', false);
+
+        foreach ([
+            'Complete E-Commerce Training',
+            'AI + Full Automation System',
+            'No VA. No Encoder.',
+            'AI-Assisted Creative Production',
+            'Simplified &amp; Data-Driven Ads Execution',
+            'Less Dependency on Highly Skilled Advertisers',
+            'FREE 1-Year IncepXion Website Subscription',
+            'Lifetime Support through the IncepXion FB Group Community',
+            'Exclusive IncepXion Mastermind Meetups',
+        ] as $item) {
+            $res->assertSee($item, false);
+        }
+    }
+
+    public function test_the_recurring_cost_is_disclosed_next_to_the_free_year(): void
+    {
+        // A cost that only surfaces after enrolment reads as one that was hidden, so it
+        // has to sit with the item it applies to.
+        $this->get('/')->assertOk()
+            ->assertSee('₱1,000/month after the first 12 months', false);
     }
 
     public function test_roadmap_image_is_served_as_a_file_with_a_webp_alternative(): void

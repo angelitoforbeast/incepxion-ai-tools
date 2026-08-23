@@ -143,8 +143,11 @@ section{padding:105px 0}
 .price-old{font-size:20px;color:#8d829d;text-decoration:line-through;margin-bottom:6px}
 .price{font-family:Oswald;font-size:clamp(56px,8vw,96px);line-height:1;background:linear-gradient(90deg,#fff,#bb8dff,#ff4f91);-webkit-background-clip:text;color:transparent}
 .price-label{color:#c7b8d7;margin-top:8px}
-.checks{display:grid;gap:13px;margin:28px 0 0;padding:0;list-style:none}
-.checks li{display:flex;gap:11px;color:#d8cfdf} .check{color:#7dffb9;font-weight:900}
+.checks{display:grid;gap:11px;margin:28px 0 0;padding:0;list-style:none}
+.checks li{display:flex;gap:11px;color:#d8cfdf;line-height:1.45}
+.check{color:#7dffb9;font-weight:900;flex-shrink:0}
+/* Secondary line under an item — indented with the text, not the tick. */
+.check-note{display:block;margin-top:4px;color:#9287a4;font-size:13px;line-height:1.5}
 .offer-cta{padding:34px;border-radius:22px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07)}
 .offer-cta h3{font-family:Oswald;font-size:34px;text-transform:uppercase}
 .offer-cta p{color:#a99db8;line-height:1.7}
@@ -310,10 +313,27 @@ footer{padding:30px 0;border-top:1px solid rgba(255,255,255,.06);color:#786d87;f
         <div class="price">₱49,500</div>
         <div class="price-label">Limited offer · Limited slots only</div>
         <ul class="checks">
-          <li><span class="check">✓</span> Complete E-Commerce Training</li>
-          <li><span class="check">✓</span> AI + Full Automation System</li>
-          <li><span class="check">✓</span> FREE 1-Year IncepXion Website Subscription</li>
-          <li><span class="check">✓</span> Lifetime Support through the IncepXion FB Group Community</li>
+          <li><span class="check">✓</span><span>Complete E-Commerce Training</span></li>
+          <li><span class="check">✓</span><span>AI + Full Automation System</span></li>
+          <li><span class="check">✓</span><span>No VA. No Encoder.</span></li>
+          <li><span class="check">✓</span><span>AI-Assisted Creative Production</span></li>
+          <li><span class="check">✓</span><span>Simplified &amp; Data-Driven Ads Execution</span></li>
+          <li><span class="check">✓</span><span>Less Dependency on Highly Skilled Advertisers</span></li>
+          <li>
+            <span class="check">✓</span>
+            <span>FREE 1-Year IncepXion Website Subscription
+              {{-- Said here rather than left for after enrolment: a cost that only turns up
+                   later reads as something that was hidden, even when it wasn't. --}}
+              <span class="check-note">₱1,000/month after the first 12 months, if you choose to keep using the platform.</span>
+            </span>
+          </li>
+          <li><span class="check">✓</span><span>Lifetime Support through the IncepXion FB Group Community</span></li>
+          <li>
+            <span class="check">✓</span>
+            <span>Exclusive IncepXion Mastermind Meetups
+              <span class="check-note">You'll always be invited to future private mastermind sessions and community meetups.</span>
+            </span>
+          </li>
         </ul>
       </div>
       <div class="offer-cta">

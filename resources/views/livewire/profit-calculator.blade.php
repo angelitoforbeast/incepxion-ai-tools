@@ -1,4 +1,34 @@
-<div class="lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+{{--
+    The calculator remembers its numbers in this browser, not on the server.
+
+    Kept here rather than on the user row for a reason: values stored against the account
+    reappear on any device they sign in from, and that is exactly what tells someone their
+    typing is being kept. Per-browser storage behaves the way people already expect a form
+    to behave, and a different device simply opens fresh.
+--}}
+<div class="lg:h-screen lg:flex lg:flex-col lg:overflow-hidden"
+     x-data="{
+        key: 'incepxion.profit.v1',
+
+        restore() {
+            let saved;
+            try { saved = JSON.parse(localStorage.getItem(this.key)); } catch (e) { return; }
+            if (! saved) return;
+
+            // Sent to the server, not just set on screen: Calculate runs server-side, so
+            // values it never received would be computed from the defaults instead.
+            // Livewire batches these two into one request.
+            if (saved.c1) $wire.set('c1', saved.c1);
+            if (saved.c2) $wire.set('c2', saved.c2);
+        },
+
+        save() {
+            try {
+                localStorage.setItem(this.key, JSON.stringify({ c1: $wire.c1, c2: $wire.c2 }));
+            } catch (e) { /* private mode or a full quota — not worth interrupting anyone over */ }
+        },
+     }"
+     x-init="restore(); $watch('$wire.c1', () => save()); $watch('$wire.c2', () => save())">
     <style>
         /* Remove number-input up/down spinners — keep free numeric typing. */
         .no-spinner::-webkit-outer-spin-button,

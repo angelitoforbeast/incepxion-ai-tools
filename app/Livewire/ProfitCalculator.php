@@ -26,23 +26,22 @@ class ProfitCalculator extends Component
         'codPrice' => 795, 'codFee' => 0.02, 'rts' => 0.4, 'target' => 100,
     ];
 
+    /**
+     * Always the plain defaults.
+     *
+     * Inputs used to be restored from the user row, which meant the same numbers followed
+     * the account onto any device — the one thing that told a user their typing was being
+     * kept server-side. The page now starts fresh and the browser restores its own copy,
+     * so the convenience stays and that signal doesn't.
+     *
+     * Nothing is lost: every calculation is still recorded in profit_calculations, which
+     * is what the Profit Log reads.
+     */
     public function mount(): void
     {
-        // Restore this user's last inputs (falls back to the demo defaults).
-        $saved = auth()->user()->profit_inputs ?? [];
-        $this->c1 = array_merge(self::DEFAULTS, is_array($saved['c1'] ?? null) ? $saved['c1'] : []);
-        $this->c2 = array_merge(self::DEFAULTS, is_array($saved['c2'] ?? null) ? $saved['c2'] : []);
+        $this->c1 = self::DEFAULTS;
+        $this->c2 = self::DEFAULTS;
     }
-
-    /** Persist the current inputs to the user so they're restored next visit. */
-    private function remember(): void
-    {
-        auth()->user()->forceFill(['profit_inputs' => ['c1' => $this->c1, 'c2' => $this->c2]])->save();
-    }
-
-    // Fires when an input syncs (on blur) — keep the user's inputs saved.
-    public function updatedC1(): void { $this->remember(); }
-    public function updatedC2(): void { $this->remember(); }
 
     private function num($v): float
     {
@@ -89,7 +88,7 @@ class ProfitCalculator extends Component
             'target_net_profit' => $this->num($c['target'] ?? 0),
         ]);
 
-        $this->remember();
+        // The browser keeps its own copy; nothing to persist server-side here.
     }
 
     public function calcAdj(int $which): void
@@ -145,7 +144,7 @@ class ProfitCalculator extends Component
             $this->adj1 = $result;
         }
 
-        $this->remember();
+        // The browser keeps its own copy; nothing to persist server-side here.
     }
 
     public function render()

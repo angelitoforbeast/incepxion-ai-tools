@@ -8,8 +8,19 @@
         <p class="text-sm text-slate-500">Every generation — inputs, outputs, and what users copied (highlighted in green).</p>
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        {{-- Fixed layout with declared widths: a long product name or email was widening
+             the table and pushing the whole page into a sideways scroll. --}}
+        <table class="w-full table-fixed divide-y divide-slate-200 text-sm">
+            <colgroup>
+                <col style="width:150px">   {{-- When --}}
+                <col style="width:190px">   {{-- User --}}
+                <col>                       {{-- Product — takes what's left --}}
+                <col style="width:110px">   {{-- Model --}}
+                <col style="width:78px">    {{-- Variants --}}
+                <col style="width:96px">    {{-- Copied --}}
+                <col style="width:64px">    {{-- View --}}
+            </colgroup>
             <thead class="bg-slate-50">
                 <tr class="text-left text-xs uppercase tracking-wide text-slate-400">
                     <th class="px-4 py-3 font-semibold">When</th>
@@ -34,14 +45,15 @@
                         $reqCount = data_get($log->input, 'variants');
                     @endphp
                     <tr class="hover:bg-slate-50 align-top">
-                        <td class="px-4 py-3 text-slate-500 whitespace-nowrap">{{ $log->created_at->format('M d, Y g:i A') }}</td>
+                        <td class="px-4 py-3 text-slate-500">{{ $log->created_at->format('M d, Y g:i A') }}</td>
                         <td class="px-4 py-3">
-                            <div class="font-medium text-slate-800">{{ $log->user?->name ?? '—' }}</div>
-                            <div class="text-xs text-slate-400">{{ $log->user?->email }}</div>
+                            <div class="truncate font-medium text-slate-800" title="{{ $log->user?->name }}">{{ $log->user?->name ?? '—' }}</div>
+                            <div class="truncate text-xs text-slate-400" title="{{ $log->user?->email }}">{{ $log->user?->email }}</div>
                         </td>
-                        <td class="px-4 py-3 text-slate-700">{{ data_get($log->input, 'product_name', '—') }}</td>
-                        <td class="px-4 py-3"><span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-mono text-slate-600">{{ $log->model ?? '—' }}</span></td>
-                        <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">req: {{ $reqCount ?? '—' }}<br>got: {{ count($variants) }}</td>
+                        @php $product = data_get($log->input, 'product_name', '—'); @endphp
+                        <td class="px-4 py-3 text-slate-700"><div class="truncate" title="{{ $product }}">{{ $product }}</div></td>
+                        <td class="px-4 py-3"><span class="block truncate rounded bg-slate-100 px-2 py-0.5 text-xs font-mono text-slate-600" title="{{ $log->model }}">{{ $log->model ?? '—' }}</span></td>
+                        <td class="px-4 py-3 text-xs text-slate-500">req: {{ $reqCount ?? '—' }}<br>got: {{ count($variants) }}</td>
                         <td class="px-4 py-3">
                             @if ($copies->count())
                                 <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">{{ $copies->count() }} copied</span>

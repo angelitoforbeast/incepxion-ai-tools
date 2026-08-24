@@ -23,6 +23,14 @@ class ProfitHistory extends Component
     public array $min = [];
     public array $max = [];
 
+    #[\Livewire\Attributes\Url(as: 'from', except: '')]
+    public string $from = '';
+
+    #[\Livewire\Attributes\Url(as: 'to', except: '')]
+    public string $to = '';
+
+    public int $perPage = 25;
+
     private const NUMERIC = [
         'cpp', 'cogs', 'shipping_fee', 'orders', 'cod_price', 'cod_fee', 'rts',
         'net_profit', 'target_net_profit', 'suggested_rts', 'suggested_cpp',
@@ -49,7 +57,7 @@ class ProfitHistory extends Component
 
     public function clearFilters(): void
     {
-        $this->reset('selectedUsers', 'min', 'max', 'type');
+        $this->reset('selectedUsers', 'min', 'max', 'type', 'from', 'to');
         $this->resetPage();
     }
 
@@ -57,12 +65,17 @@ class ProfitHistory extends Component
     public function updatedSelectedUsers(): void { $this->resetPage(); }
     public function updatedMin(): void { $this->resetPage(); }
     public function updatedMax(): void { $this->resetPage(); }
+    public function updatedFrom(): void { $this->resetPage(); }
+    public function updatedTo(): void { $this->resetPage(); }
+    public function updatedPerPage(): void { $this->resetPage(); }
 
     public function render()
     {
         $q = ProfitCalculation::with('user')
             ->when($this->type, fn ($x) => $x->where('type', $this->type))
-            ->when($this->selectedUsers, fn ($x) => $x->whereIn('user_id', $this->selectedUsers));
+            ->when($this->selectedUsers, fn ($x) => $x->whereIn('user_id', $this->selectedUsers))
+            ->when($this->from !== '', fn ($x) => $x->where('created_at', '>=', $this->from.' 00:00:00'))
+            ->when($this->to !== '', fn ($x) => $x->where('created_at', '<=', $this->to.' 23:59:59'));
 
         foreach (self::NUMERIC as $col) {
             if (is_numeric($this->min[$col] ?? null)) {
@@ -81,9 +94,10 @@ class ProfitHistory extends Component
 
         return view('livewire.admin.profit-history', [
             'activeTab'     => 'admin.profit',
-            'rows'          => $q->paginate(25),
+            'rows'          => $q->paginate($this->perPage),
             'users'         => $users,
             'activeFilters' => count($this->selectedUsers) + ($this->type ? 1 : 0)
+                + ($this->from !== '' ? 1 : 0) + ($this->to !== '' ? 1 : 0)
                 + count(array_filter($this->min, fn ($v) => is_numeric($v)))
                 + count(array_filter($this->max, fn ($v) => is_numeric($v))),
         ]);

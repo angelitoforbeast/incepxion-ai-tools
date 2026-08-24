@@ -7,7 +7,7 @@
             <h2 class="text-lg font-semibold text-slate-900">Profit Calculator — History</h2>
             <p class="text-sm text-slate-500">Net-profit and adjustment runs. Sort any column; filter users / number ranges in the header.</p>
         </div>
-        <div class="flex items-end gap-3">
+        <div class="flex flex-wrap items-end gap-3">
             <div>
                 <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Type</label>
                 <select wire:model.live="type" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -16,11 +16,41 @@
                     <option value="adjustment">Adjustment</option>
                 </select>
             </div>
+
+            {{-- Users and number ranges already live in the column headers; the date range
+                 had nowhere to go, so it sits here. --}}
+            <div class="w-40">
+                <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">From</label>
+                <x-date-field model="from" size="text-sm" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+            </div>
+
+            <div class="w-40">
+                <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">To</label>
+                <x-date-field model="to" size="text-sm" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+            </div>
+
             @if ($activeFilters)
                 <button wire:click="clearFilters" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
                     Clear ({{ $activeFilters }})
                 </button>
             @endif
+        </div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <p class="text-sm text-slate-600">
+            @if ($rows->total() > 0)
+                Showing <span class="font-semibold text-slate-900">{{ number_format($rows->firstItem()) }}–{{ number_format($rows->lastItem()) }}</span>
+                of <span class="font-semibold text-slate-900">{{ number_format($rows->total()) }}</span>
+            @else
+                No calculations match these filters
+            @endif
+        </p>
+        <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-500">Rows</label>
+            <select wire:model.live="perPage" class="rounded-lg border-slate-300 py-1 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                @foreach ([25, 50, 100] as $n)<option value="{{ $n }}">{{ $n }}</option>@endforeach
+            </select>
         </div>
     </div>
 
@@ -45,8 +75,22 @@
     @endphp
 
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-xs">
+        <div>
+            {{-- Fourteen columns will not fit unless each one is told how much room it gets:
+                 left to size themselves, they set their own width and pushed the page into
+                 a sideways scroll. The numeric ones are narrow because their values are
+                 short; the header filter inputs are already w-full so they follow along. --}}
+            <table class="w-full table-fixed text-xs">
+                <colgroup>
+                    @foreach ($columns as $col)
+                        <col style="width: {{ match ($col['key']) {
+                            'created_at' => '82px',
+                            'user_id'    => '102px',
+                            'type'       => '62px',
+                            default      => 'auto',
+                        } }}">
+                    @endforeach
+                </colgroup>
                 <thead class="bg-slate-50 text-slate-600">
                     <tr>
                         @foreach ($columns as $col)
@@ -56,7 +100,7 @@
                                     ? count($selectedUsers) > 0
                                     : ($col['type'] === 'num' && (is_numeric($min[$col['key']] ?? null) || is_numeric($max[$col['key']] ?? null)));
                             @endphp
-                            <th class="px-3 py-2 font-medium whitespace-nowrap {{ $col['align'] === 'right' ? 'text-right' : 'text-left' }}">
+                            <th class="px-2 py-2 font-medium {{ $col['align'] === 'right' ? 'text-right' : 'text-left' }}">
                                 <div class="inline-flex items-center gap-1 {{ $col['align'] === 'right' ? 'flex-row-reverse' : '' }}">
                                     <button type="button" wire:click="sort('{{ $col['key'] }}')" class="inline-flex items-center gap-1 hover:text-indigo-600">
                                         {{ $col['label'] }}
@@ -115,22 +159,28 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($rows as $r)
                         <tr class="hover:bg-slate-50">
-                            <td class="px-3 py-1.5 whitespace-nowrap text-slate-600">{{ $r->created_at?->timezone('Asia/Manila')->format('M j, g:i A') }}</td>
-                            <td class="px-3 py-1.5 text-slate-800 max-w-[200px] truncate" title="{{ $r->user?->email }}">{{ $r->user?->email ?? '—' }}</td>
-                            <td class="px-3 py-1.5">
+                            {{-- Two lines rather than one long one, so the column can stay narrow. --}}
+                            <td class="px-2 py-1.5 text-slate-600 leading-tight">
+                                {{ $r->created_at?->timezone('Asia/Manila')->format('M j') }}<br>
+                                <span class="text-[10px] text-slate-400">{{ $r->created_at?->timezone('Asia/Manila')->format('g:i A') }}</span>
+                            </td>
+                            <td class="px-2 py-1.5 text-slate-800">
+                                <div class="truncate" title="{{ $r->user?->email }}">{{ $r->user?->name ?? '—' }}</div>
+                            </td>
+                            <td class="px-2 py-1.5">
                                 <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase {{ $r->type === 'adjustment' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800' }}">{{ $r->type }}</span>
                             </td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->cpp, 2) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->cogs, 2) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->shipping_fee, 2) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->orders) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ number_format($r->cod_price, 2) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ $numTrim($r->cod_fee) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums">{{ $numTrim($r->rts) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums font-semibold {{ $r->net_profit < 0 ? 'text-red-600' : 'text-indigo-700' }}">₱{{ number_format($r->net_profit, 2) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums text-slate-600">{{ $r->target_net_profit !== null ? '₱'.number_format($r->target_net_profit, 2) : '—' }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums {{ $r->suggested_rts !== null ? 'text-emerald-700' : 'text-slate-300' }}">{{ $numTrim($r->suggested_rts) }}</td>
-                            <td class="px-3 py-1.5 text-right tabular-nums {{ $r->suggested_cpp !== null ? 'text-emerald-700' : 'text-slate-300' }}">{{ $r->suggested_cpp !== null ? '₱'.number_format($r->suggested_cpp, 2) : '—' }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px]">{{ number_format($r->cpp, 2) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px]">{{ number_format($r->cogs, 2) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px]">{{ number_format($r->shipping_fee, 2) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px]">{{ number_format($r->orders) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px]">{{ number_format($r->cod_price, 2) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px]">{{ $numTrim($r->cod_fee) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px]">{{ $numTrim($r->rts) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px] font-semibold {{ $r->net_profit < 0 ? 'text-red-600' : 'text-indigo-700' }}">₱{{ number_format($r->net_profit, 2) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px] text-slate-600">{{ $r->target_net_profit !== null ? '₱'.number_format($r->target_net_profit, 2) : '—' }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px] {{ $r->suggested_rts !== null ? 'text-emerald-700' : 'text-slate-300' }}">{{ $numTrim($r->suggested_rts) }}</td>
+                            <td class="px-2 py-1.5 text-right tabular-nums text-[11px] {{ $r->suggested_cpp !== null ? 'text-emerald-700' : 'text-slate-300' }}">{{ $r->suggested_cpp !== null ? '₱'.number_format($r->suggested_cpp, 2) : '—' }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="{{ count($columns) }}" class="px-3 py-8 text-center text-slate-400">No calculations match these filters.</td></tr>

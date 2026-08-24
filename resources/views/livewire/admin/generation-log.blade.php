@@ -3,12 +3,85 @@
     <h1 class="text-xl font-bold text-slate-900 mb-1">Admin</h1>
     @include('partials.admin-nav')
 
-    <div class="mb-6">
+    <div class="mb-4">
         <h2 class="text-lg font-semibold text-slate-900">Ad Copy Generation History</h2>
         <p class="text-sm text-slate-500">Every generation — inputs, outputs, and what users copied (highlighted in green).</p>
     </div>
 
+    {{-- Filters --}}
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 mb-4">
+        <div class="flex flex-wrap items-end gap-3">
+            <div class="min-w-[180px]">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">User</label>
+                <select wire:model.live="userId" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">All users</option>
+                    @foreach ($users as $u)
+                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="w-36">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">Status</label>
+                <select wire:model.live="status" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">All</option>
+                    <option value="success">Success</option>
+                    <option value="error">Error</option>
+                </select>
+            </div>
+
+            <div class="w-40">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">Model</label>
+                <select wire:model.live="model" class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">All models</option>
+                    @foreach ($models as $m)
+                        <option value="{{ $m }}">{{ $m }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="w-40">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">From</label>
+                <x-date-field model="from" size="text-sm" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+            </div>
+
+            <div class="w-40">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">To</label>
+                <x-date-field model="to" size="text-sm" class="rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+            </div>
+
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">Product</label>
+                <input type="text" wire:model.live.debounce.400ms="search" placeholder="Search product name…"
+                       class="w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+
+            @if ($this->activeFilters)
+                <button wire:click="clearFilters"
+                        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                    Clear ({{ $this->activeFilters }})
+                </button>
+            @endif
+        </div>
+    </div>
+
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+            <p class="text-sm text-slate-600">
+                @if ($logs->total() > 0)
+                    Showing <span class="font-semibold text-slate-900">{{ number_format($logs->firstItem()) }}–{{ number_format($logs->lastItem()) }}</span>
+                    of <span class="font-semibold text-slate-900">{{ number_format($logs->total()) }}</span>
+                @else
+                    No generations match these filters
+                @endif
+            </p>
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-slate-500">Rows</label>
+                <select wire:model.live="perPage" class="rounded-lg border-slate-300 py-1 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                    @foreach ([20, 50, 100] as $n)<option value="{{ $n }}">{{ $n }}</option>@endforeach
+                </select>
+            </div>
+        </div>
         {{-- Fixed layout with declared widths: a long product name or email was widening
              the table and pushing the whole page into a sideways scroll. --}}
         <table class="w-full table-fixed divide-y divide-slate-200 text-sm">
@@ -121,9 +194,61 @@
                                         </div>
                                     @endif
 
+                                    {{-- The inputs as a table. Reading them as pretty-printed
+                                         JSON meant picking field names out of braces and
+                                         quotes; these are just labelled values. --}}
                                     <details class="text-xs">
-                                        <summary class="cursor-pointer text-slate-500 font-medium">Raw input</summary>
-                                        <pre class="mt-2 whitespace-pre-wrap break-words rounded bg-white border border-slate-200 p-3 max-h-56 overflow-auto">{{ json_encode($log->input, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                                        <summary class="cursor-pointer text-slate-500 font-medium">Inputs used</summary>
+                                        @php
+                                            $input = is_array($log->input) ? $log->input : [];
+                                            $spf = $input['sales_prompt_fields'] ?? [];
+                                            $top = collect($input)->except('sales_prompt_fields');
+
+                                            // "product_name" / "PRODUCT_NAME" both read as "Product name".
+                                            $label = fn ($k) => ucfirst(strtolower(str_replace('_', ' ', $k)));
+                                        @endphp
+
+                                        <div class="mt-2 rounded-lg border border-slate-200 bg-white overflow-hidden">
+                                            <table class="w-full table-fixed text-xs">
+                                                <colgroup><col style="width:190px"><col></colgroup>
+                                                <tbody class="divide-y divide-slate-100">
+                                                    @foreach ($top as $k => $v)
+                                                        <tr class="align-top">
+                                                            <th class="bg-slate-50 px-3 py-2 text-left font-semibold text-slate-500">{{ $label($k) }}</th>
+                                                            <td class="px-3 py-2 text-slate-700 whitespace-pre-wrap break-words">
+                                                                @if (is_array($v))
+                                                                    {{ implode(', ', $v) }}
+                                                                @elseif (trim((string) $v) === '')
+                                                                    <span class="text-slate-300">—</span>
+                                                                @else
+                                                                    {{ $v }}
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+
+                                                    @if (! empty($spf))
+                                                        <tr>
+                                                            <th colspan="2" class="bg-indigo-50 px-3 py-1.5 text-left text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                                                                Sales prompt fields
+                                                            </th>
+                                                        </tr>
+                                                        @foreach ($spf as $k => $v)
+                                                            <tr class="align-top">
+                                                                <th class="bg-slate-50 px-3 py-2 text-left font-semibold text-slate-500">{{ $label($k) }}</th>
+                                                                <td class="px-3 py-2 text-slate-700 whitespace-pre-wrap break-words">
+                                                                    @if (trim((string) $v) === '')
+                                                                        <span class="text-slate-300">—</span>
+                                                                    @else
+                                                                        {{ $v }}
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    @endif
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </details>
                                 </div>
                             </td>

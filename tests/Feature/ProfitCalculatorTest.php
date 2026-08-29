@@ -60,30 +60,23 @@ class ProfitCalculatorTest extends TestCase
             ->assertDontSee('3,131.31');
     }
 
-    public function test_inputs_are_retained_per_user(): void
+    // Inputs used to be held against the user row and restored on the next visit. That is
+    // deliberately gone — the browser keeps its own copy now, so the same numbers no longer
+    // follow the account onto another device. ProfitCalculatorPrivacyTest covers what
+    // replaced it.
+
+    public function test_adjustments_reject_zero_orders(): void
     {
-        $user = User::factory()->create(['status' => 'approved']);
-
-        Livewire::actingAs($user)->test(ProfitCalculator::class)
-            ->set('c1.cpp', 999)
-            ->call('calcNet', 1);
-
-        $user->refresh();
-        $this->assertSame(999, (int) $user->profit_inputs['c1']['cpp']);
-
-        // A fresh visit restores the saved value.
-        Livewire::actingAs($user)->test(ProfitCalculator::class)
-            ->assertSet('c1.cpp', 999);
-    }
-
-    public function test_adjustments_error_when_orders_zero(): void
-    {
+        // This used to come back as $adj1['error'], a message in the results box below the
+        // button. It is a validation error on the field itself now, which puts it next to
+        // the input the user has to change.
         $user = User::factory()->create(['status' => 'approved']);
 
         Livewire::actingAs($user)->test(ProfitCalculator::class)
             ->set('c1.orders', 0)
             ->call('calcAdj', 1)
-            ->assertSet('adj1', fn ($a) => isset($a['error']));
+            ->assertHasErrors(['c1.orders' => 'min'])
+            ->assertSet('adj1', null);
     }
 
     public function test_adjustments_suggests_values(): void

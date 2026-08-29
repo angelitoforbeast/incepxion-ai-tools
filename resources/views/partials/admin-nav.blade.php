@@ -1,18 +1,15 @@
 @php
+    // Only the tabs worth reaching every day. The rest are still routed and still behind
+    // the admin middleware — they just aren't advertised here. Reach them by URL:
+    //   profit-history · access-log · video-log · rts-data · rts-records · logs
     $tabs = [
         ['route' => 'admin.users', 'label' => 'Users'],
         ['route' => 'admin.prompts', 'label' => 'Prompts'],
         ['route' => 'admin.courses', 'label' => 'Courses'],
-        ['route' => 'admin.profit', 'label' => 'Profit Log'],
-        ['route' => 'admin.access', 'label' => 'Access Log'],
-        ['route' => 'admin.video-log', 'label' => 'Video Log'],
         ['route' => 'admin.subscriptions', 'label' => 'Subscriptions'],
         ['route' => 'admin.billing', 'label' => 'Billing'],
-        ['route' => 'admin.rts', 'label' => 'RTS Data'],
-        ['route' => 'admin.rts-records', 'label' => 'RTS Records'],
         ['route' => 'admin.storage', 'label' => 'Storage'],
         ['route' => 'admin.errors', 'label' => 'Error Logs'],
-        ['route' => 'admin.logs', 'label' => 'Data Logs'],
     ];
     // $activeTab is passed by each admin component so the highlight survives Livewire
     // updates (during a livewire/update request, request()->routeIs() no longer matches).

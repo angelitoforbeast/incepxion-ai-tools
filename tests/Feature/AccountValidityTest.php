@@ -82,7 +82,7 @@ class AccountValidityTest extends TestCase
         $this->actingAs($admin)->get('/dashboard')->assertOk();
     }
 
-    public function test_approve_sets_default_three_month_validity(): void
+    public function test_approve_sets_the_default_validity(): void
     {
         $admin = User::factory()->create(['status' => 'approved', 'role' => 'admin', 'email_verified_at' => now()]);
         $pending = User::factory()->create(['status' => 'pending', 'email_verified_at' => now(), 'access_expires_at' => null]);
@@ -90,9 +90,12 @@ class AccountValidityTest extends TestCase
         Livewire::actingAs($admin)->test(UserManager::class)->call('approve', $pending->id);
 
         $exp = $pending->fresh()->access_expires_at;
+        $months = User::DEFAULT_VALIDITY_MONTHS;
+
         $this->assertNotNull($exp);
-        // ~3 months out (allow a day of slack).
-        $this->assertTrue($exp->between(now()->addMonths(3)->subDay(), now()->addMonths(3)->addDay()));
+        // Read from the constant rather than repeating the number, so changing the default
+        // does not leave this asserting the old one.
+        $this->assertTrue($exp->between(now()->addMonths($months)->subDay(), now()->addMonths($months)->addDay()));
     }
 
     public function test_extend_access_bumps_expiry_from_future_date(): void

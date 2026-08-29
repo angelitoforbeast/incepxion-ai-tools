@@ -123,3 +123,15 @@ Route::view('profile', 'profile')->middleware(['auth'])->name('profile');
 Route::view('settings', 'settings')->middleware(['auth', 'approved'])->name('settings');
 
 require __DIR__.'/auth.php';
+
+// Development shortcut into the app. Signing in goes through Google only, which needs a
+// redirect URI registered against localhost — more setup than a local run is worth. This
+// stands in for it. The environment check means the route is never registered in
+// production, so there is nothing to guess at or reach there.
+if (app()->environment('local')) {
+    Route::get('dev-login/{id?}', function (int $id = 1) {
+        auth()->login(\App\Models\User::findOrFail($id));
+
+        return redirect()->route('dashboard');
+    })->name('dev.login');
+}

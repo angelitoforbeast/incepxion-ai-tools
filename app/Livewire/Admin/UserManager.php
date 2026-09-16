@@ -16,6 +16,14 @@ class UserManager extends Component
 {
     use WithPagination;
 
+    /**
+     * A status, or 'admin', or 'all'.
+     *
+     * 'admin' is a role rather than a status, so it overlaps the others instead of
+     * partitioning with them — every admin is also approved. It sits here anyway because
+     * "who can reach the console" is a question worth one click, and a second row of
+     * controls for a single option would cost more than the tidiness is worth.
+     */
     #[Url]
     public string $filter = 'pending';
 
@@ -174,7 +182,9 @@ class UserManager extends Component
     public function render()
     {
         $users = User::query()
-            ->when($this->filter !== 'all', fn ($q) => $q->where('status', $this->filter))
+            ->when($this->filter === 'admin', fn ($q) => $q->where('role', 'admin'))
+            ->when(! in_array($this->filter, ['all', 'admin'], true),
+                fn ($q) => $q->where('status', $this->filter))
             ->when($this->search, fn ($q) => $q->where(fn ($w) => $w
                 ->where('name', 'like', "%{$this->search}%")
                 ->orWhere('email', 'like', "%{$this->search}%")))
